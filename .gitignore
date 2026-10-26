@@ -1,0 +1,40 @@
+# Kredensial & config lokal — jangan pernah masuk repository
+smartftp.json
+ftp-simple.json
+scheduling-system/config/database.credentials.php
+scheduling-system/config/*.local.php
+**/.env
+**/.env.*
+
+# Data & berkas hasil generate
+scheduling-system/database/*.db
+*.log
+**/*.log
+
+# Debug pribadi
+scheduling-system/public/debug.php
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Dependency & cache
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# Arsip / temp
+*.zip
+*.rar
+*.7z
+_x/
+_xd/
+_phpcheck.php
+_syntaxcheck.txt
+_recap*.png

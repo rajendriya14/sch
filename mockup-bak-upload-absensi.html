@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — BAK: Upload Absensi &amp; Harga per Posisi (format asli)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    :root{
+        --bak-primary:#2563eb;--bak-primary-dark:#1d4ed8;--bak-text:#0f172a;--bak-muted:#64748b;
+        --bak-border:#e2e8f0;--bak-bg:#f8fafc;--bak-green:#15803d;--bak-green-bg:#dcfce7;
+        --bak-yellow:#a16207;--bak-yellow-bg:#fef9c3;--bak-red:#b91c1c;--bak-red-bg:#fee2e2;
+    }
+    *{box-sizing:border-box}
+    body{
+        margin:0;background:#eef1f5;color:var(--bak-text);
+        font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    }
+
+    /* ---------- bingkai mockup ---------- */
+    .mock-bar{
+        position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+        padding:9px 16px;background:#fff;border-bottom:1px solid var(--bak-border);
+        box-shadow:0 2px 10px -6px rgba(15,23,42,.3);
+    }
+    .mock-brand{display:flex;align-items:center;gap:8px;font-weight:750;font-size:.88rem;min-width:0;flex:1 1 260px}
+    .mock-brand i{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:#0f172a;color:#fff;font-size:.86rem;flex:0 0 auto}
+    .mock-brand-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .mock-brand em{
+        font-style:normal;font-size:.64rem;font-weight:750;text-transform:uppercase;letter-spacing:.06em;
+        color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:2px 7px;flex:0 0 auto;
+    }
+    .mbtn{
+        border:1px solid var(--bak-border);background:#fff;color:#334155;font:inherit;font-size:.76rem;
+        font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;
+        align-items:center;gap:5px;white-space:nowrap;
+    }
+    .mbtn:hover{background:#f1f5f9}
+    .mbtn.on{background:#0f172a;border-color:#0f172a;color:#fff}
+    .mock-wrap{max-width:1220px;margin:0 auto;padding:18px 14px 60px}
+
+    /* ---------- BAK root ---------- */
+    .bak-root{background:var(--bak-bg);padding:16px;border-radius:14px;border:1px solid var(--bak-border)}
+    .bak-header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+    .bak-h1{font-size:18px;font-weight:700;margin:0 0 2px}
+    .bak-h2{font-size:15px;font-weight:700;margin:0}
+    .bak-muted{color:var(--bak-muted);margin:0;font-size:12.5px}
+    .bak-pill{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--bak-border);background:#fff;color:var(--bak-muted)}
+    .bak-pill--blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+
+    .bak-stepper{display:flex;gap:8px;margin-bottom:14px}
+    .bak-step{flex:1 1 0;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bak-border);border-radius:10px;background:#fff}
+    .bak-step--active{border-color:var(--bak-primary);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+    .bak-step--todo .bak-step__index{background:#cbd5e1;color:#475569}
+    .bak-step__index{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--bak-primary);color:#fff;font-size:12.5px;font-weight:700}
+    .bak-step__meta{display:flex;flex-direction:column;min-width:0}
+    .bak-step__title{font-weight:650;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .bak-step__sub{font-size:11.5px;color:var(--bak-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .bak-panel{background:#fff;border:1px solid var(--bak-border);border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+    .bak-panel + .bak-panel{margin-top:14px}
+    .bak-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+    .bak-toolbar__actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+    .bak-sub{display:flex;align-items:center;gap:9px;margin-bottom:3px;flex-wrap:wrap}
+    .bak-sub__no{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:31px;height:22px;
+        padding:0 6px;border-radius:6px;background:#0f172a;color:#fff;font-size:11.5px;font-weight:750;
+        letter-spacing:.03em;font-variant-numeric:tabular-nums}
+    .bak-sub--new .bak-sub__no{background:var(--bak-primary)}
+    .bak-tag-new{font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:1px 5px}
+
+    .bak-btn{font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:9px;border:1px solid var(--bak-border);
+        background:#fff;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+    .bak-btn:hover{background:#f1f5f9}
+    .bak-btn--primary{background:var(--bak-primary);border-color:var(--bak-primary);color:#fff}
+    .bak-btn--primary:hover{background:var(--bak-primary-dark)}
+    .bak-btn--sm{font-size:12.5px;padding:6px 11px}
+    .bak-btn:disabled{opacity:.55;cursor:not-allowed}
+
+    .bak-tabs{display:inline-flex;border:1px solid var(--bak-border);border-radius:9px;overflow:hidden;background:#fff}
+    .bak-tabs button{font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border:0;background:transparent;
+        color:var(--bak-muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+    .bak-tabs button + button{border-left:1px solid var(--bak-border)}
+    .bak-tabs button.on{background:#0f172a;color:#fff}
+
+    .bak-drop{border:2px dashed #cbd5e1;border-radius:12px;background:#fff;padding:24px 18px;text-align:center;transition:border-color .15s,background .15s;cursor:pointer}
+    .bak-drop:hover{border-color:#93c5fd;background:#f8fbff}
+    .bak-drop__ico{font-size:1.7rem;color:var(--bak-primary);line-height:1}
+    .bak-drop__t{font-weight:700;margin:8px 0 2px}
+    .bak-drop__s{font-size:12.5px;color:var(--bak-muted)}
+    .bak-drop__foot{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+    .bak-paste{width:100%;min-height:118px;resize:vertical;border:1px solid var(--bak-border);border-radius:10px;
+        padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;color:var(--bak-text)}
+    .bak-paste:focus{outline:2px solid rgba(37,99,235,.35);outline-offset:1px}
+
+    .bak-filebar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 13px;border-radius:10px;
+        background:#f0fdf4;border:1px solid #bbf7d0;font-size:12.5px;margin-top:14px}
+    .bak-filebar__name{font-weight:700;display:flex;align-items:center;gap:7px;min-width:0}
+    .bak-filebar__name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .bak-filebar__meta{color:var(--bak-muted);margin-left:auto;font-variant-numeric:tabular-nums}
+
+    /* legenda format kolom */
+    .bak-legend{overflow-x:auto;border:1px solid var(--bak-border);border-radius:10px;margin-top:12px;background:#fff}
+    table.lgd{border-collapse:collapse;width:100%;font-size:12px}
+    table.lgd th,table.lgd td{padding:5px 12px;border-bottom:1px solid #f1f5f9;text-align:left;white-space:nowrap}
+    table.lgd thead th{background:#f8fafc;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--bak-muted);font-weight:700}
+    table.lgd tbody tr:last-child td{border-bottom:0}
+    table.lgd tbody tr.is-key td{background:#eff6ff;font-weight:650}
+    table.lgd .lgd-k{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;
+        border-radius:5px;background:#e2e8f0;color:#475569;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+    table.lgd tbody tr.is-key .lgd-k{background:var(--bak-primary);color:#fff}
+    table.lgd .lgd-note{font-size:11px;color:var(--bak-muted);font-weight:500}
+    .bak-legend__foot{padding:8px 12px;font-size:11.5px;color:var(--bak-muted);border-top:1px solid #f1f5f9;background:#fbfdff}
+
+    /* preview excel */
+    .bak-xl{overflow-x:auto;border:1px solid var(--bak-border);border-radius:10px;margin-top:12px}
+    table.xl{border-collapse:collapse;font-size:11.5px;width:100%;font-variant-numeric:tabular-nums}
+    table.xl th,table.xl td{border:1px solid #eef2f7;padding:4px 8px;white-space:nowrap;text-align:left;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+    table.xl thead tr.xlletters th{background:#e2e8f0;color:#64748b;font-size:9.5px;font-weight:700;letter-spacing:.08em;padding:2px 4px;text-align:center}
+    table.xl thead tr.xlletters th.hl{background:#bfdbfe;color:#1d4ed8}
+    table.xl thead tr.xlheads th{background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-align:center;letter-spacing:.02em}
+    table.xl thead tr.xlheads th.hl{background:#dbeafe;color:#1d4ed8}
+    table.xl td.hl{background:#f5f9ff;font-weight:600}
+    table.xl tbody tr:nth-child(even) td{background:#fcfdff}
+    table.xl tbody tr:nth-child(even) td.hl{background:#eff6ff}
+    .code-h{color:#15803d;font-weight:800}
+    .code-sc{color:#a16207;font-weight:800}
+    .code-sick{color:#b91c1c;font-weight:800}
+    .code-ct{color:#1d4ed8;font-weight:800}
+    .code-off{color:#94a3b8;font-weight:700}
+    .code-other{color:#b91c1c;font-weight:800}
+
+    /* tabel BAK */
+    .bak-table-wrap{overflow-x:auto;border:1px solid var(--bak-border);border-radius:10px}
+    table.bak-table{border-collapse:collapse;width:100%;font-size:13px}
+    table.bak-table th,table.bak-table td{padding:9px 11px;border-bottom:1px solid #f1f5f9;text-align:left;vertical-align:middle}
+    table.bak-table thead th{background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--bak-muted);font-weight:700;white-space:nowrap}
+    table.bak-table tbody tr:last-child td{border-bottom:0}
+    table.bak-table tbody tr.row-new td{background:#f8fbff}
+    table.bak-table tfoot td{background:#f8fafc;font-weight:750;border-top:1px solid var(--bak-border)}
+    .bak-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .bak-cat{display:block;font-size:11.5px;color:var(--bak-muted);font-weight:500}
+    .bak-qty{font-weight:750;font-variant-numeric:tabular-nums;font-size:13.5px}
+    .bak-zero{color:#cbd5e1;font-weight:600}
+
+    .cnt{display:inline-flex;align-items:center;justify-content:center;min-width:29px;padding:2px 7px;border-radius:6px;
+        font-weight:750;font-variant-numeric:tabular-nums;font-size:12px}
+    .cnt--h{background:var(--bak-green-bg);color:var(--bak-green)}
+    .cnt--sc{background:var(--bak-yellow-bg);color:var(--bak-yellow)}
+    .cnt--sick{background:var(--bak-red-bg);color:var(--bak-red)}
+    .cnt--ct{background:#eff6ff;color:#1d4ed8}
+    .cnt--off{background:#f1f5f9;color:#94a3b8}
+    .cnt--0{background:#f8fafc;color:#cbd5e1}
+
+    .price-box{display:inline-flex;align-items:center;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;height:34px}
+    .price-box:focus-within{border-color:var(--bak-primary);box-shadow:0 0 0 3px rgba(37,99,235,.16)}
+    .price-box span{font-size:12px;color:var(--bak-muted);padding:0 7px;background:#f8fafc;align-self:stretch;display:flex;align-items:center;border-right:1px solid #eef2f7}
+    .price-box input{font:inherit;font-size:13px;border:0;outline:0;width:112px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums;background:transparent;color:var(--bak-text)}
+
+    .bak-alert{display:flex;gap:9px;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.55;margin-top:12px}
+    .bak-alert i{flex:0 0 auto;margin-top:1px}
+    .bak-alert--warn{background:var(--bak-yellow-bg);border:1px solid #fde68a;color:var(--bak-yellow)}
+    .bak-alert--ok{background:var(--bak-green-bg);border:1px solid #bbf7d0;color:var(--bak-green)}
+    .bak-alert--info{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+    .bak-alert ul{margin:5px 0 0;padding-left:18px}
+    .bak-alert li{margin-bottom:2px}
+    .bak-alert code{background:rgba(255,255,255,.75);padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+    .bak-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .bak-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:#f1f5f9;border:1px solid var(--bak-border);font-size:12.5px;font-variant-numeric:tabular-nums}
+    .bak-total{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:10px;background:#0f172a;color:#fff}
+    .bak-total span:first-child{font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.8;font-weight:700}
+    .bak-total__value{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+    .bak-footer{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--bak-border)}
+    .bak-footer__left{font-size:12.5px;color:var(--bak-muted)}
+
+    .sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+    .sync-badge--ok{background:var(--bak-green-bg);color:var(--bak-green);border:1px solid #bbf7d0}
+    .sync-badge--new{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+    .sync-badge--warn{background:var(--bak-yellow-bg);color:var(--bak-yellow);border:1px solid #fde68a}
+    .sync-badge--idle{background:#f1f5f9;color:var(--bak-muted);border:1px solid var(--bak-border)}
+
+    /* toggle mode hitung */
+    .bak-toggle{display:inline-flex;border:1px solid var(--bak-border);border-radius:9px;overflow:hidden;background:#fff}
+    .bak-toggle button{font:inherit;font-size:12px;font-weight:650;padding:6px 11px;border:0;background:transparent;color:var(--bak-muted);cursor:pointer}
+    .bak-toggle button + button{border-left:1px solid var(--bak-border)}
+    .bak-toggle button.on{background:var(--bak-primary);color:#fff}
+
+    /* stat strip */
+    .bak-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:9px;margin-top:12px}
+    .bak-stat{border:1px solid var(--bak-border);border-radius:10px;padding:9px 11px;background:#fff}
+    .bak-stat__l{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--bak-muted);font-weight:750}
+    .bak-stat__v{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+
+    /* riwayat upload per bulan */
+    .bak-history{margin-top:12px;border:1px solid var(--bak-border);border-radius:10px;background:#fff;overflow:hidden}
+    .bak-history__t{display:flex;align-items:center;gap:7px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid #f1f5f9;
+        font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--bak-muted);font-weight:750}
+    .bak-history__row{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 12px;border-bottom:1px solid #f8fafc;font-size:12.5px}
+    .bak-history__row:last-child{border-bottom:0}
+    .bak-history__row.is-now{background:#f0fdf4}
+    .bak-history__p{font-weight:750;min-width:112px}
+    .bak-history__m{color:var(--bak-muted);font-variant-numeric:tabular-nums}
+    .bak-history__tag{margin-left:auto}
+
+    /* prorata bar */
+    .prorate{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+    .prorate__bar{width:62px;height:5px;border-radius:99px;background:#e2e8f0;overflow:hidden}
+    .prorate__fill{height:100%;border-radius:99px;background:var(--bak-primary)}
+    .prorate__fill.is-partial{background:#f59e0b}
+
+    /* catatan */
+    .notes{max-width:1220px;margin:20px auto 0;padding:0 14px}
+    .note-card{background:#fff;border:1px solid var(--bak-border);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+    .note-card h3{margin:0 0 4px;font-size:1rem;display:flex;align-items:center;gap:8px}
+    .note-card h3 i{color:var(--bak-primary)}
+    .note-card > p{margin:0 0 12px;color:var(--bak-muted);font-size:.84rem;line-height:1.6}
+    .note-card table{width:100%;border-collapse:collapse;font-size:.82rem}
+    .note-card th,.note-card td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--bak-border);vertical-align:top}
+    .note-card th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bak-muted);white-space:nowrap}
+    .note-card tr:last-child td{border-bottom:0}
+    .note-card code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:.78rem}
+    .qmark{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;
+        background:#fef9c3;color:#a16207;font-size:11px;font-weight:800;border:1px solid #fde68a}
+    .fact{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:.82rem;color:#a16207;line-height:1.6}
+
+    @media (max-width:820px){
+        .bak-stepper{flex-direction:column}
+        .bak-step__sub{display:none}
+        table.bak-table{font-size:12px}
+        table.bak-table th,table.bak-table td{padding:7px 7px}
+        .price-box input{width:86px}
+        .bak-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:600px){
+        .bak-root{padding:12px}
+        .bak-panel{padding:12px}
+        .bak-drop{padding:18px 12px}
+        .bak-total__value{font-size:16px}
+        .bak-toolbar{gap:10px}
+        .bak-toolbar__actions{width:100%}
+    }
+</style>
+</head>
+<body>
+
+<div class="mock-bar">
+    <div class="mock-brand">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+        <span class="mock-brand-text">Mockup BAK — Absensi 19 kolom (A–S)</span>
+        <em>lokal</em>
+    </div>
+    <button class="mbtn on" id="btnEmpty"><i class="bi bi-inbox"></i> Belum upload</button>
+    <button class="mbtn" id="btnLoaded"><i class="bi bi-check2-circle"></i> Sudah upload</button>
+    <button class="mbtn" id="btnPasteView"><i class="bi bi-clipboard"></i> Mode paste</button>
+    <button class="mbtn" id="btnFileView"><i class="bi bi-upload"></i> Mode file</button>
+</div>
+
+<div class="mock-wrap">
+
+<div class="bak-root">
+    <div class="bak-header">
+        <div>
+            <h1 class="bak-h1">BAK - Berita Acara Kerja</h1>
+            <p class="bak-muted">Step 1 dari 3: Max Potential Earnings</p>
+        </div>
+        <span class="bak-pill bak-pill--blue">PREVIEW</span>
+    </div>
+
+    <nav class="bak-stepper" aria-label="BAK progress">
+        <div class="bak-step bak-step--active">
+            <span class="bak-step__index">1</span>
+            <span class="bak-step__meta">
+                <span class="bak-step__title">Max Potential Earnings</span>
+                <span class="bak-step__sub">Absensi → harga → rate card</span>
+            </span>
+        </div>
+        <div class="bak-step bak-step--todo">
+            <span class="bak-step__index">2</span>
+            <span class="bak-step__meta">
+                <span class="bak-step__title">Accrual Input</span>
+                <span class="bak-step__sub">Input nilai accrual</span>
+            </span>
+        </div>
+        <div class="bak-step bak-step--todo">
+            <span class="bak-step__index">3</span>
+            <span class="bak-step__meta">
+                <span class="bak-step__title">Actual Input</span>
+                <span class="bak-step__sub">Verifikasi finance</span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- ============ 1A UPLOAD ============ -->
+    <section class="bak-panel">
+        <div class="bak-toolbar">
+            <div>
+                <div class="bak-sub bak-sub--new">
+                    <span class="bak-sub__no">1A</span>
+                    <h2 class="bak-h2">Upload Absensi</h2>
+                    <span class="bak-tag-new">baru</span>
+                </div>
+                <p class="bak-muted">
+                    Berkas konfirmasi attendance WFM. Dibaca <strong>kolom D (Position)</strong> dan
+                    <strong>kolom Q (Actual Attendance Code)</strong>.
+                </p>
+            </div>
+            <div class="bak-toolbar__actions">
+                <div class="bak-tabs" role="group">
+                    <button type="button" id="tabFile"><i class="bi bi-upload"></i> File .xlsx</button>
+                    <button type="button" id="tabPaste" class="on"><i class="bi bi-clipboard"></i> Paste dari Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- mode file -->
+        <div id="paneFile" style="display:none">
+            <div class="bak-drop" id="drop">
+                <div class="bak-drop__ico"><i class="bi bi-cloud-arrow-up"></i></div>
+                <div class="bak-drop__t">Tarik berkas ke sini, atau pilih dari perangkat</div>
+                <div class="bak-drop__s">.xlsx / .xls / .csv · maks 5 MB · header di baris 1 · data mulai baris 2</div>
+                <div class="bak-drop__foot">
+                    <button type="button" class="bak-btn bak-btn--primary bak-btn--sm" id="btnPick">
+                        <i class="bi bi-folder2-open"></i> Pilih berkas
+                    </button>
+                    <button type="button" class="bak-btn bak-btn--sm" id="btnSampleFile">
+                        <i class="bi bi-magic"></i> Pakai contoh (3.131 baris)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- mode paste -->
+        <div id="panePaste">
+            <textarea class="bak-paste" id="pasteBox" spellcheck="false"></textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                <button type="button" class="bak-btn bak-btn--primary bak-btn--sm" id="btnParse"><i class="bi bi-play-fill"></i> Proses data</button>
+                <button type="button" class="bak-btn bak-btn--sm" id="btnSamplePaste"><i class="bi bi-magic"></i> Isi contoh (40 baris)</button>
+                <button type="button" class="bak-btn bak-btn--sm" id="btnClear"><i class="bi bi-eraser"></i> Kosongkan</button>
+            </div>
+        </div>
+
+        <!-- legenda format: A-S -->
+        <div class="bak-legend">
+            <table class="lgd">
+                <thead>
+                    <tr><th style="width:70px">Kolom</th><th>Nama kolom</th><th>Dipakai?</th></tr>
+                </thead>
+                <tbody id="legendBody"></tbody>
+            </table>
+            <div class="bak-legend__foot">
+                <i class="bi bi-info-circle"></i>
+                Hanya <strong>D</strong> dan <strong>Q</strong> yang dihitung. Sisanya untuk pratinjau &amp; penelusuran.
+            </div>
+        </div>
+
+        <!-- hasil -->
+        <div id="resultBox" style="display:none">
+            <div class="bak-filebar">
+                <div class="bak-filebar__name">
+                    <i class="bi bi-file-earmark-spreadsheet-fill" style="color:#15803d"></i>
+                    <span id="fileName">Konfirmasi_Attendance_1_-_6_October_2026__WFM_-updated.xlsx</span>
+                </div>
+                <span class="sync-badge sync-badge--ok" id="fileRows">3.131 baris</span>
+                <span class="bak-filebar__meta" id="fileTime">diproses 22 Okt 2026, 14:40 WIB</span>
+            </div>
+
+            <div class="bak-xl">
+                <table class="xl">
+                    <thead>
+                        <tr class="xlletters" id="xlLetters"></tr>
+                        <tr class="xlheads" id="xlHeads"></tr>
+                    </thead>
+                    <tbody id="xlBody"></tbody>
+                </table>
+            </div>
+            <p class="bak-muted" style="margin-top:8px;font-size:11.5px">
+                <i class="bi bi-info-circle"></i> Pratinjau 5 baris pertama · kolom <b>D</b> &amp; <b>Q</b> disorot
+            </p>
+
+            <div class="bak-stats" id="statStrip"></div>
+            <div id="alertBox"></div>
+
+            <div class="bak-history">
+                <div class="bak-history__t"><i class="bi bi-clock-history"></i> Riwayat upload per bulan</div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 1B REKAP ============ -->
+    <section class="bak-panel" id="sumPanel" style="opacity:.55;pointer-events:none">
+        <div class="bak-toolbar">
+            <div>
+                <div class="bak-sub bak-sub--new">
+                    <span class="bak-sub__no">1B</span>
+                    <h2 class="bak-h2">Rekap per Posisi</h2>
+                    <span class="bak-tag-new">baru</span>
+                </div>
+                <p class="bak-muted">
+                    Quantity = <strong>orang unik per posisi</strong>. Orang yang masuk penuh sebulan dihitung
+                    <strong>1</strong>; yang resign / masuk sebagian diprorata.
+                </p>
+            </div>
+            <div class="bak-toolbar__actions">
+                <span class="sync-badge sync-badge--ok" id="stdBadge"><i class="bi bi-calendar3"></i> Hari kerja standar: —</span>
+            </div>
+        </div>
+
+        <div class="bak-table-wrap">
+            <table class="bak-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Posisi (D)</th>
+                        <th scope="col" class="bak-num">Orang</th>
+                        <th scope="col" class="bak-num">Quantity (prorate)</th>
+                        <th scope="col" class="bak-num">H</th>
+                        <th scope="col" class="bak-num">SC</th>
+                        <th scope="col" class="bak-num">Sick</th>
+                        <th scope="col" class="bak-num">CT</th>
+                        <th scope="col" class="bak-num">Day Off</th>
+                        <th scope="col">Rate card</th>
+                    </tr>
+                </thead>
+                <tbody id="sumBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td class="bak-num" id="tPeople">0</td>
+                        <td class="bak-num" id="tQty">0</td>
+                        <td class="bak-num" id="tH">0</td>
+                        <td class="bak-num" id="tSC">0</td>
+                        <td class="bak-num" id="tSick">0</td>
+                        <td class="bak-num" id="tCT">0</td>
+                        <td class="bak-num" id="tOff">0</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="bak-alert bak-alert--info" style="margin-top:10px">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                CT dihitung <strong>masuk</strong> (bagian dari undang-undang ketenagakerjaan).
+                Pembagi prorata = <strong id="stdText">hari kerja terbanyak</strong> di berkas ini.
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 1C HARGA ============ -->
+    <section class="bak-panel" id="pricePanel" style="opacity:.55;pointer-events:none">
+        <div class="bak-toolbar">
+            <div>
+                <div class="bak-sub bak-sub--new">
+                    <span class="bak-sub__no">1C</span>
+                    <h2 class="bak-h2">Harga per Posisi</h2>
+                    <span class="bak-tag-new">baru</span>
+                </div>
+                <p class="bak-muted">Subtotal = <strong>harga × jumlah masuk</strong>, langsung mengalir ke Max Potential Earnings.</p>
+            </div>
+            <div class="bak-toolbar__actions">
+                <span class="sync-badge sync-badge--idle" id="priceSync">Menunggu data absensi</span>
+                <button type="button" class="bak-btn bak-btn--primary bak-btn--sm" id="btnAddPositions" style="display:none">
+                    <i class="bi bi-plus-lg"></i> Tambah <span id="addCount">0</span> posisi baru
+                </button>
+            </div>
+        </div>
+
+        <div class="bak-table-wrap">
+            <table class="bak-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Posisi</th>
+                        <th scope="col">Kategori</th>
+                        <th scope="col" class="bak-num">Quantity</th>
+                        <th scope="col" class="bak-num">Harga / Posisi</th>
+                        <th scope="col" class="bak-num">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="priceBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">Grand Total</td>
+                        <td class="bak-num" id="priceTotal">Rp 0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ 1D MAX POTENTIAL ============ -->
+    <section class="bak-panel">
+        <div class="bak-toolbar">
+            <div>
+                <div class="bak-sub">
+                    <span class="bak-sub__no">1D</span>
+                    <h2 class="bak-h2">Max Potential Earnings</h2>
+                </div>
+                <p class="bak-muted" id="maxSub">Nilai maksimum berdasarkan rate card dan quantity.</p>
+            </div>
+            <div class="bak-toolbar__actions">
+                <span class="sync-badge sync-badge--idle" id="maxSync">Belum tersinkron</span>
+                <button type="button" class="bak-btn bak-btn--sm" disabled><i class="bi bi-arrow-repeat"></i> Muat ulang</button>
+            </div>
+        </div>
+
+        <div class="bak-table-wrap">
+            <table class="bak-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Role</th>
+                        <th scope="col">Billing Type</th>
+                        <th scope="col" class="bak-num">Price/Unit</th>
+                        <th scope="col" class="bak-num">Quantity</th>
+                        <th scope="col" class="bak-num">Subtotal</th>
+                        <th scope="col">Sumber</th>
+                    </tr>
+                </thead>
+                <tbody id="maxBody"></tbody>
+            </table>
+        </div>
+
+        <div class="bak-chips" id="maxChips"></div>
+
+        <div class="bak-total">
+            <span>Grand Total</span>
+            <span class="bak-total__value" id="maxTotal">Rp 0</span>
+        </div>
+
+        <div class="bak-footer">
+            <div class="bak-footer__left" id="maxFoot">Upload absensi &amp; isi harga per posisi untuk mengisi tabel ini.</div>
+            <button type="button" class="bak-btn bak-btn--primary">Next →</button>
+        </div>
+    </section>
+</div>
+
+<!-- ================= CATATAN ================= -->
+<div class="notes">
+    <div class="note-card">
+        <h3><i class="bi bi-check2-square"></i> 5 keputusan bes — sudah diterapkan di mockup ini</h3>
+        <table>
+            <thead><tr><th style="width:34px">#</th><th>Keputusan</th><th>Cara kerja di mockup</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><span class="qmark">1</span></td>
+                    <td><b>Orang unik + prorata</b><br><span class="bak-muted">resign tengah bulan terpotong</span></td>
+                    <td>Masuk penuh sebulan = <b>1,00</b>. Yang masuk sebagian = <b>hari terjadwal ÷ hari kerja standar</b>.
+                        Contoh di data: 1 orang Agent resign 15 Okt → dihitung <b>0,48</b>, jadi Agent = <b>60,48</b> bukan 61.</td>
+                </tr>
+                <tr>
+                    <td><span class="qmark">2</span></td>
+                    <td><b>CT dihitung masuk</b><br><span class="bak-muted">bagian UU ketenagakerjaan</span></td>
+                    <td>Kolom H/SC/Sick/CT tetap dipisah untuk keterangan, tapi batas "masuk" = <b>H + SC + Sick + CT</b>.
+                        Orang yang cuti tahunan tidak dianggap kurang.</td>
+                </tr>
+                <tr>
+                    <td><span class="qmark">3</span></td>
+                    <td><b>Posisi bisa ditambah</b><br><span class="bak-muted">rate card beda per project</span></td>
+                    <td>Posisi di luar rate card ditandai, lalu muncul tombol
+                        <b>“Tambah N posisi baru”</b> di bagian 1C. Setelah ditambah, harganya bisa langsung diisi.</td>
+                </tr>
+                <tr>
+                    <td><span class="qmark">4</span></td>
+                    <td><b>Dua cara input</b><br><span class="bak-muted">upload &amp; paste, opsional</span></td>
+                    <td>Tab <b>File .xlsx</b> (tarik/klik) dan tab <b>Paste dari Excel</b>. Dua-duanya memakai parser yang sama.</td>
+                </tr>
+                <tr>
+                    <td><span class="qmark">5</span></td>
+                    <td><b>Simpan per bulan</b><br><span class="bak-muted">riwayat tersimpan</span></td>
+                    <td>Ada panel <b>Riwayat upload per bulan</b> di bagian 1A: Oktober (sedang dipakai), September, Agustus —
+                        masing-masing menyimpan baris, orang, dan harganya sendiri.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-calculator"></i> Rumus prorata yang dipakai</h3>
+        <p>Ini bagian terpenting, jadi saya tulis eksplisit:</p>
+        <table>
+            <thead><tr><th>Langkah</th><th>Rumus</th><th>Contoh dari file bes</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1. Hari kerja standar</td>
+                    <td><code>max(hari terjadwal tiap orang)</code></td>
+                    <td><b>25 hari</b> (31 hari − 6 Day Off)</td>
+                </tr>
+                <tr>
+                    <td>2. Rasio satu orang</td>
+                    <td><code>min(1, hari terjadwal ÷ 25)</code></td>
+                    <td>Masuk penuh 25/25 = <b>1,00</b><br>Resign 15 Okt → 12/25 = <b>0,48</b></td>
+                </tr>
+                <tr>
+                    <td>3. Quantity posisi</td>
+                    <td><code>Σ rasio semua orang di posisi itu</code></td>
+                    <td>Agent = 60 × 1,00 + 1 × 0,48 = <b>60,48</b></td>
+                </tr>
+                <tr>
+                    <td>4. Subtotal</td>
+                    <td><code>quantity × harga per posisi</code></td>
+                    <td>60,48 × Rp 6.500.000 = <b>Rp 393.120.000</b></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="fact" style="margin-top:12px">
+            <i class="bi bi-info-circle-fill"></i>
+            Hari kerja standar dihitung <b>otomatis dari berkas</b> (yang terbanyak), bukan dipaku 25.
+            Jadi kalau bulan itu cuma 22 hari kerja, atau berkasnya hanya separuh bulan, tetap benar tanpa diatur manual.
+        </div>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-file-earmark-check"></i> Hasil baca file asli bes</h3>
+        <p>Isi sebenarnya dari <code>Konfirmasi_Attendance_1_-_6_October_2026__WFM_-updated.xlsx</code>:</p>
+        <table>
+            <thead><tr><th>Item</th><th>Isi</th></tr></thead>
+            <tbody>
+                <tr><td>Jumlah kolom</td><td><b>19 kolom: A sampai S</b></td></tr>
+                <tr><td>Baris data</td><td><b>3.131 baris</b> = <b>101 orang × 31 hari</b> (1–31 Oktober 2026)</td></tr>
+                <tr><td>Kolom Position (D)</td><td>Agent, Agent English, Team Leader, Trainer, WFM, Operation Manager, Supervisor, Analyst Ops</td></tr>
+                <tr><td>Kolom Attendance Code (Q)</td><td><b>H = 2.323</b> · <b>CT = 202</b> · <b>kosong = 606</b></td></tr>
+                <tr><td>SC &amp; Sick</td><td><b>0 baris</b> di file ini — kolomnya tetap disiapkan</td></tr>
+                <tr><td>Kode kosong</td><td>Selalu berpasangan dengan Working Shift = <code>Day Off</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-arrow-left-right"></i> Posisi di Excel vs rate card BAK sekarang</h3>
+        <p>Ini yang perlu perhatian — <b>hampir tidak ada yang cocok</b>.</p>
+        <table>
+            <thead><tr><th>Posisi di Excel</th><th>Orang</th><th>Ada di rate card?</th></tr></thead>
+            <tbody id="mapTableBody"></tbody>
+        </table>
+        <div class="fact" style="margin-top:12px">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Hanya <b>Trainer</b> dan <b>Team Leader</b> yang cocok.
+            Sebaliknya, <b>Content Moderator, Senior Content Moderator, QA Analyst, QA Lead</b> ada di rate card
+            tapi <b>tidak ada di file absensi</b>. Klik <b>“Tambah posisi baru”</b> di bagian 1C untuk memasukkannya.
+        </div>
+    </div>
+</div>
+
+</div><!-- /.mock-wrap -->
+
+<script>
+(function(){
+    'use strict';
+
+    /* ================= kolom A–S sesuai file asli ================= */
+    var COLS = [
+        ['A','Employee ID',false],
+        ['B','Fullname',false],
+        ['C','Branch',false],
+        ['D','Position',true],
+        ['E','DIVISI',false],
+        ['F','Working Shift',false],
+        ['G','Date',false],
+        ['H','Duty On Date',false],
+        ['I','Duty On Time',false],
+        ['J','Duty Off Date',false],
+        ['K','Duty Off Time',false],
+        ['L','New Working Shift',false],
+        ['M','Actual Duty On Date',false],
+        ['N','Actual Duty On Time',false],
+        ['O','Actual Duty Off Date',false],
+        ['P','Actual Duty Off Time',false],
+        ['Q','Actual Attendance Code',true],
+        ['R','Note',false],
+        ['S','Reason',false]
+    ];
+
+    /* rate card BAK yang ada di production sekarang */
+    var RATE = [
+        { position:'Trainer',                  category:'Enablement', price:7000000 },
+        { position:'Content Moderator',        category:'Operations', price:6500000 },
+        { position:'Senior Content Moderator', category:'Operations', price:7000000 },
+        { position:'Team Leader',              category:'Operations', price:8000000 },
+        { position:'QA Analyst',               category:'Quality',    price:7000000 },
+        { position:'QA Lead',                  category:'Quality',    price:8500000 }
+    ];
+
+    /* komposisi orang per posisi, persis file asli.
+       Satu baris tambahan: contoh orang yang resign di tengah bulan (15 Okt),
+       supaya kelihatan efek prorata-nya. */
+    var HEADCOUNT = [
+        { position:'Agent',             people:60 },
+        { position:'Agent',             people:1, partial:15, note:'resign 15 Okt' },
+        { position:'Agent English',     people:27 },
+        { position:'Team Leader',       people:8  },
+        { position:'Trainer',           people:2  },
+        { position:'WFM',               people:1  },
+        { position:'Operation Manager', people:1  },
+        { position:'Supervisor',        people:1  },
+        { position:'Analyst Ops',       people:1  }
+    ];
+
+    var DAYS = 31;
+    var NAMA = ['Aris Vangki Arsandi','Belinda Merlansyah Suendi','Retno Utami','Dian Kusuma','Fajar Ramadhan',
+        'Gilang Pratama','Hesti Wulandari','Irfan Maulana','Jihan Aulia','Kurnia Sandi','Lestari Ningsih',
+        'Muhammad Rizki','Nadia Safitri','Oki Setiawan','Putra Wijaya','Qori Amalia','Rina Marlina','Sandi Permana',
+        'Taufik Hidayat','Umi Kalsum','Vina Oktaviani','Wahyu Saputra','Yani Suryani','Zaki Firmansyah','Ahmad Fauzi'];
+
+    /* ================= util ================= */
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function rp(n){ return 'Rp ' + (Math.round(n)||0).toLocaleString('id-ID'); }
+    function nf(n){ return (Math.round(n)||0).toLocaleString('id-ID'); }
+
+    function serialToDate(v){
+        var n = Number(v);
+        if (!isFinite(n) || n < 20000 || n > 80000) return String(v == null ? '' : v);
+        var d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+        var mm = String(d.getUTCMonth() + 1).padStart(2,'0');
+        var dd = String(d.getUTCDate()).padStart(2,'0');
+        return dd + '/' + mm + '/' + d.getUTCFullYear();
+    }
+
+    function normCode(v){
+        var s = String(v==null?'':v).trim().toUpperCase().replace(/[\s\-_]+/g,'');
+        if (s === '') return '';
+        if (s === 'H' || s === 'HADIR' || s === 'PRESENT') return 'H';
+        if (s === 'SC' || s === 'SHIFTCHANGE') return 'SC';
+        if (s === 'SICK' || s === 'SAKIT') return 'Sick';
+        if (s === 'CT' || s === 'CUTI' || s === 'CUTITAHUNAN') return 'CT';
+        if (s === 'OFF' || s === 'DAYOFF' || s === 'DO' || s === 'LIBUR') return 'OFF';
+        return 'LAIN:' + s;
+    }
+    function codeClass(c){
+        if (c === 'H') return 'code-h';
+        if (c === 'SC') return 'code-sc';
+        if (c === 'Sick') return 'code-sick';
+        if (c === 'CT') return 'code-ct';
+        if (c === 'OFF' || c === '') return 'code-off';
+        return 'code-other';
+    }
+    function codeLabel(c){
+        if (c === '' ) return 'Day Off';
+        return c.indexOf('LAIN:') === 0 ? c.slice(5) : c;
+    }
+
+    /* ================= generator data contoh (meniru file asli 3.131 baris) ================= */
+    function buildSample(){
+        var rows = [];
+        var idx = 0;
+        HEADCOUNT.forEach(function (p) {
+            for (var k = 0; k < p.people; k++) {
+                var nama = NAMA[idx % NAMA.length] + (idx >= NAMA.length ? ' ' + (Math.floor(idx / NAMA.length) + 1) : '');
+                idx++;
+                var totalDays = p.partial ? p.partial : DAYS;
+                for (var d = 0; d < totalDays; d++) {
+                    var code, shift;
+                    if (d % 5 === 4) { code = ''; shift = 'Day Off'; }
+                    else if (d === 7 || d === 21) { code = 'CT'; shift = (d % 2 ? 'S2' : 'P4'); }
+                    else { code = 'H'; shift = (d % 2 ? 'S2' : 'P4'); }
+                    rows.push({
+                        nip: '', name: nama, branch: 'PT. TRANSCOSMOS INDONESIA',
+                        position: p.position, divisi: 'WFM', shift: shift,
+                        date: 46296 + d, dOnDate: 46296 + d,
+                        dOnTime: shift === 'Day Off' ? '00:00' : '09:00',
+                        dOffDate: 46296 + d,
+                        dOffTime: shift === 'Day Off' ? '00:00' : '18:00',
+                        newShift: shift,
+                        aOnDate: shift === 'Day Off' ? '' : 46296 + d,
+                        aOnTime: shift === 'Day Off' ? '' : '09:05',
+                        aOffDate: shift === 'Day Off' ? '' : 46296 + d,
+                        aOffTime: shift === 'Day Off' ? '' : '18:07',
+                        code: code, note: '', reason: ''
+                    });
+                }
+            }
+        });
+        return rows;
+    }
+
+    /* ================= parsing teks (paste dari Excel) ================= */
+    function parseText(text){
+        var lines = text.replace(/\r/g,'').split('\n').filter(function(l){ return l.trim() !== ''; });
+        var rows = [], other = [];
+        var posIdx = -1, codeIdx = -1, mapDone = false, skipNext = 0;
+
+        lines.forEach(function (line) {
+            var cells = line.indexOf('\t') >= 0 ? line.split('\t') : line.split(/[,;]/);
+            var probe = cells.join(' ').toUpperCase();
+
+            if (!mapDone && probe.indexOf('POSITION') >= 0 && probe.indexOf('ATTENDANCE') >= 0) {
+                cells.forEach(function (c, i) {
+                    var u = String(c).trim().toUpperCase();
+                    if (u === 'POSITION') posIdx = i;
+                    if (u.indexOf('ATTENDANCE') >= 0) codeIdx = i;
+                });
+                mapDone = true;
+                skipNext = 1;   // baris huruf A B C D ... (kalau ikut ter-paste)
+                return;
+            }
+            if (skipNext > 0) {
+                // baris huruf kolom: A, B, C, ...
+                if (cells.join('').replace(/\s/g,'').toUpperCase() === COLS.map(function(c){return c[0];}).join('')) {
+                    skipNext = 0;
+                    return;
+                }
+                skipNext = 0;
+            }
+
+            var posRaw = posIdx >= 0 ? cells[posIdx] : cells[3];
+            var codeRaw = codeIdx >= 0 ? cells[codeIdx] : cells[16];
+            var pos = String(posRaw == null ? '' : posRaw).trim();
+            if (pos === '') return;
+
+            var code = normCode(codeRaw);
+            if (code.indexOf('LAIN:') === 0) other.push(code.slice(5));
+
+            rows.push({
+                nip: String(cells[0] || '').trim(),
+                name: String(cells[1] || '').trim(),
+                branch: String(cells[2] || '').trim(),
+                position: pos,
+                divisi: String(cells[4] || '').trim(),
+                shift: String(cells[5] || '').trim(),
+                date: cells[6] || '',
+                dOnDate: cells[7] || '', dOnTime: cells[8] || '',
+                dOffDate: cells[9] || '', dOffTime: cells[10] || '',
+                newShift: cells[11] || '',
+                aOnDate: cells[12] || '', aOnTime: cells[13] || '',
+                aOffDate: cells[14] || '', aOffTime: cells[15] || '',
+                code: code,
+                note: String(cells[17] || '').trim(),
+                reason: String(cells[18] || '').trim()
+            });
+        });
+
+        return { rows: rows, other: other };
+    }
+
+    /* ================= agregasi + prorata ================= */
+    function rateOf(pos){
+        var f = RATE.filter(function (r) { return r.position === pos; })[0];
+        if (f) return f;
+        var x = (S.extraRate || []).filter(function (r) { return r.position === pos; })[0];
+        return x || null;
+    }
+
+    /** Hari ini dihitung "terjadwal" bila bukan Day Off. */
+    function isScheduled(r){
+        if (r.code === 'OFF') return false;
+        var shift = String(r.shift || '').trim().toLowerCase();
+        if (shift === 'day off' || shift === 'dayoff' || shift === 'off' || shift === 'libur') return false;
+        if (r.code !== '') return true;          // H / SC / Sick / CT
+        return shift !== '';                      // ada shift tapi kode kosong
+    }
+
+    /**
+     * Hitung per posisi.
+     *
+     * Quantity = jumlah ORANG UNIK, dengan prorata:
+     *   rasio orang = hari terjadwal orang itu / hari kerja standar
+     *   hari kerja standar = hari terjadwal TERBANYAK di berkas (= sebulan penuh)
+     * Jadi orang yang masuk penuh = 1,00; resign tengah bulan < 1,00.
+     * CT dihitung masuk (bagian dari hak cuti tahunan).
+     */
+    function aggregate(rows){
+        var people = new Map();   // "nama|posisi" -> { scheduled }
+        var map = new Map();      // posisi -> agregat
+
+        rows.forEach(function (r) {
+            if (!map.has(r.position)) {
+                map.set(r.position, { position:r.position, h:0, sc:0, sick:0, ct:0, off:0, other:0, people:{} });
+            }
+            var a = map.get(r.position);
+            if (r.code === 'H') a.h++;
+            else if (r.code === 'SC') a.sc++;
+            else if (r.code === 'Sick') a.sick++;
+            else if (r.code === 'CT') a.ct++;
+            else if (r.code === '' || r.code === 'OFF') a.off++;
+            else a.other++;
+
+            var name = r.name || r.nip;
+            if (!name) return;
+            a.people[name] = 1;
+
+            var key = name + '|' + r.position;
+            if (!people.has(key)) people.set(key, { name:name, position:r.position, scheduled:0 });
+            if (isScheduled(r)) people.get(key).scheduled++;
+        });
+
+        // hari kerja standar = yang terbanyak (sebulan penuh)
+        var standard = 0;
+        people.forEach(function (p) { if (p.scheduled > standard) standard = p.scheduled; });
+
+        var list = Array.from(map.values()).map(function (a) {
+            a.head = Object.keys(a.people).length;
+            a.known = !!rateOf(a.position);
+            a.std = standard;
+            a.qty = 0;
+            a.partialCount = 0;
+
+            Object.keys(a.people).forEach(function (name) {
+                var p = people.get(name + '|' + a.position);
+                var ratio = (standard > 0 && p) ? Math.min(1, p.scheduled / standard) : 1;
+                a.qty += ratio;
+                if (ratio < 0.999) a.partialCount++;
+            });
+
+            a.qty = Math.round(a.qty * 100) / 100;
+            a.masuk = a.h + a.sc + a.sick + a.ct;   // CT ikut dihitung masuk
+            return a;
+        });
+
+        list.sort(function (x, y) {
+            if (x.known !== y.known) return x.known ? -1 : 1;
+            return x.position.localeCompare(y.position);
+        });
+
+        S.standard = standard;
+        return list;
+    }
+
+    /** Angka quantity dengan maksimal 2 desimal. */
+    function nq(n){
+        var v = Math.round((Number(n) || 0) * 100) / 100;
+        return v.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    /* ================= state ================= */
+    var S = {
+        mode:'paste', loaded:false,
+        rows:[], other:[], sum:[], prices:{}, extraRate:[],
+        standard:0,
+        fileName:'Konfirmasi_Attendance_1_-_6_October_2026__WFM_-updated.xlsx',
+        _sample:null
+    };
+
+    /* riwayat upload per bulan (keputusan: data disimpan per periode) */
+    var HISTORY = [
+        { period:'Oktober 2026', file:'Konfirmasi_Attendance_1_-_6_October_2026__WFM_-updated.xlsx',
+          rows:3131, people:102, now:true },
+        { period:'September 2026', file:'Konfirmasi_Attendance_September_2026.xlsx',
+          rows:3030, people:101, now:false },
+        { period:'Agustus 2026', file:'Konfirmasi_Attendance_Agustus_2026.xlsx',
+          rows:3069, people:99, now:false }
+    ];
+
+    function sampleRows(){ return S._sample || (S._sample = buildSample()); }
+
+    /* ================= render ================= */
+    function renderLegend(){
+        document.getElementById('legendBody').innerHTML = COLS.map(function (c) {
+            var mark = c[2]
+                ? '<span class="sync-badge sync-badge--new"><i class="bi bi-check2"></i> dihitung</span>'
+                : '<span class="bak-muted" style="font-size:11.5px">pratinjau</span>';
+            return '<tr class="' + (c[2] ? 'is-key' : '') + '">'
+                + '<td><span class="lgd-k">' + c[0] + '</span></td>'
+                + '<td>' + esc(c[1]) + (c[2] ? '' : ' <span class="lgd-note">— tidak dihitung</span>') + '</td>'
+                + '<td>' + mark + '</td></tr>';
+        }).join('');
+    }
+
+    function renderLetters(){
+        document.getElementById('xlLetters').innerHTML = COLS.map(function (c) {
+            return '<th class="' + (c[2] ? 'hl' : '') + '">' + c[0] + '</th>';
+        }).join('');
+        document.getElementById('xlHeads').innerHTML = COLS.map(function (c) {
+            return '<th class="' + (c[2] ? 'hl' : '') + '">' + esc(c[1]) + '</th>';
+        }).join('');
+    }
+
+    function cell(v, hl){
+        return '<td class="' + (hl ? 'hl' : '') + '">' + esc(v === '' || v == null ? '—' : v) + '</td>';
+    }
+
+    function renderPreview(){
+        document.getElementById('xlBody').innerHTML = S.rows.slice(0,5).map(function (r) {
+            return '<tr>'
+                + cell(r.nip)
+                + cell(r.name)
+                + cell(r.branch || 'PT. TRANSCOSMOS INDONESIA')
+                + cell(r.position, true)
+                + cell(r.divisi || 'WFM')
+                + cell(r.shift || '—')
+                + cell(serialToDate(r.date))
+                + cell(serialToDate(r.dOnDate))
+                + cell(r.dOnTime || '—')
+                + cell(serialToDate(r.dOffDate))
+                + cell(r.dOffTime || '—')
+                + cell(r.newShift || r.shift || '—')
+                + cell(serialToDate(r.aOnDate))
+                + cell(r.aOnTime || '—')
+                + cell(serialToDate(r.aOffDate))
+                + cell(r.aOffTime || '—')
+                + '<td class="hl"><span class="' + codeClass(r.code) + '">' + esc(codeLabel(r.code)) + '</span></td>'
+                + cell(r.note)
+                + cell(r.reason)
+                + '</tr>';
+        }).join('');
+    }
+
+    function renderStats(){
+        var people = {}, days = {}, h=0, ct=0, off=0, other=0, sc=0, sick=0;
+        S.rows.forEach(function (r) {
+            if (r.name) people[r.name] = 1;
+            if (r.date) days[String(r.date)] = 1;
+            if (r.code === 'H') h++;
+            else if (r.code === 'SC') sc++;
+            else if (r.code === 'Sick') sick++;
+            else if (r.code === 'CT') ct++;
+            else if (r.code === '' || r.code === 'OFF') off++;
+            else other++;
+        });
+        var items = [
+            ['Baris', nf(S.rows.length)],
+            ['Orang', nf(Object.keys(people).length)],
+            ['Hari', nf(Object.keys(days).length)],
+            ['H', nf(h)],
+            ['CT', nf(ct)],
+            ['Day Off', nf(off)],
+            ['Kode lain', nf(other)]
+        ];
+        if (sc || sick) { items.push(['SC', nf(sc)]); items.push(['Sick', nf(sick)]); }
+
+        document.getElementById('statStrip').innerHTML = items.map(function (i) {
+            return '<div class="bak-stat"><div class="bak-stat__l">' + i[0] + '</div>'
+                + '<div class="bak-stat__v">' + i[1] + '</div></div>';
+        }).join('');
+    }
+
+    function renderAlerts(){
+        var html = '';
+        var unknownPos = S.sum.filter(function (x) { return !x.known; });
+
+        if (S.other.length) {
+            var uniq = S.other.filter(function (v,i,a){ return a.indexOf(v) === i; });
+            html += '<div class="bak-alert bak-alert--warn"><i class="bi bi-exclamation-triangle-fill"></i><div>'
+                + '<strong>' + S.other.length + ' baris berkode di luar H / SC / Sick / CT / Day Off</strong> — tidak dihitung.'
+                + '<ul><li>' + uniq.map(function (c) { return '<code>' + esc(c) + '</code>'; }).join(' · ') + '</li></ul>'
+                + '</div></div>';
+        }
+
+        if (unknownPos.length) {
+            html += '<div class="bak-alert bak-alert--warn"><i class="bi bi-plus-circle-fill"></i><div>'
+                + '<strong>' + unknownPos.length + ' posisi belum ada di rate card BAK</strong> — perlu ditambah atau dipetakan.'
+                + '<ul>' + unknownPos.map(function (x) {
+                    return '<li><code>' + esc(x.position) + '</code> — ' + x.head + ' orang</li>';
+                }).join('') + '</ul></div></div>';
+        }
+
+        var missing = RATE.filter(function (r) {
+            return !S.sum.some(function (x) { return x.position === r.position; });
+        });
+        if (missing.length) {
+            html += '<div class="bak-alert bak-alert--info"><i class="bi bi-info-circle-fill"></i><div>'
+                + '<strong>' + missing.length + ' posisi di rate card tidak ada di absensi</strong> — quantity jadi 0.'
+                + '<ul><li>' + missing.map(function (r) { return '<code>' + esc(r.position) + '</code>'; }).join(' · ') + '</li></ul>'
+                + '</div></div>';
+        }
+
+        if (!html) {
+            html = '<div class="bak-alert bak-alert--ok"><i class="bi bi-check-circle-fill"></i><div>'
+                + 'Semua posisi dikenali dan semua kode valid.</div></div>';
+        }
+        document.getElementById('alertBox').innerHTML = html;
+    }
+
+    function cnt(v, kind){
+        return '<td class="bak-num"><span class="cnt ' + (v ? 'cnt--' + kind : 'cnt--0') + '">' + nf(v) + '</span></td>';
+    }
+
+    function renderSummary(){
+        document.getElementById('sumBody').innerHTML = S.sum.map(function (x) {
+            var badge = x.known
+                ? '<span class="sync-badge sync-badge--ok"><i class="bi bi-check2"></i> ada</span>'
+                : '<span class="sync-badge sync-badge--new"><i class="bi bi-plus-lg"></i> belum ada</span>';
+
+            var pct = x.head > 0 ? Math.round((x.qty / x.head) * 100) : 100;
+            var qtyCell = '<td class="bak-num"><div class="prorate">'
+                + '<span class="bak-qty">' + nq(x.qty) + '</span>'
+                + '<span class="prorate__bar"><span class="prorate__fill' + (x.partialCount ? ' is-partial' : '')
+                + '" style="display:block;width:' + Math.min(100, pct) + '%"></span></span>'
+                + (x.partialCount
+                    ? '<span class="bak-cat">' + x.partialCount + ' orang prorata</span>'
+                    : '')
+                + '</div></td>';
+
+            return '<tr class="' + (x.known ? '' : 'row-new') + '">'
+                + '<td><strong>' + esc(x.position) + '</strong>'
+                  + (x.known ? '' : '<span class="bak-cat">perlu ditambah ke rate card</span>') + '</td>'
+                + '<td class="bak-num"><span class="bak-qty">' + nf(x.head) + '</span>'
+                  + '<span class="bak-cat">orang unik</span></td>'
+                + qtyCell
+                + cnt(x.h,'h') + cnt(x.sc,'sc') + cnt(x.sick,'sick')
+                + cnt(x.ct,'ct') + cnt(x.off,'off')
+                + '<td>' + badge + '</td></tr>';
+        }).join('');
+
+        var t = { people:0, qty:0, h:0, sc:0, sick:0, ct:0, off:0 };
+        S.sum.forEach(function (x) {
+            t.people += x.head; t.qty += x.qty;
+            t.h += x.h; t.sc += x.sc; t.sick += x.sick; t.ct += x.ct; t.off += x.off;
+        });
+        document.getElementById('tPeople').textContent = nf(t.people);
+        document.getElementById('tQty').textContent = nq(t.qty);
+        document.getElementById('tH').textContent = nf(t.h);
+        document.getElementById('tSC').textContent = nf(t.sc);
+        document.getElementById('tSick').textContent = nf(t.sick);
+        document.getElementById('tCT').textContent = nf(t.ct);
+        document.getElementById('tOff').textContent = nf(t.off);
+
+        var std = S.standard || 0;
+        document.getElementById('stdBadge').innerHTML =
+            '<i class="bi bi-calendar3"></i> Hari kerja standar: ' + std + ' hari';
+        document.getElementById('stdText').textContent = std + ' hari (terbanyak di berkas ini)';
+    }
+
+    function priceOf(pos){
+        if (S.prices[pos] != null) return S.prices[pos];
+        var r = rateOf(pos);
+        return r ? r.price : 0;
+    }
+    function catOf(pos){
+        var r = rateOf(pos);
+        return r ? r.category : 'Belum ada kategori';
+    }
+
+    function renderPrices(){
+        var body = document.getElementById('priceBody');
+        body.innerHTML = S.sum.map(function (x) {
+            var price = priceOf(x.position);
+            return '<tr class="' + (x.known ? '' : 'row-new') + '">'
+                + '<td><strong>' + esc(x.position) + '</strong></td>'
+                + '<td><span class="bak-cat" style="display:inline">' + esc(catOf(x.position)) + '</span></td>'
+                + '<td class="bak-num"><span class="bak-qty">' + nq(x.qty) + '</span>'
+                  + (x.partialCount ? '<span class="bak-cat">' + x.head + ' orang</span>' : '') + '</td>'
+                + '<td class="bak-num"><span class="price-box"><span>Rp</span>'
+                  + '<input type="text" inputmode="numeric" data-pos="' + esc(x.position) + '" value="' + nf(price) + '">'
+                  + '</span></td>'
+                + '<td class="bak-num"><strong>' + rp(price * x.qty) + '</strong></td></tr>';
+        }).join('');
+
+        var total = 0;
+        S.sum.forEach(function (x) { total += priceOf(x.position) * x.qty; });
+        document.getElementById('priceTotal').textContent = rp(total);
+
+        body.querySelectorAll('input[data-pos]').forEach(function (inp) {
+            inp.addEventListener('input', function () {
+                var digits = inp.value.replace(/[^\d]/g,'');
+                var num = digits ? parseInt(digits,10) : 0;
+                var key = inp.getAttribute('data-pos');
+                S.prices[key] = num;
+                renderPrices();
+                renderMax();
+                var again = body.querySelector('input[data-pos="' + key.replace(/"/g,'\\"') + '"]');
+                if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+            });
+        });
+
+        var sync = document.getElementById('priceSync');
+        sync.className = 'sync-badge sync-badge--ok';
+        sync.innerHTML = '<i class="bi bi-check2"></i> Tersinkron ke Max Potential';
+    }
+
+    function renderMax(){
+        var body = document.getElementById('maxBody');
+        var chips = document.getElementById('maxChips');
+
+        if (!S.loaded) {
+            body.innerHTML = '<tr><td colspan="6" class="bak-muted" style="padding:18px 12px">'
+                + 'Belum ada data — upload absensi terlebih dahulu.</td></tr>';
+            chips.innerHTML = '';
+            document.getElementById('maxTotal').textContent = 'Rp 0';
+            return;
+        }
+
+        body.innerHTML = S.sum.map(function (x) {
+            var price = priceOf(x.position);
+            var src = x.known
+                ? '<span class="sync-badge sync-badge--ok"><i class="bi bi-link-45deg"></i> absensi</span>'
+                : '<span class="sync-badge sync-badge--new"><i class="bi bi-plus-lg"></i> posisi baru</span>';
+            var detail = (x.sc || x.sick || x.ct || x.partialCount)
+                ? '<span class="bak-cat">H ' + x.h + ' · SC ' + x.sc + ' · Sick ' + x.sick + ' · CT ' + x.ct
+                  + (x.partialCount ? ' · ' + x.partialCount + ' prorata' : '') + '</span>'
+                : (x.off ? '<span class="bak-cat">' + x.off + ' hari off</span>' : '');
+            return '<tr class="' + (x.known ? '' : 'row-new') + '">'
+                + '<td><span>' + esc(x.position) + '</span><span class="bak-cat">' + esc(catOf(x.position)) + '</span></td>'
+                + '<td><span class="bak-cat" style="display:inline">Headcount</span></td>'
+                + '<td class="bak-num">' + (price ? nf(price) : '<span class="bak-zero">0</span>') + '</td>'
+                + '<td class="bak-num"><strong>' + nq(x.qty) + '</strong>' + detail + '</td>'
+                + '<td class="bak-num"><strong>' + rp(price * x.qty) + '</strong></td>'
+                + '<td>' + src + '</td></tr>';
+        }).join('');
+
+        var cats = new Map();
+        S.sum.forEach(function (x) {
+            var k = catOf(x.position);
+            cats.set(k, (cats.get(k) || 0) + priceOf(x.position) * x.qty);
+        });
+        chips.innerHTML = Array.from(cats.entries()).map(function (e) {
+            return '<span class="bak-chip">' + esc(e[0]) + '<strong>' + rp(e[1]) + '</strong></span>';
+        }).join('');
+
+        var total = 0;
+        S.sum.forEach(function (x) { total += priceOf(x.position) * x.qty; });
+        document.getElementById('maxTotal').textContent = rp(total);
+
+        var ms = document.getElementById('maxSync');
+        ms.className = 'sync-badge sync-badge--ok';
+        ms.innerHTML = '<i class="bi bi-check2"></i> Tersinkron';
+        document.getElementById('maxSub').textContent = 'Quantity & Price/Unit terisi otomatis dari 1A dan 1C.';
+        document.getElementById('maxFoot').innerHTML = 'Quantity = <b>orang unik</b>, diprorata bila masuk kurang dari '
+            + (S.standard || 0) + ' hari kerja. CT dihitung masuk.';
+    }
+
+    function applyState(){
+        var loaded = S.loaded;
+        document.getElementById('resultBox').style.display = loaded ? 'block' : 'none';
+
+        var sp = document.getElementById('sumPanel');
+        sp.style.opacity = loaded ? '1' : '.55';
+        sp.style.pointerEvents = loaded ? 'auto' : 'none';
+
+        var pp = document.getElementById('pricePanel');
+        pp.style.opacity = loaded ? '1' : '.55';
+        pp.style.pointerEvents = loaded ? 'auto' : 'none';
+
+        if (loaded) {
+            document.getElementById('fileName').textContent = S.fileName;
+            document.getElementById('fileRows').textContent = nf(S.rows.length) + ' baris';
+            renderPreview();
+            renderStats();
+            renderSummary();
+            renderAlerts();
+            renderPrices();
+        } else {
+            var ps = document.getElementById('priceSync');
+            ps.className = 'sync-badge sync-badge--idle';
+            ps.textContent = 'Menunggu data absensi';
+            var ms = document.getElementById('maxSync');
+            ms.className = 'sync-badge sync-badge--idle';
+            ms.textContent = 'Belum tersinkron';
+            document.getElementById('maxSub').textContent = 'Nilai maksimum berdasarkan rate card dan quantity.';
+            document.getElementById('maxFoot').textContent = 'Upload absensi & isi harga per posisi untuk mengisi tabel ini.';
+        }
+        renderMax();
+        renderHistory();
+        renderAddButton();
+
+        document.getElementById('btnEmpty').classList.toggle('on', !loaded);
+        document.getElementById('btnLoaded').classList.toggle('on', loaded);
+    }
+
+    function renderHistory(){
+        var el = document.getElementById('historyList');
+        if (!el) return;
+        el.innerHTML = HISTORY.map(function (h) {
+            return '<div class="bak-history__row' + (h.now ? ' is-now' : '') + '">'
+                + '<span class="bak-history__p">' + esc(h.period) + '</span>'
+                + '<span class="bak-history__m">' + nf(h.rows) + ' baris · ' + nf(h.people) + ' orang</span>'
+                + '<span class="bak-history__tag">' + (h.now
+                    ? '<span class="sync-badge sync-badge--ok"><i class="bi bi-check2"></i> sedang dipakai</span>'
+                    : '<span class="sync-badge sync-badge--idle">tersimpan</span>') + '</span>'
+                + '</div>';
+        }).join('');
+    }
+
+    /** Tombol "tambah posisi baru" muncul bila ada posisi di luar rate card. */
+    function renderAddButton(){
+        var btn = document.getElementById('btnAddPositions');
+        var cntEl = document.getElementById('addCount');
+        if (!btn) return;
+        var unknown = S.sum.filter(function (x) { return !x.known; });
+        if (!S.loaded || !unknown.length) { btn.style.display = 'none'; return; }
+        btn.style.display = 'inline-flex';
+        if (cntEl) cntEl.textContent = unknown.length;
+    }
+
+    function load(rows, other, fileName){
+        S.rows = rows || [];
+        S.other = other || [];
+        S.sum = aggregate(S.rows);
+        if (fileName) S.fileName = fileName;
+        S.loaded = S.rows.length > 0;
+        if (S.loaded) {
+            var d = new Date();
+            var pad = function (n) { return String(n).padStart(2,'0'); };
+            document.getElementById('fileTime').textContent =
+                'diproses ' + d.getDate() + ' Okt 2026, ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' WIB';
+        }
+        applyState();
+    }
+
+    function setMode(m){
+        S.mode = m;
+        var isFile = m === 'file';
+        document.getElementById('paneFile').style.display = isFile ? 'block' : 'none';
+        document.getElementById('panePaste').style.display = isFile ? 'none' : 'block';
+        document.getElementById('tabFile').classList.toggle('on', isFile);
+        document.getElementById('tabPaste').classList.toggle('on', !isFile);
+    }
+
+    function sampleText(){
+        var rows = sampleRows();
+        var head = COLS.map(function (c) { return c[1]; }).join('\t');
+        var letters = COLS.map(function (c) { return c[0]; }).join('\t');
+        var body = rows.slice(0,40).map(function (r) {
+            return [r.nip, r.name, r.branch, r.position, r.divisi, r.shift,
+                serialToDate(r.date), serialToDate(r.dOnDate), r.dOnTime,
+                serialToDate(r.dOffDate), r.dOffTime, r.newShift,
+                serialToDate(r.aOnDate), r.aOnTime, serialToDate(r.aOffDate), r.aOffTime,
+                codeLabel(r.code), r.note, r.reason].join('\t');
+        }).join('\n');
+        return head + '\n' + letters + '\n' + body;
+    }
+
+    /* ================= event ================= */
+    function bind(id, fn){ var el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
+
+    bind('tabFile', function(){ setMode('file'); });
+    bind('tabPaste', function(){ setMode('paste'); });
+    bind('btnPasteView', function(){ setMode('paste'); });
+    bind('btnFileView', function(){ setMode('file'); });
+
+    bind('btnSamplePaste', function(){ document.getElementById('pasteBox').value = sampleText(); });
+    bind('btnPick', function(){ document.getElementById('btnSampleFile').click(); });
+    bind('drop', function(){ document.getElementById('btnSampleFile').click(); });
+
+    bind('btnSampleFile', function(){
+        load(sampleRows(), [], 'Konfirmasi_Attendance_1_-_6_October_2026__WFM_-updated.xlsx');
+        setMode('file');
+    });
+
+    bind('btnParse', function(){
+        var text = document.getElementById('pasteBox').value;
+        if (!text.trim()) { text = sampleText(); document.getElementById('pasteBox').value = text; }
+        var parsed = parseText(text);
+        load(parsed.rows, parsed.other, 'paste-absensi.xlsx');
+    });
+
+    bind('btnClear', function(){
+        document.getElementById('pasteBox').value = '';
+        S.loaded = false; S.rows = []; S.other = []; S.sum = []; S.prices = {};
+        applyState();
+    });
+
+    bind('btnEmpty', function(){ S.loaded = false; applyState(); });
+    bind('btnLoaded', function(){
+        if (!S.rows.length) document.getElementById('btnSampleFile').click();
+        else { S.loaded = true; applyState(); }
+    });
+
+    bind('btnAddPositions', function(){
+        var unknown = S.sum.filter(function (x) { return !x.known; });
+        unknown.forEach(function (x) {
+            S.extraRate.push({ position: x.position, category: 'Posisi baru (project ini)', price: 0 });
+        });
+        S.sum = aggregate(S.rows);   // tandai ulang sebagai "known"
+        applyState();
+    });
+
+    /* tabel pemetaan posisi */
+    (function renderMap(){
+        var body = document.getElementById('mapTableBody');
+        if (!body) return;
+        body.innerHTML = HEADCOUNT.map(function (h) {
+            var ok = !!rateOf(h.position);
+            return '<tr><td><code>' + esc(h.position) + '</code></td><td>' + h.people + '</td>'
+                + '<td>' + (ok
+                    ? '<span class="sync-badge sync-badge--ok"><i class="bi bi-check2"></i> cocok</span>'
+                    : '<span class="sync-badge sync-badge--warn"><i class="bi bi-exclamation-triangle"></i> tidak ada</span>')
+                + '</td></tr>';
+        }).join('');
+    })();
+
+    /* ================= start ================= */
+    renderLegend();
+    renderLetters();
+    document.getElementById('pasteBox').value = sampleText();
+    setMode('paste');
+    applyState();
+})();
+</script>
+</body>
+</html>

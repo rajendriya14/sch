@@ -1,0 +1,19 @@
+RewriteEngine On
+
+# --- Blokir akses langsung ke berkas sensitif (sql, md, log, json, dll) ---
+RewriteRule \.(sql|md|log|json|ini|bak|old|sh|yml|yaml)$ - [F,L]
+
+# --- Blokir halaman debug ---
+RewriteRule (^|/)debug\.php$ - [F,L]
+
+# --- Blokir isi aplikasi kecuali folder public (aset tetap boleh diakses) ---
+RewriteRule ^scheduling-system/(?!public/).* - [F,L]
+
+# --- REST API BAK: /api/bak/<path> -> front controller ---
+# Dipakai komponen React BAK (assets/js/BAKStepper.tsx).
+RewriteRule ^api/bak/?(.*)$ index.php?page=bak&action=api&path=$1 [QSA,L]
+
+# Forward all requests to the dispatcher
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

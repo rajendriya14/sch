@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# --- Blokir akses langsung ke berkas sensitif (sql, md, log, json, dll) ---
+RewriteRule \.(sql|md|log|json|ini|bak|old|sh|yml|yaml)$ - [F,L]
+
+# --- Blokir halaman debug ---
+RewriteRule (^|/)debug\.php$ - [F,L]
+
+# Redirect all requests to index.php (front controller)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

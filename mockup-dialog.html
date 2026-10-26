@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Dialog Konfirmasi Profesional</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    :root {
+        --dlg-radius: 16px;
+        --dlg-shadow: 0 24px 60px -12px rgba(15, 23, 42, .35), 0 8px 20px -8px rgba(15, 23, 42, .2);
+    }
+
+    body {
+        background: #eef1f5;
+        padding: 24px 16px 80px;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .mock-note {
+        border-left: 4px solid #0d6efd;
+        background: #e7f1ff;
+        border-radius: 8px;
+    }
+
+    .demo-card {
+        background: #fff;
+        border: 1px solid #e3e7ed;
+        border-radius: 12px;
+        padding: 18px;
+    }
+
+    /* ---------- Overlay ---------- */
+    .dlg-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1080;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, .5);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        transition: opacity .18s ease;
+    }
+
+    .dlg-overlay.is-open {
+        display: flex;
+    }
+
+    .dlg-overlay.is-visible {
+        opacity: 1;
+    }
+
+    .dlg-card {
+        width: 100%;
+        max-width: 440px;
+        background: #fff;
+        border-radius: var(--dlg-radius);
+        box-shadow: var(--dlg-shadow);
+        padding: 26px 26px 20px;
+        text-align: center;
+        transform: translateY(10px) scale(.97);
+        opacity: 0;
+        transition: transform .22s cubic-bezier(.2, .8, .3, 1), opacity .18s ease;
+    }
+
+    .dlg-overlay.is-visible .dlg-card {
+        transform: none;
+        opacity: 1;
+    }
+
+    .dlg-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 1.25rem;
+        margin: 0 auto 14px;
+    }
+
+    .dlg-icon--danger  { background: #fee2e2; color: #b91c1c; }
+    .dlg-icon--warning { background: #fef3c7; color: #b45309; }
+    .dlg-icon--info    { background: #dbeafe; color: #1d4ed8; }
+    .dlg-icon--success { background: #dcfce7; color: #15803d; }
+
+    .dlg-title {
+        font-size: 1.06rem;
+        font-weight: 650;
+        color: #0f172a;
+        margin: 0 0 6px;
+        letter-spacing: -.01em;
+    }
+
+    .dlg-message {
+        font-size: .9rem;
+        line-height: 1.6;
+        color: #55627a;
+        margin: 0;
+    }
+
+    .dlg-detail {
+        margin: 14px 0 0;
+        padding: 12px 14px;
+        background: #f6f8fa;
+        border: 1px solid #e6eaf0;
+        border-radius: 10px;
+        font-size: .84rem;
+        color: #475467;
+        text-align: center;
+        list-style-position: inside;
+    }
+
+    .dlg-detail li {
+        margin-bottom: 4px;
+    }
+
+    .dlg-detail li:last-child {
+        margin-bottom: 0;
+    }
+
+    .dlg-note {
+        margin: 14px 0 0;
+        font-size: .8rem;
+        color: #7b8698;
+    }
+
+    .dlg-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 22px;
+    }
+
+    .dlg-actions .btn {
+        border-radius: 9px;
+        font-size: .875rem;
+        font-weight: 550;
+        padding: .5rem 1rem;
+        min-width: 92px;
+    }
+
+    .dlg-actions .btn:focus-visible {
+        outline: 3px solid rgba(13, 110, 253, .35);
+        outline-offset: 2px;
+    }
+
+    /* ---------- Toast (notifikasi hasil simpan) ---------- */
+    .toast-stack {
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1090;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(420px, calc(100vw - 32px));
+        pointer-events: none;
+    }
+
+    .app-toast {
+        pointer-events: auto;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: #fff;
+        border: 1px solid #e3e7ed;
+        border-left: 4px solid #16a34a;
+        border-radius: 11px;
+        padding: 12px 14px;
+        box-shadow: 0 14px 34px -14px rgba(15, 23, 42, .4);
+        transform: translateY(-12px);
+        opacity: 0;
+        transition: transform .2s ease, opacity .2s ease;
+    }
+
+    .app-toast.is-visible {
+        transform: none;
+        opacity: 1;
+    }
+
+    .app-toast .t-icon { color: #16a34a; font-size: 1.05rem; line-height: 1.3; }
+    .app-toast.is-warning { border-left-color: #d97706; }
+    .app-toast.is-warning .t-icon { color: #d97706; }
+    .app-toast.is-danger { border-left-color: #dc2626; }
+    .app-toast.is-danger .t-icon { color: #dc2626; }
+
+    .app-toast .t-title {
+        font-size: .875rem;
+        font-weight: 650;
+        color: #0f172a;
+        margin: 0 0 2px;
+    }
+
+    .app-toast .t-body {
+        font-size: .82rem;
+        color: #5b6779;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .app-toast .t-close {
+        border: 0;
+        background: none;
+        color: #9aa4b2;
+        padding: 0 2px;
+        margin-left: auto;
+        line-height: 1;
+    }
+
+    @media (max-width: 480px) {
+        .dlg-card { padding: 22px 20px 16px; }
+        .dlg-actions { flex-direction: column-reverse; }
+        .dlg-actions .btn { width: 100%; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container-fluid" style="max-width: 980px;">
+
+    <div class="alert mock-note mb-4">
+        <strong><i class="bi bi-tools"></i> Mockup pratinjau</strong> — file terpisah, aplikasi asli
+        belum diubah. Klik tombol di bawah untuk melihat bentuk dialog pengganti
+        <code>window.confirm()</code> bawaan browser.
+    </div>
+
+    <h5 class="mb-1" style="font-weight: 650;">Dialog konfirmasi</h5>
+    <p class="text-secondary small mb-3">
+        Semua dialog muncul di tengah layar, latar belakang diredupkan &amp; diburamkan.
+        Tekan <kbd>Esc</kbd> untuk membatalkan.
+    </p>
+
+    <div class="demo-card mb-4">
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-danger btn-sm" onclick="AppDialog.confirm({
+                        tone: 'danger', title: 'Hapus periode November 2026?',
+                        message: 'Seluruh pemasukan, alokasi dana, dan daftar belanja pada periode ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+                        confirmText: 'Ya, hapus', cancelText: 'Batal'
+                    })">
+                <i class="bi bi-trash"></i> Hapus (merah)
+            </button>
+
+            <button class="btn btn-outline-warning btn-sm" onclick="AppDialog.confirm({
+                        tone: 'warning', title: 'Tutup buku bulan ini?',
+                        message: 'Setelah ditutup, rencana dan daftar belanja bulan ini dikunci dan tidak bisa diubah sampai buku dibuka kembali.',
+                        detail: ['Pemasukan & alokasi tidak bisa diubah', 'Daftar belanja terkunci', 'Bisa dibuka kembali kapan saja'],
+                        confirmText: 'Tutup buku', cancelText: 'Nanti saja'
+                    })">
+                <i class="bi bi-lock"></i> Peringatan (kuning)
+            </button>
+
+            <button class="btn btn-outline-primary btn-sm" onclick="AppDialog.confirm({
+                        tone: 'info', title: 'Salin rencana dari bulan lalu?',
+                        message: 'Semua alokasi dana dan daftar belanja dari Oktober 2026 akan disalin ke November 2026. Angka realisasi dikosongkan.',
+                        confirmText: 'Salin sekarang', cancelText: 'Batal'
+                    })">
+                <i class="bi bi-clipboard-plus"></i> Info (biru)
+            </button>
+
+            <button class="btn btn-outline-success btn-sm" onclick="AppDialog.confirm({
+                        tone: 'success', title: 'Simpan pemasukan?',
+                        message: 'Pemasukan akan disimpan dan dipakai sebagai dasar perhitungan persentase alokasi dana.',
+                        confirmText: 'Simpan', cancelText: 'Batal'
+                    })">
+                <i class="bi bi-check2-circle"></i> Konfirmasi simpan
+            </button>
+        </div>
+    </div>
+
+    <h5 class="mb-1" style="font-weight: 650;">Contoh di dalam halaman</h5>
+    <p class="text-secondary small mb-3">
+        Tombol di toolbar Rencana Bulan — perhatikan bahwa browser tidak lagi menampilkan
+        kotak abu-abu di pojok atas.
+    </p>
+
+    <div class="demo-card d-flex flex-wrap align-items-center gap-2 mb-4">
+        <button class="btn btn-sm btn-outline-dark" onclick="AppDialog.toast({message: 'Draft dipulihkan — 3 kolom belum disimpan.'})">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button class="btn btn-sm btn-outline-danger" onclick="AppDialog.confirm({
+                    tone: 'danger', title: 'Kosongkan semua isian di layar?',
+                    message: 'Data yang sudah tersimpan tidak akan berubah. Halaman hanya dikosongkan supaya bisa diisi ulang dari awal.',
+                    confirmText: 'Ya, kosongkan', cancelText: 'Batal'
+                })">
+            <i class="bi bi-eraser"></i> Hapus Isi
+        </button>
+        <span class="text-muted small ms-2">← tombol asli yang tadinya memakai popup browser</span>
+    </div>
+
+    <h5 class="mb-1" style="font-weight: 650;">Notifikasi hasil simpan (toast)</h5>
+    <p class="text-secondary small mb-3">
+        Pesan sukses/peringatan ringan tampil di atas tengah, menutup sendiri setelah 5 detik,
+        tidak menghalangi halaman.
+    </p>
+
+    <div class="demo-card d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-outline-success btn-sm" onclick="AppDialog.toast({
+                    tone: 'success', title: 'Rencana tersimpan',
+                    message: 'Pemasukan Rp 12.000.000 · alokasi 99,05% dari pemasukan.'})">
+            <i class="bi bi-check-circle"></i> Toast sukses
+        </button>
+        <button class="btn btn-outline-warning btn-sm" onclick="AppDialog.toast({
+                    tone: 'warning', title: 'Total persen melebihi 100%',
+                    message: 'Masih boleh disimpan, tetapi dana yang dialokasikan lebih besar dari pemasukan.'})">
+            <i class="bi bi-exclamation-triangle"></i> Toast peringatan
+        </button>
+        <button class="btn btn-outline-danger btn-sm" onclick="AppDialog.toast({
+                    tone: 'danger', title: 'Gagal menyimpan',
+                    message: 'Sesi form kedaluwarsa. Muat ulang halaman lalu coba lagi.'})">
+            <i class="bi bi-x-circle"></i> Toast gagal
+        </button>
+    </div>
+
+    <p class="text-muted small mb-0">
+        Catatan: dialog ini tidak memakai <code>window.confirm()</code>, jadi tampilannya sama
+        di semua browser dan HP, serta bisa diatur teks tombolnya.
+    </p>
+</div>
+
+<!-- ================= Dialog ================= -->
+<div class="dlg-overlay" id="dlgOverlay" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" aria-describedby="dlgMessage">
+    <div class="dlg-card" role="document">
+        <div class="dlg-icon dlg-icon--warning" id="dlgIcon">
+            <i class="bi bi-exclamation-triangle" id="dlgIconGlyph"></i>
+        </div>
+        <h2 class="dlg-title" id="dlgTitle">Judul</h2>
+        <p class="dlg-message" id="dlgMessage">Pesan</p>
+        <ul class="dlg-detail d-none" id="dlgDetail"></ul>
+        <p class="dlg-note d-none" id="dlgNote">Tekan Esc untuk membatalkan.</p>
+        <div class="dlg-actions">
+            <button type="button" class="btn btn-light border" id="dlgCancel">Batal</button>
+            <button type="button" class="btn btn-primary" id="dlgConfirm">Lanjutkan</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    var ICONS = {
+        danger:  'bi-exclamation-octagon',
+        warning: 'bi-exclamation-triangle',
+        info:    'bi-info-circle',
+        success: 'bi-check-circle'
+    };
+    var CONFIRM_BTN = {
+        danger:  'btn-danger',
+        warning: 'btn-warning',
+        info:    'btn-primary',
+        success: 'btn-success'
+    };
+
+    var overlay = document.getElementById('dlgOverlay');
+    var iconBox = document.getElementById('dlgIcon');
+    var iconGlyph = document.getElementById('dlgIconGlyph');
+    var titleEl = document.getElementById('dlgTitle');
+    var msgEl = document.getElementById('dlgMessage');
+    var detailEl = document.getElementById('dlgDetail');
+    var noteEl = document.getElementById('dlgNote');
+    var cancelBtn = document.getElementById('dlgCancel');
+    var confirmBtn = document.getElementById('dlgConfirm');
+
+    var resolver = null;
+    var lastFocus = null;
+
+    function open(opts) {
+        opts = opts || {};
+        var tone = CONFIRM_BTN[opts.tone] ? opts.tone : 'warning';
+
+        iconBox.className = 'dlg-icon dlg-icon--' + tone;
+        iconGlyph.className = 'bi ' + (opts.icon || ICONS[tone]);
+        titleEl.textContent = opts.title || 'Konfirmasi';
+        msgEl.textContent = opts.message || '';
+
+        if (Array.isArray(opts.detail) && opts.detail.length) {
+            detailEl.innerHTML = opts.detail.map(function (d) {
+                return '<li>' + d + '</li>';
+            }).join('');
+            detailEl.classList.remove('d-none');
+        } else {
+            detailEl.classList.add('d-none');
+            detailEl.innerHTML = '';
+        }
+
+        if (opts.note === false) {
+            noteEl.classList.add('d-none');
+        } else {
+            noteEl.textContent = opts.note || 'Tekan Esc untuk membatalkan.';
+            noteEl.classList.remove('d-none');
+        }
+
+        cancelBtn.textContent = opts.cancelText || 'Batal';
+        cancelBtn.className = 'btn btn-light border';
+        confirmBtn.textContent = opts.confirmText || 'Lanjutkan';
+        confirmBtn.className = 'btn ' + (opts.confirmClass || CONFIRM_BTN[tone]);
+
+        lastFocus = document.activeElement;
+        overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        // dua frame supaya transisi opacity/scale berjalan
+        requestAnimationFrame(function () {
+            overlay.classList.add('is-visible');
+            // Aksi berbahaya: fokus ke Batal (lebih aman). Selain itu ke tombol utama.
+            (tone === 'danger' ? cancelBtn : confirmBtn).focus();
+        });
+
+        return new Promise(function (resolve) { resolver = resolve; });
+    }
+
+    function close(result) {
+        if (!resolver) return;
+        var done = resolver;
+        resolver = null;
+
+        overlay.classList.remove('is-visible');
+        document.body.style.overflow = '';
+        setTimeout(function () {
+            overlay.classList.remove('is-open');
+        }, 180);
+
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+        done(result);
+    }
+
+    cancelBtn.addEventListener('click', function () { close(false); });
+    confirmBtn.addEventListener('click', function () { close(true); });
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close(false);   // klik latar = batal
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (!overlay.classList.contains('is-open')) return;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close(false);
+            return;
+        }
+        if (e.key === 'Tab') {
+            // fokus tetap di dalam dialog
+            var focusables = [cancelBtn, confirmBtn];
+            var i = focusables.indexOf(document.activeElement);
+            e.preventDefault();
+            var next = e.shiftKey ? i - 1 : i + 1;
+            if (next < 0) next = focusables.length - 1;
+            if (next >= focusables.length) next = 0;
+            focusables[next].focus();
+        }
+    });
+
+    /* ---------- Toast ---------- */
+    var stack = document.getElementById('toastStack');
+    var TOAST_ICON = {
+        success: 'bi-check-circle-fill',
+        warning: 'bi-exclamation-triangle-fill',
+        danger:  'bi-x-circle-fill'
+    };
+
+    function toast(opts) {
+        opts = opts || {};
+        var tone = TOAST_ICON[opts.tone] ? opts.tone : 'success';
+
+        var el = document.createElement('div');
+        el.className = 'app-toast' + (tone === 'success' ? '' : ' is-' + tone);
+        el.innerHTML =
+            '<i class="bi ' + TOAST_ICON[tone] + ' t-icon"></i>' +
+            '<div class="flex-grow-1">' +
+                '<p class="t-title"></p>' +
+                '<p class="t-body"></p>' +
+            '</div>' +
+            '<button type="button" class="t-close" aria-label="Tutup">&times;</button>';
+
+        el.querySelector('.t-title').textContent = opts.title || 'Berhasil';
+        el.querySelector('.t-body').textContent = opts.message || '';
+
+        stack.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('is-visible'); });
+
+        var timer = setTimeout(remove, opts.duration || 5000);
+        el.querySelector('.t-close').addEventListener('click', function () {
+            clearTimeout(timer);
+            remove();
+        });
+
+        function remove() {
+            el.classList.remove('is-visible');
+            setTimeout(function () { el.remove(); }, 220);
+        }
+    }
+
+    window.AppDialog = { confirm: open, toast: toast };
+
+    /* ---------- Demo otomatis sekali saat dibuka ---------- */
+    if (location.hash === '#demo') {
+        setTimeout(function () {
+            open({
+                tone: 'danger',
+                title: 'Kosongkan semua isian di layar?',
+                message: 'Data yang sudah tersimpan tidak akan berubah. Halaman hanya dikosongkan supaya bisa diisi ulang dari awal.',
+                confirmText: 'Ya, kosongkan',
+                cancelText: 'Batal'
+            });
+        }, 400);
+    }
+})();
+</script>
+</body>
+</html>

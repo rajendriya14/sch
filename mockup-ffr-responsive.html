@@ -1,0 +1,1927 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Family Financial Report Responsif (Komputer · Tab · HP)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    /* =====================================================================
+       MOCKUP SHELL (bukan bagian aplikasi — hanya bingkai & kontrol)
+       ===================================================================== */
+    :root {
+        --ink: #101828;
+        --muted: #667085;
+        --line: #e4e7ec;
+        --soft: #f7f8fa;
+        --brand: #212529;
+        --accent: #0d6efd;
+        --ok: #12b76a;
+        --warn: #f79009;
+        --bad: #d92d20;
+        --shell: #eef1f5;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        background: var(--shell);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- Toolbar mockup ---------- */
+    .mock-bar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 18px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 18px;
+        box-shadow: 0 2px 10px -6px rgba(16, 24, 40, .3);
+    }
+
+    .mock-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 700;
+        font-size: .92rem;
+        letter-spacing: -.01em;
+    }
+
+    .mock-brand i {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background: var(--brand);
+        color: #fff;
+        font-size: .95rem;
+    }
+
+    .mock-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px;
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+    }
+
+    .mock-group > span {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+        padding: 0 4px 0 8px;
+        font-weight: 600;
+    }
+
+    .mock-btn {
+        border: 0;
+        background: transparent;
+        color: #344054;
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 550;
+        padding: 6px 11px;
+        border-radius: 7px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: background .15s, color .15s;
+    }
+
+    .mock-btn:hover { background: #e9ecf1; }
+
+    .mock-btn.is-on {
+        background: var(--brand);
+        color: #fff;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, .25);
+    }
+
+    .mock-btn i { font-size: .9rem; }
+
+    .mock-read {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .76rem;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mock-read b { color: var(--ink); font-size: .8rem; }
+
+    .mock-bp {
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: #e7f5ec;
+        color: #067647;
+        font-weight: 650;
+        font-size: .72rem;
+        border: 1px solid #abefc6;
+    }
+
+    /* ---------- Stage ---------- */
+    .mock-stage {
+        padding: 20px 18px 40px;
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        align-items: flex-start;
+        overflow-x: auto;
+    }
+
+    .mock-frame {
+        flex: 0 0 auto;
+        max-width: 100%;
+        border-radius: 16px;
+        background: #0b1220;
+        padding: 10px;
+        box-shadow: 0 24px 50px -22px rgba(11, 18, 32, .5), 0 4px 12px -6px rgba(11, 18, 32, .3);
+    }
+
+    .mock-frame[data-device="desktop"] { width: 1440px; }
+    .mock-frame[data-device="tablet"]  { width: 820px; }
+    .mock-frame[data-device="phone"]   { width: 390px; }
+
+    .mock-frame[hidden] { display: none; }
+
+    .mock-chrome {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 4px 8px;
+        color: #94a3b8;
+        font-size: .7rem;
+        letter-spacing: .02em;
+    }
+
+    .mock-chrome .dots { display: flex; gap: 5px; }
+
+    .mock-chrome .dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #334155;
+    }
+
+    .mock-chrome .lbl { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+    .mock-viewport {
+        border-radius: 9px;
+        overflow: auto;
+        background: #f4f6f9;
+        height: calc(100vh - 160px);
+        min-height: 520px;
+        overscroll-behavior: contain;
+    }
+
+    .mock-frame[data-device="phone"] .mock-viewport { height: 844px; border-radius: 26px; }
+    .mock-frame[data-device="tablet"] .mock-viewport { height: 900px; border-radius: 16px; }
+
+    /* ---------- Catatan implementasi ---------- */
+    .mock-notes {
+        max-width: 1080px;
+        margin: 0 auto 60px;
+        padding: 0 18px;
+    }
+
+    .note-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px 22px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    }
+
+    .note-card h3 {
+        margin: 0 0 4px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .note-card h3 i { color: var(--accent); }
+
+    .note-card > p { margin: 0 0 14px; color: var(--muted); font-size: .85rem; line-height: 1.55; }
+
+    .note-card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .82rem;
+    }
+
+    .note-card th, .note-card td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+    }
+
+    .note-card th { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .note-card tr:last-child td { border-bottom: 0; }
+    .note-card code { background: var(--soft); padding: 1px 5px; border-radius: 4px; font-size: .78rem; }
+
+    .note-ok { color: #067647; font-weight: 600; }
+
+    /* =====================================================================
+       SIMULASI APLIKASI — semua di bawah ini memakai CONTAINER QUERY
+       sehingga bisa diperkecil/diperbesar tanpa mengubah media query browser.
+       ===================================================================== */
+    .ffr-sim {
+        container-type: inline-size;
+        container-name: ffr;
+        position: relative;
+        background: #f4f6f9;
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.45;
+        min-height: 100%;
+        padding-bottom: 0;
+    }
+
+    .ffr-sim *,
+    .ffr-sim *::before,
+    .ffr-sim *::after { box-sizing: border-box; }
+
+    /* ---------- Navbar atas aplikasi ---------- */
+    .sim-navbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        height: 56px;
+        background: var(--brand);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+    }
+
+    .sim-navbar .burger {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .1);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 1rem;
+        flex: 0 0 auto;
+    }
+
+    .sim-navbar .brand {
+        font-weight: 650;
+        font-size: .92rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sim-navbar .spacer { flex: 1 1 auto; }
+
+    .sim-navbar .who {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 40%;
+    }
+
+    .sim-navbar .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #495057;
+        display: grid;
+        place-items: center;
+        font-size: .72rem;
+        font-weight: 700;
+        flex: 0 0 auto;
+    }
+
+    /* ---------- Isi halaman ---------- */
+    .sim-content {
+        --pad: 24px;
+        padding: 20px var(--pad) 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    /* ---------- Kepala halaman: judul + pemilih periode ---------- */
+    .ffr-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .ffr-head h1 {
+        margin: 0;
+        font-size: 1.32rem;
+        line-height: 1.2;
+        letter-spacing: -.015em;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .ffr-head h1 i { color: var(--brand); font-size: 1.2rem; }
+
+    .ffr-head .sub {
+        margin: 4px 0 0;
+        font-size: .82rem;
+        color: var(--muted);
+    }
+
+    .period-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .period-bar label {
+        font-size: .74rem;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+
+    .period-bar select {
+        font: inherit;
+        font-size: .82rem;
+        padding: 6px 26px 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        background: #fff
+            url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%23667085' d='M8 11 4 5h8z'/%3E%3C/svg%3E")
+            no-repeat right 8px center;
+        appearance: none;
+        color: var(--ink);
+        min-height: 36px;
+    }
+
+    /* ---------- Layout: rail kiri + isi ---------- */
+    .ffr-layout {
+        display: grid;
+        grid-template-columns: 232px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .ffr-rail {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 10px;
+        position: sticky;
+        top: 74px;
+    }
+
+    /* Tombol ringkas rail (hanya tampil di HP) */
+    .rail-toggle {
+        display: none;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        padding: 6px 4px;
+        cursor: pointer;
+        text-align: left;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .rail-toggle .now { flex: 1 1 auto; min-width: 0; }
+
+    .rail-toggle .kick {
+        display: block;
+        font-size: .66rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+        font-weight: 650;
+    }
+
+    .rail-toggle .cur {
+        display: block;
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .rail-toggle .caret { color: var(--muted); transition: transform .2s; }
+
+    .ffr-rail.is-open .rail-toggle .caret { transform: rotate(180deg); }
+
+    .ffr-rail-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .rail-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        color: var(--ink);
+        font-weight: 650;
+        font-size: .9rem;
+        text-decoration: none;
+        line-height: 1.2;
+        min-height: 40px;
+    }
+
+    .rail-link i:first-child { width: 18px; text-align: center; }
+
+    .rail-link .grow { flex: 1 1 auto; }
+
+    .rail-link .caret { font-size: .7rem; opacity: .7; }
+
+    .rail-link.is-active { background: var(--brand); color: #fff; }
+
+    .rail-sub {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin: 3px 0 7px 14px;
+        padding-left: 10px;
+        border-left: 2px solid #e9ecef;
+    }
+
+    .rail-sublink {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 9px;
+        border-radius: 6px;
+        color: #495057;
+        font-size: .84rem;
+        text-decoration: none;
+        line-height: 1.2;
+        min-height: 36px;
+    }
+
+    .rail-sublink i { width: 16px; text-align: center; font-size: .84rem; }
+
+    .rail-sublink.is-active {
+        background: #e9ecef;
+        color: var(--ink);
+        font-weight: 650;
+    }
+
+    .ffr-rail-foot {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #f1f3f5;
+    }
+
+    .ffr-body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    /* ---------- Kartu ---------- */
+    .card {
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    }
+
+    .card-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 16px;
+        font-size: .84rem;
+        font-weight: 650;
+        background: var(--brand);
+        color: #fff;
+    }
+
+    .card-head .grow { flex: 1 1 auto; }
+
+    .card-head .badge-soft {
+        font-size: .7rem;
+        font-weight: 650;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .16);
+        color: #fff;
+    }
+
+    .card-body { padding: 14px 16px; }
+    .card-body.tight { padding: 10px 12px; }
+    .card-body.flush { padding: 0; }
+
+    .card-foot {
+        padding: 10px 16px;
+        border-top: 1px solid #eef0f3;
+        background: #fbfcfd;
+        font-size: .82rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* ---------- Insight ---------- */
+    .insight {
+        display: flex;
+        gap: 10px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        font-size: .84rem;
+        line-height: 1.5;
+        background: #ecfdf3;
+        border: 1px solid #abefc6;
+        color: #067647;
+    }
+
+    .insight.warn { background: #fffaeb; border-color: #fedf89; color: #b54708; }
+    .insight i { flex: 0 0 auto; margin-top: 1px; }
+
+    /* ---------- KPI ---------- */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .kpi {
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 12px;
+        padding: 13px 15px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+        min-width: 0;
+    }
+
+    .kpi .lbl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .74rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-bottom: 7px;
+    }
+
+    .kpi .val {
+        font-size: 1.28rem;
+        font-weight: 750;
+        letter-spacing: -.02em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .kpi .foot {
+        margin-top: 6px;
+        font-size: .74rem;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .up { color: #067647; }
+    .down { color: #b42318; }
+
+    /* ---------- Baris dua kolom ---------- */
+    .row-2 {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+    }
+
+    .row-2.even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    /* ---------- Alokasi per kelompok ---------- */
+    .alloc-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px 12px;
+        padding: 9px 0;
+        border-bottom: 1px dashed #eef0f3;
+    }
+
+    .alloc-row:last-child { border-bottom: 0; }
+
+    .alloc-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .86rem;
+        font-weight: 600;
+        min-width: 0;
+    }
+
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .dot.d1 { background: #0d6efd; }
+    .dot.d2 { background: #f79009; }
+    .dot.d3 { background: #12b76a; }
+    .dot.d4 { background: #98a2b3; }
+
+    .alloc-amt {
+        font-size: .86rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .alloc-track {
+        grid-column: 1 / -1;
+        height: 8px;
+        border-radius: 999px;
+        background: #eef0f3;
+        overflow: hidden;
+    }
+
+    .alloc-fill { height: 100%; border-radius: 999px; }
+    .alloc-fill.f1 { width: 60.9%; background: #0d6efd; }
+    .alloc-fill.f2 { width: 17.2%; background: #f79009; }
+    .alloc-fill.f3 { width: 21%; background: #12b76a; }
+    .alloc-fill.f4 { width: 2%; background: #98a2b3; }
+
+    .alloc-meta {
+        grid-column: 1 / -1;
+        font-size: .74rem;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Grafik trend ---------- */
+    .chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        height: 190px;
+        padding-top: 8px;
+    }
+
+    .chart-col {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 6px;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .chart-bars {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+    }
+
+    .bar {
+        flex: 1 1 0;
+        border-radius: 4px 4px 2px 2px;
+        min-height: 3px;
+    }
+
+    .bar.in { background: #0d6efd; }
+    .bar.out { background: #f79009; }
+
+    .chart-lbl {
+        font-size: .68rem;
+        color: var(--muted);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .legend {
+        display: flex;
+        gap: 14px;
+        margin-top: 10px;
+        font-size: .76rem;
+        color: var(--muted);
+        flex-wrap: wrap;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ---------- Tabel ---------- */
+    .tbl-wrap { overflow-x: auto; }
+
+    table.tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .84rem;
+        table-layout: fixed;
+        min-width: 760px;
+    }
+
+    table.tbl thead th {
+        background: #fbfcfd;
+        border-bottom: 1px solid #e4e7ec;
+        padding: 9px 10px;
+        text-align: left;
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--muted);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    table.tbl tbody td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    table.tbl tbody tr { height: 46px; }
+    table.tbl tbody tr:last-child td { border-bottom: 0; }
+    table.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.tbl .ctr { text-align: center; }
+    table.tbl tfoot td {
+        padding: 10px;
+        font-weight: 750;
+        background: #fbfcfd;
+        border-top: 1px solid #e4e7ec;
+    }
+
+    .item-name {
+        display: block;
+        overflow-x: auto;
+        scrollbar-width: none;
+        font-weight: 550;
+    }
+
+    .item-name::-webkit-scrollbar { display: none; }
+
+    .pin { color: #b42318; font-size: .72rem; margin-right: 4px; }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 650;
+        white-space: nowrap;
+        background: #eef0f3;
+        color: #475467;
+    }
+
+    .chip.ok { background: #ecfdf3; color: #067647; }
+    .chip.warn { background: #fffaeb; color: #b54708; }
+    .chip.bad { background: #fef3f2; color: #b42318; }
+    .chip.blue { background: #eff6ff; color: #1d4ed8; }
+
+    /* ---------- Toolbar aksi (Refresh / Hapus Isi / Simpan) ---------- */
+    .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 9px 12px;
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        font-size: .8rem;
+    }
+
+    .toolbar .state { color: var(--muted); flex: 1 1 auto; min-width: 0; }
+
+    .btn {
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 600;
+        padding: 7px 13px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        background: #fff;
+        color: #344054;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 36px;
+        white-space: nowrap;
+    }
+
+    .btn:hover { background: #f5f6f8; }
+    .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn.primary:hover { background: #000; }
+    .btn.danger { color: #b42318; border-color: #fda29b; }
+    .btn.block { width: 100%; justify-content: center; }
+
+    /* ---------- Kartu pemasukan (dua mode) ---------- */
+    .income-locked {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .income-locked .main { flex: 1 1 220px; min-width: 0; }
+
+    .income-locked .amt {
+        font-size: 1.7rem;
+        font-weight: 780;
+        letter-spacing: -.025em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+    }
+
+    .income-locked .cap { font-size: .76rem; color: var(--muted); margin-top: 3px; }
+
+    /* ---------- Input alokasi (% & Rp sejajar) ---------- */
+    .alloc-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .alloc-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px auto 150px;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 11px;
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .alloc-item .who { min-width: 0; }
+
+    .alloc-item .who b {
+        display: block;
+        font-size: .87rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .alloc-item .who small { font-size: .72rem; color: var(--muted); }
+
+    .pct-box, .rp-box {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+        height: 36px;
+    }
+
+    .pct-box input, .rp-box input {
+        font: inherit;
+        font-size: .84rem;
+        border: 0;
+        outline: 0;
+        padding: 0 8px;
+        width: 100%;
+        min-width: 0;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        background: transparent;
+    }
+
+    .pct-box span, .rp-box span {
+        font-size: .76rem;
+        color: var(--muted);
+        padding: 0 8px;
+        background: #f7f8fa;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        border-left: 1px solid #eef0f3;
+    }
+
+    .rp-box span { border-left: 0; border-right: 1px solid #eef0f3; }
+
+    .arrow { color: #98a2b3; font-size: .78rem; }
+
+    .alloc-total {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 11px 13px;
+        border-radius: 10px;
+        background: #f7f8fa;
+        border: 1px solid #e4e7ec;
+        font-size: .84rem;
+        margin-top: 10px;
+    }
+
+    .alloc-total b { font-variant-numeric: tabular-nums; }
+
+    /* ---------- Daftar aset (Tabunganku) ---------- */
+    .asset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+        gap: 11px;
+    }
+
+    .asset {
+        border: 1px solid #e4e7ec;
+        border-radius: 11px;
+        padding: 12px 13px;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .asset .top { display: flex; align-items: center; gap: 9px; }
+
+    .asset .ico {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: .95rem;
+        flex: 0 0 auto;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .asset .ico.gold { background: #fffaeb; color: #b54708; }
+    .asset .ico.stock { background: #ecfdf3; color: #067647; }
+    .asset .ico.fx { background: #f4f3ff; color: #5925dc; }
+
+    .asset .nm { font-size: .84rem; font-weight: 650; min-width: 0; }
+
+    .asset .sub { font-size: .72rem; color: var(--muted); }
+
+    .asset .value {
+        font-size: 1.06rem;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.015em;
+    }
+
+    .asset .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: .74rem;
+        color: var(--muted);
+        border-top: 1px dashed #eef0f3;
+        padding-top: 8px;
+    }
+
+    .total-hero {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        padding: 16px 18px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, #1f2937, #111827);
+        color: #fff;
+    }
+
+    .total-hero .cap { font-size: .74rem; color: #c3cad6; text-transform: uppercase; letter-spacing: .06em; font-weight: 650; }
+
+    .total-hero .big {
+        font-size: 1.9rem;
+        font-weight: 780;
+        letter-spacing: -.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.15;
+        margin-top: 3px;
+    }
+
+    .total-hero .delta { font-size: .8rem; color: #6ee7a8; margin-top: 4px; }
+
+    .total-hero .mini {
+        margin-left: auto;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .total-hero .mini div { font-size: .74rem; color: #c3cad6; }
+    .total-hero .mini b { display: block; font-size: .92rem; color: #fff; font-variant-numeric: tabular-nums; }
+
+    /* ---------- Bar aksi bawah (khusus HP) ---------- */
+    .actionbar { display: none; }
+
+    /* ---------- Pemisah visual antar seksi mockup ---------- */
+    .screen { display: none; flex-direction: column; gap: 14px; }
+    .screen.is-on { display: flex; }
+
+    /* =====================================================================
+       BREAKPOINT — CONTAINER QUERY
+       ≥1200  Komputer besar
+       992–1199  Laptop
+       768–991   Tab
+       576–767   HP besar
+       ≤575      HP
+       ===================================================================== */
+
+    /* ---------- LAPTOP (992–1199) ---------- */
+    @container ffr (max-width: 1199px) {
+        .sim-content { --pad: 18px; padding: 18px var(--pad) 26px; }
+        .ffr-layout { grid-template-columns: 208px minmax(0, 1fr); gap: 14px; }
+        .kpi .val { font-size: 1.15rem; }
+        .alloc-item { grid-template-columns: minmax(0, 1fr) 88px auto 132px; }
+    }
+
+    /* ---------- TAB (768–991) ---------- */
+    @container ffr (max-width: 991px) {
+        .sim-content { --pad: 16px; padding: 16px var(--pad) 24px; gap: 12px; }
+
+        /* Rail pindah ke atas, jadi chip yang membungkus */
+        .ffr-layout { display: block; }
+
+        .ffr-rail {
+            position: static;
+            margin-bottom: 12px;
+            padding: 9px 10px;
+        }
+
+        .ffr-rail-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+
+        .rail-link {
+            flex: 0 0 auto;
+            background: #f4f6f9;
+            font-size: .84rem;
+            padding: 7px 11px;
+            min-height: 36px;
+            gap: 6px;
+        }
+
+        .rail-link .caret { display: none; }
+
+        .rail-link.is-active { background: var(--brand); color: #fff; }
+
+        /* Submenu grup aktif jadi baris chip kedua */
+        .rail-sub {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 0;
+            padding: 0;
+            border-left: 0;
+            flex: 1 1 100%;
+            order: 9;
+        }
+
+        .rail-sub:not(.is-on) { display: none; }
+
+        .rail-sublink {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            font-size: .79rem;
+            padding: 5px 10px;
+            min-height: 32px;
+        }
+
+        .rail-sublink.is-active {
+            background: #e9ecef;
+            border-color: #ced4da;
+            font-weight: 650;
+        }
+
+        .ffr-rail-foot { display: none; }
+
+        /* KPI 2 kolom */
+        .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+        /* Dua kolom jadi satu */
+        .row-2, .row-2.even { grid-template-columns: minmax(0, 1fr); }
+
+        /* Tabel: scroll horizontal, kolom nomor tetap */
+        table.tbl { min-width: 720px; }
+
+        .tbl-wrap { position: relative; }
+
+        .chart { height: 160px; }
+
+        .ffr-head { align-items: flex-start; }
+    }
+
+    /* ---------- HP BESAR (576–767) ---------- */
+    @container ffr (max-width: 767px) {
+        .sim-content { --pad: 13px; padding: 14px var(--pad) 24px; gap: 11px; }
+        .sim-navbar { padding: 0 12px; }
+        .sim-navbar .who span.txt { display: none; }
+
+        .ffr-head h1 { font-size: 1.12rem; }
+        .ffr-head .sub { font-size: .78rem; }
+
+        /* Pemilih periode: dua kolom penuh */
+        .period-bar { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .period-bar label { display: none; }
+        .period-bar select { width: 100%; min-height: 40px; font-size: .86rem; }
+
+        /* Rail jadi drawer ringkas */
+        .ffr-rail { padding: 6px 8px; margin-bottom: 10px; }
+        .rail-toggle { display: flex; }
+        .rail-body { display: none; padding-top: 6px; }
+        .ffr-rail.is-open .rail-body { display: block; }
+
+        .ffr-rail-nav { flex-direction: column; }
+        .rail-link { background: transparent; padding: 9px 8px; min-height: 42px; }
+        .rail-link .caret { display: inline-block; }
+
+        .rail-sub {
+            flex-direction: column;
+            margin: 2px 0 6px 12px;
+            padding-left: 10px;
+            border-left: 2px solid #e9ecef;
+            order: 0;
+        }
+
+        .rail-sublink { border: 0; background: transparent; padding: 8px; min-height: 40px; font-size: .84rem; }
+        .rail-sublink.is-active { background: #e9ecef; }
+        .ffr-rail-foot { display: block; }
+
+        /* KPI 2 kolom rapat */
+        .kpi-grid { gap: 9px; }
+        .kpi { padding: 11px 12px; }
+        .kpi .lbl { font-size: .68rem; margin-bottom: 5px; }
+        .kpi .val { font-size: 1.02rem; }
+        .kpi .foot { font-size: .68rem; }
+
+        /* Grafik lebih pendek, label diringkas */
+        .chart { height: 150px; gap: 5px; }
+        .chart-lbl { font-size: .62rem; }
+        .legend { font-size: .72rem; gap: 10px; }
+
+        /* Input alokasi: label penuh, % dan Rp di bawahnya */
+        .alloc-item {
+            grid-template-columns: 1fr 1fr;
+            gap: 7px 8px;
+            padding: 10px;
+        }
+
+        .alloc-item .who { grid-column: 1 / -1; }
+        .alloc-item .pct-box { grid-column: 1 / 2; }
+        .alloc-item .arrow { display: none; }
+        .alloc-item .rp-box { grid-column: 2 / 3; }
+
+        .pct-box, .rp-box { height: 40px; }
+        .pct-box input, .rp-box input { font-size: 16px; } /* cegah zoom iOS */
+
+        .income-locked .amt { font-size: 1.45rem; }
+        .income-locked .btn { flex: 1 1 auto; justify-content: center; }
+
+        .total-hero { padding: 14px; }
+        .total-hero .big { font-size: 1.55rem; }
+        .total-hero .mini { margin-left: 0; width: 100%; gap: 14px; }
+
+        .asset-grid { grid-template-columns: minmax(0, 1fr); }
+
+        .card-head { padding: 10px 13px; font-size: .8rem; }
+        .card-body { padding: 12px 13px; }
+        .card-foot { padding: 9px 13px; font-size: .78rem; }
+
+        /* Toolbar jadi dua baris rata */
+        .toolbar { font-size: .76rem; }
+        .toolbar .state { flex: 1 1 100%; }
+
+        /* Tabel berubah jadi KARTU */
+        table.tbl { min-width: 0; table-layout: auto; }
+        table.tbl thead { display: none; }
+        table.tbl tbody { display: block; padding: 10px; }
+
+        table.tbl tbody tr {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px 12px;
+            height: auto;
+            border: 1px solid #e4e7ec;
+            border-radius: 11px;
+            padding: 11px 12px;
+            margin-bottom: 9px;
+            background: #fff;
+        }
+
+        table.tbl tbody tr:last-child { margin-bottom: 0; }
+
+        table.tbl tbody td {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding: 0;
+            border: 0;
+            white-space: normal;
+            text-align: left;
+            min-width: 0;
+        }
+
+        table.tbl tbody td::before {
+            content: attr(data-label);
+            font-size: .62rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        table.tbl tbody td.c-item {
+            grid-column: 1 / -1;
+            order: -1;
+            font-size: .92rem;
+        }
+
+        table.tbl tbody td.c-item::before { display: none; }
+        table.tbl tbody td.c-no { display: none; }
+        table.tbl tbody td.c-wide { grid-column: 1 / -1; }
+        table.tbl tbody td .num,
+        table.tbl tbody td.num { text-align: left; }
+        table.tbl tbody td.ctr { text-align: left; }
+
+        table.tbl tfoot { display: block; }
+        table.tbl tfoot tr { display: flex; justify-content: space-between; padding: 4px 2px; }
+        table.tbl tfoot td { padding: 0; background: transparent; border: 0; font-size: .84rem; }
+        table.tbl tfoot td:first-child::before { content: attr(data-label); font-size: .72rem; color: var(--muted); }
+
+        .tbl-wrap { overflow: visible; }
+
+        /* Bar aksi bawah */
+        .actionbar {
+            display: flex;
+            gap: 8px;
+            position: sticky;
+            bottom: 0;
+            z-index: 15;
+            padding: 10px var(--pad);
+            background: rgba(255, 255, 255, .94);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid var(--line);
+            margin: 4px calc(var(--pad) * -1) 0;
+        }
+
+        .actionbar .btn { flex: 1 1 0; justify-content: center; min-height: 44px; font-size: .86rem; }
+
+        .btn { min-height: 42px; }
+    }
+
+    /* ---------- HP KECIL (≤575) ---------- */
+    @container ffr (max-width: 575px) {
+        .sim-content { --pad: 10px; padding: 12px var(--pad) 20px; }
+        .ffr-head h1 { font-size: 1.02rem; }
+        .kpi .val { font-size: .93rem; }
+        .chart { height: 132px; gap: 3px; }
+        .chart-bars { gap: 2px; }
+        .alloc-item { padding: 9px; }
+        .total-hero .big { font-size: 1.35rem; }
+        .toolbar .btn { flex: 1 1 0; justify-content: center; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ================= TOOLBAR MOCKUP ================= -->
+<div class="mock-bar">
+    <div class="mock-brand">
+        <i class="bi bi-phone"></i>
+        Mockup Responsif — Family Financial Report
+    </div>
+
+    <div class="mock-group">
+        <span>Layar</span>
+        <button class="mock-btn is-on" data-device="desktop"><i class="bi bi-display"></i> Komputer</button>
+        <button class="mock-btn" data-device="tablet"><i class="bi bi-tablet-landscape"></i> Tab</button>
+        <button class="mock-btn" data-device="phone"><i class="bi bi-phone"></i> HP</button>
+        <button class="mock-btn" data-device="compare"><i class="bi bi-columns-gap"></i> Bandingkan</button>
+    </div>
+
+    <div class="mock-group">
+        <span>Halaman</span>
+        <button class="mock-btn is-on" data-screen="dashboard">Dashboard</button>
+        <button class="mock-btn" data-screen="plan">Rencana Bulan</button>
+        <button class="mock-btn" data-screen="items">Daftar Belanja</button>
+        <button class="mock-btn" data-screen="savings">Tabunganku</button>
+    </div>
+
+    <div class="mock-read">
+        <span>Lebar efektif</span>
+        <b id="mockWidth">—</b>
+        <span class="mock-bp" id="mockBp">—</span>
+    </div>
+</div>
+
+<!-- ================= STAGE ================= -->
+<div class="mock-stage" id="mockStage">
+
+    <!-- ---------- FRAME KOMPUTER ---------- -->
+    <div class="mock-frame" data-device="desktop" id="frameDesktop">
+        <div class="mock-chrome">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="lbl"><i class="bi bi-display"></i> Komputer — 1440 px</span>
+        </div>
+        <div class="mock-viewport" data-viewport>
+            <div class="ffr-sim">
+                <!-- navbar -->
+                <div class="sim-navbar">
+                    <button class="burger"><i class="bi bi-list"></i></button>
+                    <div class="brand">Pradiya Portal</div>
+                    <div class="spacer"></div>
+                    <div class="who"><span class="txt">Ivan Rajendriya</span><div class="avatar">IR</div></div>
+                </div>
+
+                <div class="sim-content">
+                    <!-- kepala -->
+                    <div class="ffr-head">
+                        <div>
+                            <h1><i class="bi bi-piggy-bank"></i> Family Financial Report</h1>
+                            <p class="sub">Periode <b>Oktober 2026</b> · <span style="color:#b54708;font-weight:600">Alokasi 99,05%</span></p>
+                        </div>
+                        <div class="period-bar">
+                            <label>Bulan</label>
+                            <select><option>Oktober</option><option>September</option></select>
+                            <label>Tahun</label>
+                            <select><option>2026</option><option>2025</option></select>
+                        </div>
+                    </div>
+
+                    <div class="ffr-layout">
+                        <!-- rail -->
+                        <aside class="ffr-rail">
+                            <button class="rail-toggle">
+                                <span class="now"><span class="kick">Annual Report</span><span class="cur" data-rail-cur>Dashboard</span></span>
+                                <i class="bi bi-chevron-down caret"></i>
+                            </button>
+                            <div class="rail-body">
+                                <nav class="ffr-rail-nav">
+                                    <a class="rail-link is-active"><i class="bi bi-calendar-range"></i><span class="grow">Annual Report</span><i class="bi bi-chevron-down caret"></i></a>
+                                    <div class="rail-sub is-on">
+                                        <a class="rail-sublink is-active" data-screen-link="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                                        <a class="rail-sublink" data-screen-link="plan"><i class="bi bi-wallet2"></i> Rencana Bulan</a>
+                                        <a class="rail-sublink" data-screen-link="items"><i class="bi bi-list-check"></i> Daftar Belanja</a>
+                                        <a class="rail-sublink"><i class="bi bi-journal-text"></i> Ledger</a>
+                                        <a class="rail-sublink"><i class="bi bi-lightbulb"></i> Rekomendasi</a>
+                                        <a class="rail-sublink"><i class="bi bi-gear"></i> Master</a>
+                                    </div>
+                                    <a class="rail-link"><i class="bi bi-piggy-bank"></i><span class="grow">Tabunganku</span><i class="bi bi-chevron-right caret"></i></a>
+                                    <a class="rail-link"><i class="bi bi-calendar-range"></i><span class="grow">Dana Darurat</span><i class="bi bi-chevron-right caret"></i></a>
+                                </nav>
+                                <div class="ffr-rail-foot">
+                                    <button class="btn block"><i class="bi bi-grid-1x2"></i> Portal</button>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <!-- isi -->
+                        <div class="ffr-body">
+                            <div class="screen is-on" data-screen="dashboard"></div>
+                            <div class="screen" data-screen="plan"></div>
+                            <div class="screen" data-screen="items"></div>
+                            <div class="screen" data-screen="savings"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ---------- FRAME TAB ---------- -->
+    <div class="mock-frame" data-device="tablet" id="frameTablet" hidden>
+        <div class="mock-chrome">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="lbl"><i class="bi bi-tablet-landscape"></i> Tab — 820 px</span>
+        </div>
+        <div class="mock-viewport" data-viewport></div>
+    </div>
+
+    <!-- ---------- FRAME HP ---------- -->
+    <div class="mock-frame" data-device="phone" id="framePhone" hidden>
+        <div class="mock-chrome">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="lbl"><i class="bi bi-phone"></i> HP — 390 px</span>
+        </div>
+        <div class="mock-viewport" data-viewport></div>
+    </div>
+</div>
+
+<!-- ================= CATATAN ================= -->
+<div class="mock-notes">
+    <div class="note-card">
+        <h3><i class="bi bi-bug"></i> Penyebab utama kenapa di HP jadi sempit (sudah ditemukan)</h3>
+        <p>
+            Di <code>public/assets/css/style.css</code> aturan <code>#wrapper</code> mengunci
+            <code>width: calc(100% - 260px)</code>. Saat FFR dipanggil, <code>#wrapper.no-sidebar</code> hanya
+            me-reset <code>margin-left</code> tetapi <b>tidak me-reset <code>width</code></b>. Di HP 390px hasilnya
+            <code>390 − 260 = 130px</code> (terukur 115px setelah padding) — itulah kenapa semua halaman FFR gepeng.
+            Perbaikannya satu baris:
+        </p>
+        <p><code>#wrapper.no-sidebar { margin-left: 0 !important; width: 100% !important; }</code></p>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-rulers"></i> Aturan responsif yang dipakai di mockup ini</h3>
+        <table>
+            <thead>
+                <tr><th>Elemen</th><th>≥1200 (Komputer)</th><th>992–1199 (Laptop)</th><th>768–991 (Tab)</th><th>≤767 (HP)</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Menu FFR</td>
+                    <td>Rail kiri 232px, sticky</td>
+                    <td>Rail kiri 208px</td>
+                    <td>Chip 2 baris di atas konten</td>
+                    <td>Drawer ringkas (tap untuk buka)</td>
+                </tr>
+                <tr>
+                    <td>Kartu ringkasan</td>
+                    <td>4 kolom</td>
+                    <td>4 kolom</td>
+                    <td>2 kolom</td>
+                    <td>2 kolom, font mengecil</td>
+                </tr>
+                <tr>
+                    <td>Tabel belanja / ledger</td>
+                    <td>Penuh, tinggi baris 46px</td>
+                    <td>Penuh</td>
+                    <td>Scroll horizontal</td>
+                    <td><b>Berubah jadi kartu</b> (label di atas nilai)</td>
+                </tr>
+                <tr>
+                    <td>Input % dan Rp</td>
+                    <td>1 baris sejajar</td>
+                    <td>1 baris sejajar</td>
+                    <td>1 baris sejajar</td>
+                    <td>Nama di atas, % &amp; Rp berdampingan</td>
+                </tr>
+                <tr>
+                    <td>Grafik trend</td>
+                    <td>190px</td>
+                    <td>190px</td>
+                    <td>160px</td>
+                    <td>132–150px</td>
+                </tr>
+                <tr>
+                    <td>Tombol simpan</td>
+                    <td>Di dalam kartu</td>
+                    <td>Di dalam kartu</td>
+                    <td>Di dalam kartu</td>
+                    <td>Bar bawah menempel (sticky)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-check2-circle"></i> Detail kecil yang bikin terasa "profesional"</h3>
+        <table>
+            <tbody>
+                <tr>
+                    <td><b>Input 16px di HP</b></td>
+                    <td>Mencegah iOS Safari auto-zoom saat kolom input disentuh — <span class="note-ok">sudah diterapkan</span></td>
+                </tr>
+                <tr>
+                    <td><b>Target sentuh ≥ 44px</b></td>
+                    <td>Semua tombol/baris menu di HP minimal 42–44px agar tidak salah pencet</td>
+                </tr>
+                <tr>
+                    <td><b>Tanpa scroll ke samping</b></td>
+                    <td>Halaman tidak boleh bisa digeser horizontal; hanya tabel/wrapper tertentu yang scroll di dalam</td>
+                </tr>
+                <tr>
+                    <td><b>Angka tidak pecah</b></td>
+                    <td>Rupiah pakai <code>tabular-nums</code> + <code>nowrap</code> supaya "Rp 10.000.000" tidak patah dua baris</td>
+                </tr>
+                <tr>
+                    <td><b>Sticky header</b></td>
+                    <td>Navbar tetap di atas; judul periode tetap terlihat saat menggulir daftar panjang</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ================= Data contoh ================= */
+    var ROWS = [
+        { no: 1, item: 'Belanja bulanan (sayur, lauk, beras)', cat: 'Rumah Tangga', freq: 'Bulanan', price: 1850000, qty: 1, plan: 1850000, act: 1920000, st: 'lebih', pin: true },
+        { no: 2, item: 'Cicilan rumah (KPR)', cat: 'Tempat Tinggal', freq: 'Bulanan', price: 1450000, qty: 1, plan: 1450000, act: 1450000, st: 'pas' },
+        { no: 3, item: 'Listrik, air & internet', cat: 'Tagihan', freq: 'Bulanan', price: 780000, qty: 1, plan: 780000, act: 745000, st: 'sisa' },
+        { no: 4, item: 'Bensin & transportasi kerja', cat: 'Transportasi', freq: 'Bulanan', price: 620000, qty: 1, plan: 620000, act: 0, st: 'belum' },
+        { no: 5, item: 'Pendidikan anak (SPP sekolah)', cat: 'Pendidikan', freq: 'Bulanan', price: 560000, qty: 1, plan: 560000, act: 560000, st: 'pas' }
+    ];
+
+    function rp(n) {
+        return 'Rp ' + n.toLocaleString('id-ID');
+    }
+
+    function badge(st) {
+        if (st === 'lebih') return '<span class="chip bad"><i class="bi bi-arrow-up-right"></i> Lebih 70.000</span>';
+        if (st === 'pas') return '<span class="chip ok"><i class="bi bi-check2"></i> Pas</span>';
+        if (st === 'sisa') return '<span class="chip warn"><i class="bi bi-arrow-down-right"></i> Sisa 35.000</span>';
+        return '<span class="chip">Belum realisasi</span>';
+    }
+
+    function itemsTable() {
+        var head = '<thead><tr>'
+            + '<th class="ctr" style="width:46px">No</th>'
+            + '<th>Item</th>'
+            + '<th style="width:130px">Kategori</th>'
+            + '<th style="width:96px">Frekuensi</th>'
+            + '<th class="num" style="width:110px">Harga</th>'
+            + '<th class="ctr" style="width:44px">Qty</th>'
+            + '<th class="num" style="width:112px">Per Bulan</th>'
+            + '<th class="num" style="width:112px">Aktual</th>'
+            + '<th style="width:132px">Status</th>'
+            + '</tr></thead>';
+
+        var body = '<tbody>' + ROWS.map(function (r) {
+            return '<tr>'
+                + '<td class="ctr c-no">' + r.no + '</td>'
+                + '<td class="c-item"><span class="item-name">' + (r.pin ? '<i class="bi bi-pin-angle-fill pin"></i>' : '') + r.item + '</span></td>'
+                + '<td data-label="Kategori">' + r.cat + '</td>'
+                + '<td data-label="Frekuensi">' + r.freq + '</td>'
+                + '<td class="num" data-label="Harga">' + rp(r.price) + '</td>'
+                + '<td class="ctr" data-label="Qty">' + r.qty + '</td>'
+                + '<td class="num" data-label="Per Bulan">' + rp(r.plan) + '</td>'
+                + '<td class="num" data-label="Aktual">' + (r.act ? rp(r.act) : '—') + '</td>'
+                + '<td data-label="Status">' + badge(r.st) + '</td>'
+                + '</tr>';
+        }).join('') + '</tbody>';
+
+        var foot = '<tfoot><tr>'
+            + '<td colspan="6" data-label="Total Utama">Total Utama</td>'
+            + '<td class="num" data-label="Rencana">' + rp(5260000) + '</td>'
+            + '<td class="num" data-label="Aktual">' + rp(4675000) + '</td>'
+            + '<td></td>'
+            + '</tr></tfoot>';
+
+        return '<div class="tbl-wrap"><table class="tbl">' + head + body + foot + '</table></div>';
+    }
+
+    /* ================= Isi tiap halaman ================= */
+    var SCREENS = {
+
+        /* ---------------- DASHBOARD ---------------- */
+        dashboard:
+            '<div class="insight"><i class="bi bi-info-circle-fill"></i><div>Sisa kas bulan ini <b>Rp 3.750.000</b> (37,5% dari pemasukan). Alokasi ke kelompok dana sudah <b>99,05%</b> — masih ada ruang Rp 95.000.</div></div>'
+
+            + '<div class="kpi-grid">'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-arrow-down-circle" style="color:#12b76a"></i> Pemasukan</div><div class="val">Rp 10.000.000</div><div class="foot">1 sumber · gaji</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-cart-dash" style="color:#d92d20"></i> Pengeluaran</div><div class="val">Rp 4.150.000</div><div class="foot"><span class="up">41,5%</span> dari pemasukan</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-piggy-bank" style="color:#0d6efd"></i> Tabungan</div><div class="val">Rp 2.100.000</div><div class="foot">Tersimpan 100%</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-wallet" style="color:#101828"></i> Sisa kas</div><div class="val">Rp 3.750.000</div><div class="foot"><span class="up"><i class="bi bi-arrow-up-short"></i>Rp 450.000</span> vs bulan lalu</div></div>'
+            + '</div>'
+
+            + '<div class="row-2">'
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-pie-chart"></i><span class="grow">Alokasi per Kelompok</span><span class="badge-soft">99,05%</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d1"></span> Utama</div><div class="alloc-amt">Rp 6.090.000</div><div class="alloc-track"><div class="alloc-fill f1"></div></div><div class="alloc-meta">60,90% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d2"></span> Tambahan</div><div class="alloc-amt">Rp 1.715.000</div><div class="alloc-track"><div class="alloc-fill f2"></div></div><div class="alloc-meta">17,15% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d3"></span> Tabungan</div><div class="alloc-amt">Rp 2.100.000</div><div class="alloc-track"><div class="alloc-fill f3"></div></div><div class="alloc-meta">21,00% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d4"></span> Dana Darurat</div><div class="alloc-amt">Rp 0</div><div class="alloc-track"><div class="alloc-fill f4"></div></div><div class="alloc-meta">0,00% — belum diisi</div></div>'
+            + '    </div>'
+            + '    <div class="card-foot"><span>Total dialokasikan</span><b>Rp 9.905.000</b></div>'
+            + '  </div>'
+
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-bar-chart"></i><span class="grow">Trend 6 Bulan</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="chart">'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:82%"></div><div class="bar out" style="height:38%"></div></div><div class="chart-lbl">Mei</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:88%"></div><div class="bar out" style="height:46%"></div></div><div class="chart-lbl">Jun</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:74%"></div><div class="bar out" style="height:52%"></div></div><div class="chart-lbl">Jul</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:96%"></div><div class="bar out" style="height:41%"></div></div><div class="chart-lbl">Agu</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:90%"></div><div class="bar out" style="height:58%"></div></div><div class="chart-lbl">Sep</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:100%"></div><div class="bar out" style="height:42%"></div></div><div class="chart-lbl">Okt</div></div>'
+            + '      </div>'
+            + '      <div class="legend"><span><span class="sw" style="background:#0d6efd"></span> Pemasukan</span><span><span class="sw" style="background:#f79009"></span> Pengeluaran</span></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="row-2 even">'
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-list-ul"></i><span class="grow">Pengeluaran Terbesar</span></div>'
+            + '    <div class="tbl-wrap"><table class="tbl" style="min-width:0"><thead><tr><th>Kategori</th><th class="num" style="width:120px">Aktual</th></tr></thead><tbody>'
+            + '      <tr><td class="c-item">Belanja bulanan</td><td class="num" data-label="Aktual">Rp 1.920.000</td></tr>'
+            + '      <tr><td class="c-item">Cicilan rumah</td><td class="num" data-label="Aktual">Rp 1.450.000</td></tr>'
+            + '      <tr><td class="c-item">Listrik &amp; internet</td><td class="num" data-label="Aktual">Rp 745.000</td></tr>'
+            + '      <tr><td class="c-item">Pendidikan anak</td><td class="num" data-label="Aktual">Rp 560.000</td></tr>'
+            + '    </tbody></table></div>'
+            + '  </div>'
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-bullseye"></i><span class="grow">Target Tabungan</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="alloc-row"><div class="alloc-name">Dana pendidikan</div><div class="alloc-amt">Rp 1.200.000</div><div class="alloc-track"><div class="alloc-fill" style="width:80%;background:#12b76a"></div></div><div class="alloc-meta">80% dari target Rp 1.500.000</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name">Dana darurat</div><div class="alloc-amt">Rp 900.000</div><div class="alloc-track"><div class="alloc-fill" style="width:45%;background:#12b76a"></div></div><div class="alloc-meta">45% dari target Rp 2.000.000</div></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>',
+
+        /* ---------------- RENCANA BULAN ---------------- */
+        plan:
+            '<div class="toolbar">'
+            + '  <span class="state"><i class="bi bi-cloud-check"></i> Draf otomatis aktif — perubahan belum tersimpan tidak hilang saat refresh</span>'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn danger"><i class="bi bi-eraser"></i> Hapus Isi</button>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-cash-coin"></i><span class="grow">Pemasukan Bulan Ini</span><span class="badge-soft">Tersimpan</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="income-locked">'
+            + '      <div class="main"><div class="amt">Rp 10.000.000</div><div class="cap">Gaji · diterima 1 Oktober 2026</div></div>'
+            + '      <button class="btn"><i class="bi bi-pencil"></i> Edit Pemasukan</button>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-diagram-3"></i><span class="grow">Alokasi Dana per Kelompok</span><span class="badge-soft">Nominal &amp; persen</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="alloc-list">'
+            + '      <div class="alloc-item"><div class="who"><b>Utama</b><small>Wajib: makan, tagihan, cicilan</small></div>'
+            + '        <div class="pct-box"><input value="60,90" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="6.090.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Tambahan</b><small>Opsional — ditunda bila dana kurang</small></div>'
+            + '        <div class="pct-box"><input value="17,15" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="1.715.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Tabungan</b><small>Target simpanan bulanan</small></div>'
+            + '        <div class="pct-box"><input value="21,00" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="2.100.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Dana Darurat</b><small>Sisihan keamanan</small></div>'
+            + '        <div class="pct-box"><input value="0" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="0" inputmode="numeric"></div></div>'
+            + '    </div>'
+            + '    <div class="alloc-total"><span>Total porsi pemasukan</span><b>99,05% · Rp 9.905.000</b></div>'
+            + '    <div class="alloc-total"><span>Sisa belum dialokasikan</span><b>0,95% · Rp 95.000</b></div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-journal-text"></i><span class="grow">Catatan Alokasi</span></div>'
+            + '  <div class="card-body"><div class="insight warn"><i class="bi bi-exclamation-triangle-fill"></i><div>Setiap perubahan persen akan menghitung ulang nominal setelah <b>Simpan</b>. Total di atas 100% akan diberi peringatan.</div></div></div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn primary"><i class="bi bi-save"></i> Simpan</button>'
+            + '</div>',
+
+        /* ---------------- DAFTAR BELANJA ---------------- */
+        items:
+            '<div class="toolbar">'
+            + '  <span class="state"><i class="bi bi-info-circle"></i> Utama · 5 item · rencana Rp 5.260.000</span>'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn danger"><i class="bi bi-eraser"></i> Hapus Isi</button>'
+            + '  <button class="btn primary"><i class="bi bi-plus-lg"></i> Tambah Item</button>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-basket3"></i><span class="grow">Daftar Belanja — Utama</span><span class="badge-soft">3 / 5 terealisasi</span></div>'
+            + itemsTable()
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-pie-chart"></i><span class="grow">Ringkasan Realisasi</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="alloc-row"><div class="alloc-name">Rencana</div><div class="alloc-amt">Rp 5.260.000</div><div class="alloc-track"><div class="alloc-fill" style="width:100%;background:#98a2b3"></div></div><div class="alloc-meta">100%</div></div>'
+            + '    <div class="alloc-row"><div class="alloc-name">Realisasi</div><div class="alloc-amt">Rp 4.675.000</div><div class="alloc-track"><div class="alloc-fill" style="width:88.9%;background:#12b76a"></div></div><div class="alloc-meta">88,9% dari rencana</div></div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn primary"><i class="bi bi-save"></i> Simpan</button>'
+            + '</div>',
+
+        /* ---------------- TABUNGANKU ---------------- */
+        savings:
+            '<div class="total-hero">'
+            + '  <div>'
+            + '    <div class="cap">Total Aset Keluarga</div>'
+            + '    <div class="big">Rp 187.450.000</div>'
+            + '    <div class="delta"><i class="bi bi-arrow-up-short"></i> +2,4% bulan ini (+Rp 4.390.000)</div>'
+            + '  </div>'
+            + '  <div class="mini">'
+            + '    <div>Likuid<b>Rp 62.400.000</b></div>'
+            + '    <div>Investasi<b>Rp 125.050.000</b></div>'
+            + '    <div>Aset<b>5 kategori</b></div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="kpi-grid">'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-cash-stack" style="color:#1d4ed8"></i> Dana Cash</div><div class="val">Rp 45.000.000</div><div class="foot">24,0% portofolio</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-gem" style="color:#b54708"></i> Emas</div><div class="val">Rp 52.650.000</div><div class="foot">25 gr · Antam</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-graph-up-arrow" style="color:#067647"></i> Saham</div><div class="val">Rp 61.800.000</div><div class="foot"><span class="up">+5,2%</span> bulan ini</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-currency-dollar" style="color:#5925dc"></i> Valas &amp; Lain</div><div class="val">Rp 28.000.000</div><div class="foot">USD 1.200 · SBN</div></div>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-wallet2"></i><span class="grow">Portofolio Aset</span><span class="badge-soft">5 aset</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="asset-grid">'
+            + '      <div class="asset"><div class="top"><div class="ico"><i class="bi bi-bank"></i></div><div><div class="nm">BCA Tahapan</div><div class="sub">Dana cash · Bank BCA</div></div></div><div class="value">Rp 45.000.000</div><div class="meta"><span>Diperbarui 18 Okt</span><span class="chip ok">+0,0%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico gold"><i class="bi bi-gem"></i></div><div><div class="nm">Emas Antam 25 gr</div><div class="sub">Emas · Logam mulia</div></div></div><div class="value">Rp 52.650.000</div><div class="meta"><span>Rp 2.106.000/gr</span><span class="chip warn">+3,4%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico stock"><i class="bi bi-graph-up-arrow"></i></div><div><div class="nm">BBCA · 50 lot</div><div class="sub">Saham · IDX</div></div></div><div class="value">Rp 61.800.000</div><div class="meta"><span>Rp 12.360/lembar</span><span class="chip ok">+5,2%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico fx"><i class="bi bi-currency-dollar"></i></div><div><div class="nm">USD 1.200</div><div class="sub">Valas · Tabungan USD</div></div></div><div class="value">Rp 19.800.000</div><div class="meta"><span>Kurs Rp 16.500</span><span class="chip ok">+1,1%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico"><i class="bi bi-file-earmark-text"></i></div><div><div class="nm">SBN Ritel ORI025</div><div class="sub">Obligasi · Kupon 6,4%</div></div></div><div class="value">Rp 8.200.000</div><div class="meta"><span>Jatuh tempo 2028</span><span class="chip blue">Kupon</span></div></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-funnel"></i> Filter</button>'
+            + '  <button class="btn primary"><i class="bi bi-plus-lg"></i> Tambah Aset</button>'
+            + '</div>'
+    };
+
+    /* ================= Render: satu markup, tiga bingkai ================= */
+    var viewports = Array.prototype.slice.call(document.querySelectorAll('[data-viewport]'));
+    var simMarkup = '';
+
+    // Ambil kerangka (navbar + head + rail) dari frame komputer sebagai cetakan.
+    var tpl = document.querySelector('#frameDesktop .ffr-sim');
+    simMarkup = tpl.innerHTML;
+
+    // Slot halaman pada cetakan diisi sesuai tombol yang dipilih.
+    viewports.forEach(function (vp) {
+        if (!vp.querySelector('.ffr-sim')) {
+            vp.innerHTML = '<div class="ffr-sim">' + simMarkup + '</div>';
+        }
+    });
+
+    var currentScreen = 'dashboard';
+    var railLabel = {
+        dashboard: { group: 'Annual Report', name: 'Dashboard' },
+        plan: { group: 'Annual Report', name: 'Rencana Bulan' },
+        items: { group: 'Annual Report', name: 'Daftar Belanja' },
+        savings: { group: 'Tabunganku', name: 'Portofolio Aset' }
+    };
+
+    function renderScreens() {
+        document.querySelectorAll('.screen[data-screen]').forEach(function (el) {
+            var key = el.getAttribute('data-screen');
+            el.innerHTML = SCREENS[key] || '';
+            el.classList.toggle('is-on', key === currentScreen);
+        });
+
+        document.querySelectorAll('[data-rail-cur]').forEach(function (el) {
+            el.textContent = (railLabel[currentScreen] || {}).name || '';
+        });
+
+        document.querySelectorAll('.rail-sublink').forEach(function (a) {
+            a.classList.toggle('is-active', a.getAttribute('data-screen-link') === currentScreen);
+        });
+    }
+
+    renderScreens();
+
+    /* ================= Kontrol device ================= */
+    var frames = {
+        desktop: document.getElementById('frameDesktop'),
+        tablet: document.getElementById('frameTablet'),
+        phone: document.getElementById('framePhone')
+    };
+    var stage = document.getElementById('mockStage');
+
+    function setDevice(mode) {
+        Object.keys(frames).forEach(function (k) { frames[k].hidden = true; });
+
+        if (mode === 'compare') {
+            frames.tablet.hidden = false;
+            frames.phone.hidden = false;
+            stage.style.overflowX = 'auto';
+        } else {
+            frames[mode].hidden = false;
+            stage.style.overflowX = 'hidden';
+        }
+
+        document.querySelectorAll('[data-device]').forEach(function (b) {
+            if (b.classList.contains('mock-btn')) {
+                b.classList.toggle('is-on', b.getAttribute('data-device') === mode);
+            }
+        });
+
+        requestAnimationFrame(measure);
+    }
+
+    /* ================= Ukur lebar efektif ================= */
+    var widthEl = document.getElementById('mockWidth');
+    var bpEl = document.getElementById('mockBp');
+
+    function breakpointOf(w) {
+        if (w >= 1200) return 'Komputer';
+        if (w >= 992) return 'Laptop';
+        if (w >= 768) return 'Tab';
+        if (w >= 576) return 'HP besar';
+        return 'HP';
+    }
+
+    function measure() {
+        var names = { desktop: 'Komputer', tablet: 'Tab', phone: 'HP' };
+
+        Array.prototype.slice.call(document.querySelectorAll('.mock-frame:not([hidden])')).forEach(function (frame) {
+            var sim = frame.querySelector('.ffr-sim');
+            var lbl = frame.querySelector('.mock-chrome .lbl');
+            if (sim && lbl) {
+                lbl.textContent = names[frame.getAttribute('data-device')] + ' — ' +
+                    Math.round(sim.getBoundingClientRect().width) + ' px';
+            }
+        });
+
+        var active = document.querySelector('.mock-frame:not([hidden])');
+        if (!active) return;
+        var w = Math.round(active.querySelector('.ffr-sim').getBoundingClientRect().width);
+        widthEl.textContent = w + ' px';
+        bpEl.textContent = breakpointOf(w);
+    }
+
+    if (window.ResizeObserver) {
+        viewports.forEach(function (vp) {
+            new ResizeObserver(measure).observe(vp);
+        });
+    }
+    window.addEventListener('resize', measure);
+
+    /* ================= Event ================= */
+    document.querySelectorAll('.mock-btn[data-device]').forEach(function (btn) {
+        btn.addEventListener('click', function () { setDevice(btn.getAttribute('data-device')); });
+    });
+
+    document.querySelectorAll('.mock-btn[data-screen]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            currentScreen = btn.getAttribute('data-screen');
+            document.querySelectorAll('.mock-btn[data-screen]').forEach(function (b) {
+                b.classList.toggle('is-on', b === btn);
+            });
+            renderScreens();
+        });
+    });
+
+    // Klik submenu di rail ikut mengganti halaman (demo interaktif).
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-screen-link]');
+        if (link) {
+            currentScreen = link.getAttribute('data-screen-link');
+            document.querySelectorAll('.mock-btn[data-screen]').forEach(function (b) {
+                b.classList.toggle('is-on', b.getAttribute('data-screen') === currentScreen);
+            });
+            renderScreens();
+            return;
+        }
+
+        var toggle = e.target.closest('.rail-toggle');
+        if (toggle) {
+            toggle.closest('.ffr-rail').classList.toggle('is-open');
+        }
+    });
+
+    setDevice('desktop');
+    setTimeout(measure, 120);
+
+    // Simpan status layar di hash supaya mudah dibagikan.
+    if (location.hash === '#hp') setDevice('phone');
+    if (location.hash === '#tab') setDevice('tablet');
+})();
+</script>
+</body>
+</html>

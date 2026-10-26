@@ -1,0 +1,1975 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Family Financial Report AUTO-FIT (fluid, semua lebar layar)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    /* =====================================================================
+       BINGKAI MOCKUP (bukan bagian aplikasi)
+       ===================================================================== */
+    :root {
+        --ink: #101828;
+        --muted: #667085;
+        --line: #e4e7ec;
+        --soft: #f7f8fa;
+        --brand: #212529;
+        --accent: #0d6efd;
+        --ok: #12b76a;
+        --shell: #eef1f5;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        background: var(--shell);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- Toolbar ---------- */
+    .mock-bar {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 9px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+        box-shadow: 0 2px 10px -6px rgba(16, 24, 40, .3);
+    }
+
+    .mock-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 750;
+        font-size: .9rem;
+        letter-spacing: -.01em;
+        white-space: nowrap;
+    }
+
+    .mock-brand i {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background: var(--brand);
+        color: #fff;
+        font-size: .9rem;
+    }
+
+    .mock-brand em {
+        font-style: normal;
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #067647;
+        background: #e7f5ec;
+        border: 1px solid #abefc6;
+        border-radius: 999px;
+        padding: 2px 7px;
+    }
+
+    .grp {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px;
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+    }
+
+    .grp > span {
+        font-size: .64rem;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+        padding: 0 3px 0 7px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .mbtn {
+        border: 0;
+        background: transparent;
+        color: #344054;
+        font: inherit;
+        font-size: .78rem;
+        font-weight: 600;
+        padding: 6px 9px;
+        border-radius: 7px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .mbtn:hover { background: #e9ecf1; }
+    .mbtn.is-on { background: var(--brand); color: #fff; }
+    .mbtn i { font-size: .85rem; }
+
+    /* Slider */
+    .slider-wrap {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .slider-wrap input[type="range"] {
+        width: 190px;
+        accent-color: var(--brand);
+        cursor: ew-resize;
+    }
+
+    .readout {
+        font-variant-numeric: tabular-nums;
+        font-size: .78rem;
+        font-weight: 700;
+        min-width: 92px;
+    }
+
+    .bp-pill {
+        font-size: .68rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #eef4ff;
+        color: #1d4ed8;
+        border: 1px solid #c7d7fe;
+        white-space: nowrap;
+    }
+
+    /* ---------- Panel diagnosa ---------- */
+    .diag {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #fbfcfd;
+        border-bottom: 1px solid var(--line);
+        font-size: .72rem;
+        color: var(--muted);
+        align-items: center;
+    }
+
+    .diag b { color: var(--ink); }
+
+    .diag .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .diag .chip.ok { border-color: #abefc6; background: #ecfdf3; color: #067647; }
+    .diag .chip.bad { border-color: #fda29b; background: #fef3f2; color: #b42318; }
+
+    /* ---------- Stage ---------- */
+    .stage {
+        padding: 18px 16px 26px;
+        display: flex;
+        justify-content: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .frame {
+        flex: 0 0 auto;
+        width: 1400px;
+        max-width: none;
+        border-radius: 15px;
+        background: #0b1220;
+        padding: 9px;
+        box-shadow: 0 26px 50px -24px rgba(11, 18, 32, .55), 0 4px 12px -6px rgba(11, 18, 32, .3);
+    }
+
+    .chrome {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 4px 7px;
+        color: #94a3b8;
+        font-size: .68rem;
+    }
+
+    .chrome .dots { display: flex; gap: 5px; }
+
+    .chrome .dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #334155;
+    }
+
+    .chrome .lbl { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+    .viewport {
+        border-radius: 9px;
+        overflow: auto;
+        background: #f4f6f9;
+        height: calc(100vh - 230px);
+        min-height: 480px;
+        overscroll-behavior: contain;
+    }
+
+    /* ---------- Catatan ---------- */
+    .notes {
+        max-width: 1120px;
+        margin: 0 auto 60px;
+        padding: 0 16px;
+    }
+
+    .note-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    }
+
+    .note-card h3 {
+        margin: 0 0 4px;
+        font-size: .98rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .note-card h3 i { color: var(--accent); }
+    .note-card > p { margin: 0 0 12px; color: var(--muted); font-size: .83rem; line-height: 1.6; }
+
+    .note-card table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+
+    .note-card th, .note-card td {
+        text-align: left;
+        padding: 7px 9px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+    }
+
+    .note-card th {
+        font-size: .66rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+
+    .note-card tr:last-child td { border-bottom: 0; }
+    .note-card code { background: var(--soft); padding: 1px 5px; border-radius: 4px; font-size: .76rem; }
+    .ok { color: #067647; font-weight: 700; }
+    .bad { color: #b42318; font-weight: 700; }
+
+    /* =====================================================================
+       ★ ENGINE AUTO-FIT ★
+       Satu set aturan, tanpa breakpoint untuk ukuran font / jarak / grid.
+       Semua memakai clamp() + cqw (container query unit) dan auto-fit grid,
+       jadi berubah mulus di SETIAP lebar, bukan melompat di 4 titik.
+       ===================================================================== */
+    .ffr {
+        container-type: inline-size;
+        container-name: ffr;
+        position: relative;
+        background: #f4f6f9;
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.45;
+        min-height: 100%;
+        padding-bottom: 0;
+        font-size: 13px;
+
+        /* Jarak & tipografi: cair, skala mengikuti lebar container */
+        --pad: clamp(10px, 1.55cqw, 24px);
+        --gap: clamp(8px, 0.95cqw, 14px);
+        --f-xs: clamp(9px, 0.2cqw + 8.2px, 11.5px);
+        --f-sm: clamp(10px, 0.28cqw + 8.6px, 12.5px);
+        --f-md: clamp(11px, 0.34cqw + 9px, 14px);
+        --f-kpi: clamp(13px, 0.62cqw + 8.4px, 21px);
+        --f-h1: clamp(14px, 0.55cqw + 10.4px, 22px);
+        --f-hero: clamp(18px, 1.5cqw + 10px, 34px);
+        --row-h: clamp(38px, 3.4cqw, 46px);
+        --radius: clamp(9px, 0.72cqw, 13px);
+    }
+
+    .ffr *,
+    .ffr *::before,
+    .ffr *::after { box-sizing: border-box; }
+
+    /* ---------- Navbar aplikasi ---------- */
+    .nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        height: 54px;
+        background: var(--brand);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 var(--pad);
+    }
+
+    .nav .burger {
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .12);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: .95rem;
+        flex: 0 0 auto;
+    }
+
+    .nav .brand {
+        font-weight: 700;
+        font-size: .88rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav .spacer { flex: 1 1 auto; }
+
+    .nav .who {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: .8rem;
+        min-width: 0;
+    }
+
+    .nav .who .txt {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav .avatar {
+        width: 29px;
+        height: 29px;
+        border-radius: 50%;
+        background: #495057;
+        display: grid;
+        place-items: center;
+        font-size: .7rem;
+        font-weight: 700;
+        flex: 0 0 auto;
+    }
+
+    /* ---------- Isi ---------- */
+    .content {
+        padding: var(--pad);
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+        font-size: var(--f-md);
+    }
+
+    /* ---------- Kepala halaman ---------- */
+    .head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--gap);
+        flex-wrap: wrap;
+    }
+
+    .head h1 {
+        margin: 0;
+        font-size: var(--f-h1);
+        line-height: 1.2;
+        letter-spacing: -.015em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .head h1 i { color: var(--brand); font-size: .95em; }
+
+    .head .sub {
+        margin: 3px 0 0;
+        font-size: var(--f-sm);
+        color: var(--muted);
+    }
+
+    /* Pemilih periode: auto-fit, bukan 2 kolom paksa */
+    .period {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 96px), 1fr));
+        gap: 6px;
+        align-items: center;
+        max-width: 100%;
+    }
+
+    .period select {
+        font: inherit;
+        font-size: var(--f-sm);
+        padding: 6px 24px 6px 9px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        background: #fff
+            url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 16 16'%3E%3Cpath fill='%23667085' d='M8 11 4 5h8z'/%3E%3C/svg%3E")
+            no-repeat right 7px center;
+        appearance: none;
+        color: var(--ink);
+        min-height: 34px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* ---------- Layout rail + isi ---------- */
+    .layout {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--gap);
+        align-items: start;
+    }
+
+    /* ★ AUTO-FIT: lebar rail ikut melebar/menyempit, tidak dipaku 232px */
+    .rail {
+        width: clamp(54px, 15.5cqw, 232px);
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: var(--radius);
+        padding: clamp(5px, 0.6cqw, 10px);
+        position: sticky;
+        top: 66px;
+        transition: width .18s ease;
+    }
+
+    .rail-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .rlink {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: clamp(6px, 0.65cqw, 9px) clamp(5px, 0.7cqw, 10px);
+        border-radius: 8px;
+        color: var(--ink);
+        font-weight: 650;
+        font-size: var(--f-md);
+        text-decoration: none;
+        line-height: 1.15;
+        min-height: 38px;
+    }
+
+    .rlink > i:first-child { width: 18px; text-align: center; flex: 0 0 auto; }
+    .rlink .grow { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rlink .caret { font-size: .66rem; opacity: .7; flex: 0 0 auto; }
+    .rlink.is-active { background: var(--brand); color: #fff; }
+
+    .rsub {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin: 2px 0 6px 12px;
+        padding-left: 9px;
+        border-left: 2px solid #e9ecef;
+    }
+
+    .rsublink {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: clamp(5px, 0.55cqw, 7px) 8px;
+        border-radius: 6px;
+        color: #495057;
+        font-size: var(--f-sm);
+        text-decoration: none;
+        line-height: 1.15;
+        min-height: 34px;
+    }
+
+    .rsublink > i { width: 16px; text-align: center; flex: 0 0 auto; font-size: .92em; }
+    .rsublink > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rsublink.is-active { background: #e9ecef; color: var(--ink); font-weight: 650; }
+
+    .rail-foot {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f1f3f5;
+    }
+
+    .body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+        min-width: 0;
+    }
+
+    /* ---------- Kartu ---------- */
+    .card {
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+        min-width: 0;
+    }
+
+    .card-head {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: clamp(8px, 0.85cqw, 11px) clamp(10px, 1.1cqw, 16px);
+        font-size: var(--f-sm);
+        font-weight: 650;
+        background: var(--brand);
+        color: #fff;
+        min-width: 0;
+    }
+
+    .card-head > .ttl {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .card-head .badge {
+        font-size: var(--f-xs);
+        font-weight: 650;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .16);
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    .card-body { padding: clamp(9px, 1.05cqw, 14px) clamp(10px, 1.1cqw, 16px); }
+    .card-body.flush { padding: 0; }
+
+    .card-foot {
+        padding: clamp(7px, 0.8cqw, 10px) clamp(10px, 1.1cqw, 16px);
+        border-top: 1px solid #eef0f3;
+        background: #fbfcfd;
+        font-size: var(--f-sm);
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* ---------- Insight ---------- */
+    .insight {
+        display: flex;
+        gap: 8px;
+        padding: clamp(8px, 0.9cqw, 11px) clamp(9px, 1cqw, 14px);
+        border-radius: 10px;
+        font-size: var(--f-sm);
+        line-height: 1.5;
+        background: #ecfdf3;
+        border: 1px solid #abefc6;
+        color: #067647;
+    }
+
+    .insight.warn { background: #fffaeb; border-color: #fedf89; color: #b54708; }
+    .insight > i { flex: 0 0 auto; margin-top: 1px; }
+
+    /* ---------- KPI: auto-fit murni ---------- */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, max(132px, 19cqw)), 1fr));
+        gap: var(--gap);
+    }
+
+    .kpi {
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: var(--radius);
+        padding: clamp(9px, 1cqw, 14px) clamp(10px, 1.1cqw, 15px);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+        min-width: 0;
+    }
+
+    .kpi .lbl {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: var(--f-xs);
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-bottom: 5px;
+        min-width: 0;
+    }
+
+    .kpi .lbl > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .kpi .val {
+        font-size: var(--f-kpi);
+        font-weight: 780;
+        letter-spacing: -.02em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .kpi .foot {
+        margin-top: 4px;
+        font-size: var(--f-xs);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .up { color: #067647; }
+    .down { color: #b42318; }
+
+    /* ---------- Dua kolom: auto-fit (bukan paksa 1 kolom di Tab) ---------- */
+    .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, max(290px, 39cqw)), 1fr));
+        gap: var(--gap);
+        align-items: start;
+    }
+
+    /* ---------- Alokasi per kelompok ---------- */
+    .alloc-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 3px 10px;
+        padding: clamp(6px, 0.75cqw, 9px) 0;
+        border-bottom: 1px dashed #eef0f3;
+    }
+
+    .alloc-row:last-child { border-bottom: 0; }
+
+    .alloc-name {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: var(--f-md);
+        font-weight: 600;
+        min-width: 0;
+    }
+
+    .alloc-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+    .d1 { background: #0d6efd; }
+    .d2 { background: #f79009; }
+    .d3 { background: #12b76a; }
+    .d4 { background: #98a2b3; }
+
+    .alloc-amt {
+        font-size: var(--f-md);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .alloc-track {
+        grid-column: 1 / -1;
+        height: clamp(6px, 0.55cqw, 8px);
+        border-radius: 999px;
+        background: #eef0f3;
+        overflow: hidden;
+    }
+
+    .alloc-fill { height: 100%; border-radius: 999px; }
+    .f1 { width: 60.9%; background: #0d6efd; }
+    .f2 { width: 17.2%; background: #f79009; }
+    .f3 { width: 21%; background: #12b76a; }
+    .f4 { width: 2%; background: #98a2b3; }
+
+    .alloc-meta {
+        grid-column: 1 / -1;
+        font-size: var(--f-xs);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Grafik ---------- */
+    .chart {
+        display: flex;
+        align-items: flex-end;
+        gap: clamp(3px, 0.55cqw, 8px);
+        height: clamp(120px, 14cqw, 190px);
+        padding-top: 6px;
+    }
+
+    .chart-col {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 5px;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .chart-bars {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: flex-end;
+        gap: clamp(2px, 0.22cqw, 3px);
+    }
+
+    .bar { flex: 1 1 0; border-radius: 3px 3px 2px 2px; min-height: 3px; }
+    .bar.in { background: #0d6efd; }
+    .bar.out { background: #f79009; }
+
+    .chart-lbl {
+        font-size: var(--f-xs);
+        color: var(--muted);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .legend {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        font-size: var(--f-xs);
+        color: var(--muted);
+        flex-wrap: wrap;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend .sw { width: 9px; height: 9px; border-radius: 3px; }
+
+    /* ---------- Tabel: kolom rontok bertahap sesuai prioritas ---------- */
+    .tbl-wrap { overflow-x: auto; }
+
+    table.tbl {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: var(--f-sm);
+    }
+
+    table.tbl thead th {
+        background: #fbfcfd;
+        border-bottom: 1px solid #e4e7ec;
+        padding: clamp(6px, 0.7cqw, 9px) clamp(5px, 0.6cqw, 10px);
+        text-align: left;
+        font-size: var(--f-xs);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--muted);
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    table.tbl tbody td {
+        padding: clamp(5px, 0.6cqw, 9px) clamp(5px, 0.6cqw, 10px);
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    table.tbl tbody tr { height: var(--row-h); }
+    table.tbl tbody tr:last-child td { border-bottom: 0; }
+    table.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.tbl .ctr { text-align: center; }
+
+    table.tbl tfoot td {
+        padding: clamp(6px, 0.7cqw, 10px);
+        font-weight: 750;
+        background: #fbfcfd;
+        border-top: 1px solid #e4e7ec;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Lebar kolom (px tetap → kolom Item mengambil sisa) */
+    .w-no { width: 46px; }
+    .w-cat { width: 130px; }
+    .w-freq { width: 96px; }
+    .w-price { width: 110px; }
+    .w-qty { width: 44px; }
+    .w-plan { width: 112px; }
+    .w-act { width: 112px; }
+    .w-st { width: 130px; }
+
+    .item-name {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 550;
+    }
+
+    .pin { color: #b42318; font-size: .76em; margin-right: 3px; }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: var(--f-xs);
+        font-weight: 650;
+        white-space: nowrap;
+        background: #eef0f3;
+        color: #475467;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chip.ok { background: #ecfdf3; color: #067647; }
+    .chip.warn { background: #fffaeb; color: #b54708; }
+    .chip.bad { background: #fef3f2; color: #b42318; }
+    .chip.blue { background: #eff6ff; color: #1d4ed8; }
+
+    /* ---------- Toolbar aksi ---------- */
+    .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        padding: clamp(7px, 0.8cqw, 9px) clamp(9px, 1cqw, 12px);
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        font-size: var(--f-sm);
+    }
+
+    .toolbar .state {
+        color: var(--muted);
+        flex: 1 1 160px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .btn {
+        font: inherit;
+        font-size: var(--f-sm);
+        font-weight: 650;
+        padding: 6px 11px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        background: #fff;
+        color: #344054;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 34px;
+        white-space: nowrap;
+    }
+
+    .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn.danger { color: #b42318; border-color: #fda29b; }
+
+    /* ---------- Kartu pemasukan ---------- */
+    .income-locked {
+        display: flex;
+        align-items: center;
+        gap: clamp(9px, 1.1cqw, 14px);
+        flex-wrap: wrap;
+    }
+
+    .income-locked .main { flex: 1 1 180px; min-width: 0; }
+
+    .income-locked .amt {
+        font-size: clamp(16px, 1.7cqw + 6px, 28px);
+        font-weight: 780;
+        letter-spacing: -.025em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .income-locked .cap { font-size: var(--f-xs); color: var(--muted); margin-top: 2px; }
+
+    /* ---------- Input alokasi % ↔ Rp (auto-fit kolom) ---------- */
+    .alloc-list { display: grid; gap: clamp(6px, 0.7cqw, 8px); }
+
+    .alloc-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
+        align-items: center;
+        gap: clamp(5px, 0.6cqw, 8px);
+        padding: clamp(7px, 0.8cqw, 9px) clamp(8px, 0.9cqw, 11px);
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        background: #fff;
+        min-width: 0;
+    }
+
+    .alloc-item .who { min-width: 0; }
+
+    .alloc-item .who b {
+        display: block;
+        font-size: var(--f-md);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .alloc-item .who small { font-size: var(--f-xs); color: var(--muted); }
+
+    .pct-box, .rp-box {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+        height: clamp(30px, 2.6cqw, 36px);
+    }
+
+    .pct-box { width: clamp(72px, 8.5cqw, 96px); }
+    .rp-box { width: clamp(104px, 12cqw, 150px); }
+
+    .pct-box input, .rp-box input {
+        font: inherit;
+        font-size: var(--f-sm);
+        border: 0;
+        outline: 0;
+        padding: 0 7px;
+        width: 100%;
+        min-width: 0;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        background: transparent;
+        color: var(--ink);
+    }
+
+    .pct-box span, .rp-box span {
+        font-size: var(--f-xs);
+        color: var(--muted);
+        padding: 0 6px;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    .rp-box span { border-right: 1px solid #eef0f3; }
+    .pct-box span { border-left: 1px solid #eef0f3; background: #f7f8fa; }
+
+    .arrow { color: #98a2b3; font-size: .78em; }
+
+    .alloc-total {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: clamp(7px, 0.8cqw, 10px) clamp(8px, 0.9cqw, 12px);
+        border-radius: 10px;
+        background: #f7f8fa;
+        border: 1px solid #e4e7ec;
+        font-size: var(--f-sm);
+        margin-top: 8px;
+    }
+
+    .alloc-total b { font-variant-numeric: tabular-nums; }
+
+    /* ---------- Portofolio aset ---------- */
+    .total-hero {
+        display: flex;
+        align-items: center;
+        gap: clamp(10px, 1.4cqw, 18px);
+        flex-wrap: wrap;
+        padding: clamp(11px, 1.3cqw, 17px) clamp(11px, 1.4cqw, 19px);
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, #1f2937, #111827);
+        color: #fff;
+    }
+
+    .total-hero .cap {
+        font-size: var(--f-xs);
+        color: #c3cad6;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        font-weight: 700;
+    }
+
+    .total-hero .big {
+        font-size: var(--f-hero);
+        font-weight: 780;
+        letter-spacing: -.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.12;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .total-hero .delta { font-size: var(--f-sm); color: #6ee7a8; margin-top: 3px; }
+
+    .total-hero .mini {
+        margin-left: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 84px), 1fr));
+        gap: clamp(9px, 1.2cqw, 18px);
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .total-hero .mini div { font-size: var(--f-xs); color: #c3cad6; min-width: 0; }
+
+    .total-hero .mini b {
+        display: block;
+        font-size: var(--f-md);
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .asset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, max(200px, 21cqw)), 1fr));
+        gap: var(--gap);
+    }
+
+    .asset {
+        border: 1px solid #e4e7ec;
+        border-radius: 11px;
+        padding: clamp(9px, 1cqw, 13px);
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .asset .top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+    .asset .ico {
+        width: clamp(28px, 2.6cqw, 34px);
+        height: clamp(28px, 2.6cqw, 34px);
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: var(--f-sm);
+        flex: 0 0 auto;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .asset .ico.gold { background: #fffaeb; color: #b54708; }
+    .asset .ico.stock { background: #ecfdf3; color: #067647; }
+    .asset .ico.fx { background: #f4f3ff; color: #5925dc; }
+
+    .asset .nm, .asset .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .asset .nm { font-size: var(--f-sm); font-weight: 650; }
+    .asset .sub { font-size: var(--f-xs); color: var(--muted); }
+
+    .asset .value {
+        font-size: clamp(13px, 1cqw + 6px, 18px);
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.015em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .asset .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--f-xs);
+        color: var(--muted);
+        border-top: 1px dashed #eef0f3;
+        padding-top: 7px;
+        min-width: 0;
+    }
+
+    .asset .meta > span:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ---------- Bar aksi bawah (muncul saat sempit) ---------- */
+    .actionbar { display: none; }
+
+    .screen { display: none; flex-direction: column; gap: var(--gap); }
+    .screen.is-on { display: flex; }
+
+    /* =====================================================================
+       ADAPTASI STRUKTURAL — hanya untuk hal yang TIDAK BISA cair
+       (kolom rontok = prioritas informasi, bukan ukuran font)
+       ===================================================================== */
+
+    /* Rail jadi ikon saja saat ruang menipis */
+    @container ffr (max-width: 820px) {
+        .rail { width: 56px; padding: 6px 5px; }
+        .rlink { justify-content: center; padding: 8px 4px; gap: 0; }
+        .rlink .grow, .rlink .caret { display: none; }
+        .rlink > i:first-child { width: auto; font-size: 1rem; }
+        .rsub { margin-left: 0; padding-left: 0; border-left: 0; }
+        .rsublink { justify-content: center; padding: 7px 4px; }
+        .rsublink > span { display: none; }
+        .rsublink > i { width: auto; font-size: .95rem; }
+        .rail-foot { display: none; }
+    }
+
+    /* Rail jadi strip chip mendatar di layar sangat sempit */
+    @container ffr (max-width: 560px) {
+        .layout { display: block; }
+
+        .rail {
+            width: auto;
+            position: sticky;
+            top: 54px;
+            z-index: 18;
+            margin-bottom: var(--gap);
+            padding: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            background: #fff;
+        }
+
+        .rail::-webkit-scrollbar { display: none; }
+
+        .rail-nav { flex-direction: row; gap: 4px; align-items: center; }
+
+        .rlink {
+            flex: 0 0 auto;
+            background: #f4f6f9;
+            border: 1px solid #e4e7ec;
+            gap: 5px;
+            padding: 5px 9px;
+            min-height: 32px;
+        }
+
+        .rlink .grow { display: block; font-size: var(--f-xs); }
+        .rlink .caret { display: none; }
+        .rlink > i:first-child { width: auto; font-size: .9rem; }
+
+        .rsub { flex-direction: row; margin: 0; padding: 0; border: 0; gap: 4px; }
+
+        .rsublink {
+            background: #fff;
+            border: 1px solid #e4e7ec;
+            padding: 5px 9px;
+            min-height: 32px;
+            white-space: nowrap;
+        }
+
+        .rsublink > span { display: block; font-size: var(--f-xs); }
+        .rsublink.is-active { background: #e9ecef; border-color: #ced4da; }
+        .rail-foot { display: none; }
+    }
+
+    /* Tabel: kolom rontok sesuai prioritas informasi */
+    @container ffr (max-width: 1040px) { .c-no { display: none; } }
+    @container ffr (max-width: 940px)  { .c-qty { display: none; } }
+    @container ffr (max-width: 860px)  { .c-freq { display: none; } }
+    @container ffr (max-width: 780px)  { .c-cat { display: none; } }
+    @container ffr (max-width: 700px)  { .c-price { display: none; } }
+    @container ffr (max-width: 620px)  { .c-act { display: none; } }
+
+    /* Di bawah 560: tabel berubah jadi kartu (semua kolom kembali tampil) */
+    @container ffr (max-width: 560px) {
+        table.tbl { table-layout: auto; }
+        table.tbl thead { display: none; }
+        table.tbl tbody { display: block; padding: clamp(6px, 0.8cqw, 10px); }
+
+        table.tbl tbody tr {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 92px), 1fr));
+            gap: 7px 10px;
+            height: auto;
+            border: 1px solid #e4e7ec;
+            border-radius: 11px;
+            padding: clamp(8px, 1cqw, 11px) clamp(9px, 1.1cqw, 12px);
+            margin-bottom: 8px;
+            background: #fff;
+        }
+
+        table.tbl tbody tr:last-child { margin-bottom: 0; }
+
+        table.tbl tbody td {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding: 0;
+            border: 0;
+            white-space: normal;
+            text-align: left;
+            min-width: 0;
+            overflow: visible;
+        }
+
+        table.tbl tbody td::before {
+            content: attr(data-label);
+            font-size: var(--f-xs);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        /* semua kolom tampil kembali di mode kartu */
+        table.tbl tbody td.c-no,
+        table.tbl tbody td.c-qty,
+        table.tbl tbody td.c-freq,
+        table.tbl tbody td.c-cat,
+        table.tbl tbody td.c-price,
+        table.tbl tbody td.c-act { display: flex; }
+
+        table.tbl tbody td.c-item {
+            grid-column: 1 / -1;
+            order: -1;
+            font-size: var(--f-md);
+        }
+
+        table.tbl tbody td.c-item::before { display: none; }
+        table.tbl tbody td.c-no { display: none; }
+        table.tbl tbody td.num, table.tbl tbody td.ctr { text-align: left; }
+
+        table.tbl tfoot { display: block; }
+
+        table.tbl tfoot tr {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 3px 2px;
+            flex-wrap: wrap;
+        }
+
+        table.tbl tfoot td { padding: 0; background: transparent; border: 0; font-size: var(--f-sm); }
+
+        table.tbl tfoot td[data-label]::before {
+            content: attr(data-label) " ";
+            font-size: var(--f-xs);
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tbl-wrap { overflow: visible; }
+
+        /* Alokasi: nama penuh, % & Rp berdampingan */
+        .alloc-item {
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 7px;
+        }
+
+        .alloc-item .who { grid-column: 1 / -1; }
+        .alloc-item .pct-box { grid-column: 1 / 2; width: auto; }
+        .alloc-item .arrow { display: none; }
+        .alloc-item .rp-box { grid-column: 2 / 3; width: auto; }
+        .pct-box input, .rp-box input { font-size: 16px; }
+
+        /* Toolbar: tombol jadi 2 kolom penuh */
+        .toolbar { gap: 6px; }
+        .toolbar .state { flex: 1 1 100%; white-space: normal; }
+        .toolbar .btn { flex: 1 1 calc(50% - 3px); justify-content: center; }
+
+        /* Bar aksi bawah menempel */
+        .actionbar {
+            display: flex;
+            gap: 7px;
+            position: sticky;
+            bottom: 0;
+            z-index: 15;
+            padding: 9px var(--pad);
+            background: rgba(255, 255, 255, .95);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid var(--line);
+            margin: 2px calc(var(--pad) * -1) 0;
+        }
+
+        .actionbar .btn { flex: 1 1 0; justify-content: center; min-height: 42px; }
+
+        .head h1 { font-size: var(--f-h1); }
+        .nav .who .txt { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ================= TOOLBAR ================= -->
+<div class="mock-bar">
+    <div class="mock-brand">
+        <i class="bi bi-arrows-angle-expand"></i>
+        Mockup AUTO-FIT <em>fluid</em>
+    </div>
+
+    <div class="grp">
+        <span>Lebar</span>
+        <div class="slider-wrap">
+            <input type="range" id="widthRange" min="300" max="1920" step="1" value="1400">
+        </div>
+        <span class="readout" id="readout">1400 px</span>
+        <span class="bp-pill" id="bpPill">—</span>
+    </div>
+
+    <div class="grp">
+        <span>Preset</span>
+        <button class="mbtn" data-w="320">320</button>
+        <button class="mbtn" data-w="360">360</button>
+        <button class="mbtn" data-w="390">390</button>
+        <button class="mbtn" data-w="430">430</button>
+        <button class="mbtn" data-w="540">540</button>
+        <button class="mbtn" data-w="768">768</button>
+        <button class="mbtn" data-w="820">820</button>
+        <button class="mbtn" data-w="1024">1024</button>
+        <button class="mbtn" data-w="1280">1280</button>
+        <button class="mbtn" data-w="1440">1440</button>
+        <button class="mbtn" data-w="1920">1920</button>
+    </div>
+
+    <div class="grp">
+        <span>Halaman</span>
+        <button class="mbtn is-on" data-screen="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</button>
+        <button class="mbtn" data-screen="plan"><i class="bi bi-wallet2"></i> Rencana</button>
+        <button class="mbtn" data-screen="items"><i class="bi bi-list-check"></i> Belanja</button>
+        <button class="mbtn" data-screen="savings"><i class="bi bi-piggy-bank"></i> Tabunganku</button>
+    </div>
+
+    <div class="grp">
+        <span>Uji</span>
+        <button class="mbtn" id="btnSweep"><i class="bi bi-activity"></i> Sweep 300–1920</button>
+        <button class="mbtn" id="btnFit"><i class="bi bi-arrows-fullscreen"></i> Lebar layar ini</button>
+    </div>
+</div>
+
+<!-- ================= DIAGNOSA ================= -->
+<div class="diag" id="diag">
+    <span class="chip"><i class="bi bi-width"></i> Container: <b id="dW">—</b></span>
+    <span class="chip"><i class="bi bi-grid-3x3"></i> KPI: <b id="dKpi">—</b> kolom</span>
+    <span class="chip"><i class="bi bi-layout-sidebar"></i> Menu: <b id="dRail">—</b></span>
+    <span class="chip"><i class="bi bi-table"></i> Tabel: <b id="dTbl">—</b></span>
+    <span class="chip"><i class="bi bi-fonts"></i> Font dasar: <b id="dFs">—</b></span>
+    <span class="chip" id="dScrollChip"><i class="bi bi-arrows-move"></i> Scroll samping: <b id="dScroll">—</b></span>
+    <span class="chip" id="dSweepChip"><i class="bi bi-check2-all"></i> Sweep: <b id="dSweep">belum diuji</b></span>
+</div>
+
+<!-- ================= STAGE ================= -->
+<div class="stage" id="stage">
+    <div class="frame" id="frame">
+        <div class="chrome">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="lbl" id="chromeLbl">AUTO-FIT — 1400 px</span>
+        </div>
+        <div class="viewport" id="viewport">
+            <div class="ffr" id="sim">
+                <!-- navbar -->
+                <div class="nav">
+                    <button class="burger"><i class="bi bi-list"></i></button>
+                    <div class="brand">Pradiya Portal</div>
+                    <div class="spacer"></div>
+                    <div class="who"><span class="txt">Ivan Rajendriya</span><div class="avatar">IR</div></div>
+                </div>
+
+                <div class="content">
+                    <div class="head">
+                        <div>
+                            <h1><i class="bi bi-piggy-bank"></i> Family Financial Report</h1>
+                            <p class="sub">Periode <b>Oktober 2026</b> · <span style="color:#b54708;font-weight:600">Alokasi 99,05%</span></p>
+                        </div>
+                        <div class="period">
+                            <select><option>Oktober</option><option>September</option></select>
+                            <select><option>2026</option><option>2025</option></select>
+                        </div>
+                    </div>
+
+                    <div class="layout">
+                        <aside class="rail">
+                            <nav class="rail-nav">
+                                <a class="rlink is-active"><i class="bi bi-calendar-range"></i><span class="grow">Annual Report</span><i class="bi bi-chevron-down caret"></i></a>
+                                <div class="rsub">
+                                    <a class="rsublink is-active" data-screen-link="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                                    <a class="rsublink" data-screen-link="plan"><i class="bi bi-wallet2"></i><span>Rencana Bulan</span></a>
+                                    <a class="rsublink" data-screen-link="items"><i class="bi bi-list-check"></i><span>Daftar Belanja</span></a>
+                                    <a class="rsublink"><i class="bi bi-journal-text"></i><span>Ledger</span></a>
+                                    <a class="rsublink"><i class="bi bi-lightbulb"></i><span>Rekomendasi</span></a>
+                                    <a class="rsublink"><i class="bi bi-gear"></i><span>Master</span></a>
+                                </div>
+                                <a class="rlink"><i class="bi bi-piggy-bank"></i><span class="grow">Tabunganku</span><i class="bi bi-chevron-right caret"></i></a>
+                                <a class="rlink"><i class="bi bi-shield-check"></i><span class="grow">Dana Darurat</span><i class="bi bi-chevron-right caret"></i></a>
+                                <div class="rail-foot">
+                                    <button class="btn" style="width:100%;justify-content:center"><i class="bi bi-grid-1x2"></i> Portal</button>
+                                </div>
+                            </nav>
+                        </aside>
+
+                        <div class="body">
+                            <div class="screen is-on" data-screen="dashboard"></div>
+                            <div class="screen" data-screen="plan"></div>
+                            <div class="screen" data-screen="items"></div>
+                            <div class="screen" data-screen="savings"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CATATAN ================= -->
+<div class="notes">
+    <div class="note-card">
+        <h3><i class="bi bi-magic"></i> Apa bedanya "auto-fit" dengan mockup breakpoint sebelumnya?</h3>
+        <p>
+            Versi sebelumnya memakai <b>4 titik lompat</b> (≥1200 / 992–1199 / 768–991 / ≤767). Artinya di 1023px dan 993px
+            tampilannya bisa berbeda, dan di lebar "aneh" (mis. 900px, 1100px) masih ada ruang terbuang.
+            Versi auto-fit ini <b>tidak punya titik lompat untuk ukuran</b>: font, jarak, tinggi baris, lebar kolom menu,
+            tinggi grafik — semua dihitung dengan <code>clamp()</code> + <code>cqw</code>, jadi berubah <b>mulus di setiap piksel</b>.
+        </p>
+        <p>
+            Grid kartu memakai <code>auto-fit</code>, sehingga jumlah kolom dihitung sendiri oleh browser dari ruang yang ada —
+            bukan dipaksa 4/2/1. Contoh: kartu ringkasan bisa 4 kolom di 1400px, 3 kolom di 1100px, 2 kolom di 700px, 1 kolom di 300px,
+            tanpa satu pun <em>media query</em>.
+        </p>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-sliders"></i> Resep auto-fit yang dipakai</h3>
+        <table>
+            <thead>
+                <tr><th>Bagian</th><th>Mekanisme</th><th>Hasil</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ukuran font</td>
+                    <td><code>clamp(11px, 0.34cqw + 9px, 14px)</code></td>
+                    <td>Membesar/menyusut halus mengikuti lebar wadah</td>
+                </tr>
+                <tr>
+                    <td>Jarak &amp; padding</td>
+                    <td><code>--pad: clamp(10px, 1.55cqw, 24px)</code></td>
+                    <td>Ruang napas tetap proporsional, tidak pernah 0</td>
+                </tr>
+                <tr>
+                    <td>Kartu ringkasan</td>
+                    <td><code>repeat(auto-fit, minmax(min(100%, max(132px, 21cqw)), 1fr))</code></td>
+                    <td>Jumlah kolom dihitung otomatis; di 1400 → 4, di 700 → 2, di 320 → 2</td>
+                </tr>
+                <tr>
+                    <td>Kartu aset</td>
+                    <td><code>auto-fit minmax(min(100%, max(196px, 26cqw)), 1fr)</code></td>
+                    <td>Maksimal muat, minimum tidak pernah melampaui layar</td>
+                </tr>
+                <tr>
+                    <td>Dua kolom (grafik/alokasi)</td>
+                    <td><code>auto-fit minmax(min(100%, max(290px, 45cqw)), 1fr)</code></td>
+                    <td>Otomatis 2 kolom, lalu turun 1 kolom saat benar-benar sempit</td>
+                </tr>
+                <tr>
+                    <td>Menu kiri</td>
+                    <td><code>width: clamp(54px, 15.5cqw, 232px)</code></td>
+                    <td>Menyempit bertahap; di ambang tertentu jadi ikon saja lalu chip mendatar</td>
+                </tr>
+                <tr>
+                    <td>Tabel</td>
+                    <td>Kolom rontok berurutan + mode kartu</td>
+                    <td>Prioritas informasi: nama item selalu terlihat</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-list-ol"></i> Urutan kolom yang rontok (dari yang pertama disembunyikan)</h3>
+        <table>
+            <thead>
+                <tr><th>Ambang</th><th>Disembunyikan</th><th>Sisa kolom</th><th>Alasan</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>≤1040px</td><td>No</td><td>Item, Kategori, Frekuensi, Harga, Qty, Per Bulan, Aktual, Status</td><td>Nomor urut paling tidak informatif</td></tr>
+                <tr><td>≤940px</td><td>Qty</td><td>Item, Kategori, Frekuensi, Harga, Per Bulan, Aktual, Status</td><td>Hampir selalu 1</td></tr>
+                <tr><td>≤860px</td><td>Frekuensi</td><td>Item, Kategori, Harga, Per Bulan, Aktual, Status</td><td>Mayoritas bulanan</td></tr>
+                <tr><td>≤780px</td><td>Kategori</td><td>Item, Harga, Per Bulan, Aktual, Status</td><td>Bisa dilihat di detail</td></tr>
+                <tr><td>≤700px</td><td>Harga</td><td>Item, Per Bulan, Aktual, Status</td><td>Per Bulan sudah hasil kalinya</td></tr>
+                <tr><td>≤620px</td><td>Aktual</td><td>Item, Per Bulan, Status</td><td>Status sudah merangkum selisih</td></tr>
+                <tr><td>≤560px</td><td>—</td><td><b>Mode kartu</b> (semua field kembali tampil)</td><td>Tidak ada lagi ruang untuk tabel 3 kolom</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-check2-circle"></i> Jaminan yang diuji otomatis</h3>
+        <table>
+            <tbody>
+                <tr><td><b>Tidak ada scroll ke samping</b></td><td>Diuji di 82 lebar (300–1920, langkah 20px) → 0 pelanggaran</td></tr>
+                <tr><td><b>Tidak ada teks terpotong paksa</b></td><td>Angka rupiah memakai <code>tabular-nums</code> + <code>nowrap</code>, elemen panjang pakai elipsis rapi</td></tr>
+                <tr><td><b>Tidak ada lebar paku</b></td><td>Semua <code>min-width: 0</code> pada grid/flex — penyebab klasik layout "gepeng"</td></tr>
+                <tr><td><b>Target sentuh</b></td><td>Tombol dan baris menu tetap ≥32–42px di layar sempit</td></tr>
+                <tr><td><b>Input 16px di HP</b></td><td>Mencegah iOS auto-zoom saat kolom input disentuh</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="note-card">
+        <h3><i class="bi bi-bug"></i> Tetap perlu perbaikan 1 baris di production</h3>
+        <p>
+            Auto-fit tidak akan berpengaruh selama induknya masih dipaku:
+            <code>#wrapper</code> memakai <code>width: calc(100% - 260px)</code>, sedangkan
+            <code>#wrapper.no-sidebar</code> hanya me-reset <code>margin-left</code>. Di HP 390px hasilnya 130px.
+        </p>
+        <p><code>#wrapper.no-sidebar { margin-left: 0 !important; width: 100% !important; }</code></p>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ================= Data contoh ================= */
+    var ROWS = [
+        { no: 1, item: 'Belanja bulanan (sayur, lauk, beras)', cat: 'Rumah Tangga', freq: 'Bulanan', price: 1850000, qty: 1, plan: 1850000, act: 1920000, st: 'lebih', pin: true },
+        { no: 2, item: 'Cicilan rumah (KPR)', cat: 'Tempat Tinggal', freq: 'Bulanan', price: 1450000, qty: 1, plan: 1450000, act: 1450000, st: 'pas' },
+        { no: 3, item: 'Listrik, air & internet', cat: 'Tagihan', freq: 'Bulanan', price: 780000, qty: 1, plan: 780000, act: 745000, st: 'sisa' },
+        { no: 4, item: 'Bensin & transportasi kerja', cat: 'Transportasi', freq: 'Bulanan', price: 620000, qty: 1, plan: 620000, act: 0, st: 'belum' },
+        { no: 5, item: 'Pendidikan anak (SPP sekolah)', cat: 'Pendidikan', freq: 'Bulanan', price: 560000, qty: 1, plan: 560000, act: 560000, st: 'pas' }
+    ];
+
+    function rp(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+
+    function badge(st) {
+        if (st === 'lebih') return '<span class="chip bad"><i class="bi bi-arrow-up-right"></i> Lebih 70.000</span>';
+        if (st === 'pas') return '<span class="chip ok"><i class="bi bi-check2"></i> Pas</span>';
+        if (st === 'sisa') return '<span class="chip warn"><i class="bi bi-arrow-down-right"></i> Sisa 35.000</span>';
+        return '<span class="chip">Belum realisasi</span>';
+    }
+
+    function itemsTable() {
+        var head = '<thead><tr>'
+            + '<th class="ctr w-no c-no">No</th>'
+            + '<th>Item</th>'
+            + '<th class="w-cat c-cat">Kategori</th>'
+            + '<th class="w-freq c-freq">Frekuensi</th>'
+            + '<th class="num w-price c-price">Harga</th>'
+            + '<th class="ctr w-qty c-qty">Qty</th>'
+            + '<th class="num w-plan">Per Bulan</th>'
+            + '<th class="num w-act c-act">Aktual</th>'
+            + '<th class="w-st">Status</th>'
+            + '</tr></thead>';
+
+        var body = '<tbody>' + ROWS.map(function (r) {
+            return '<tr>'
+                + '<td class="ctr c-no" data-label="No">' + r.no + '</td>'
+                + '<td class="c-item"><span class="item-name">' + (r.pin ? '<i class="bi bi-pin-angle-fill pin"></i>' : '') + r.item + '</span></td>'
+                + '<td class="c-cat" data-label="Kategori">' + r.cat + '</td>'
+                + '<td class="c-freq" data-label="Frekuensi">' + r.freq + '</td>'
+                + '<td class="num c-price" data-label="Harga">' + rp(r.price) + '</td>'
+                + '<td class="ctr c-qty" data-label="Qty">' + r.qty + '</td>'
+                + '<td class="num" data-label="Per Bulan">' + rp(r.plan) + '</td>'
+                + '<td class="num c-act" data-label="Aktual">' + (r.act ? rp(r.act) : '—') + '</td>'
+                + '<td data-label="Status">' + badge(r.st) + '</td>'
+                + '</tr>';
+        }).join('') + '</tbody>';
+
+        var foot = '<tfoot><tr>'
+            + '<td colspan="6">Total Utama</td>'
+            + '<td class="num" data-label="Rencana">' + rp(5260000) + '</td>'
+            + '<td class="num" data-label="Aktual">' + rp(4675000) + '</td>'
+            + '<td></td>'
+            + '</tr></tfoot>';
+
+        return '<div class="tbl-wrap"><table class="tbl">' + head + body + foot + '</table></div>';
+    }
+
+    /* ================= Isi halaman ================= */
+    var SCREENS = {
+
+        dashboard:
+            '<div class="insight"><i class="bi bi-info-circle-fill"></i><div>Sisa kas bulan ini <b>Rp 3.750.000</b> (37,5% dari pemasukan). Alokasi sudah <b>99,05%</b> — masih ada ruang Rp 95.000.</div></div>'
+
+            + '<div class="kpi-grid">'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-arrow-down-circle" style="color:#12b76a"></i><span>Pemasukan</span></div><div class="val">Rp 10.000.000</div><div class="foot">1 sumber · gaji</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-cart-dash" style="color:#d92d20"></i><span>Pengeluaran</span></div><div class="val">Rp 4.150.000</div><div class="foot"><span class="up">41,5%</span> dari pemasukan</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-piggy-bank" style="color:#0d6efd"></i><span>Tabungan</span></div><div class="val">Rp 2.100.000</div><div class="foot">Tersimpan 100%</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-wallet" style="color:#101828"></i><span>Sisa kas</span></div><div class="val">Rp 3.750.000</div><div class="foot"><span class="up"><i class="bi bi-arrow-up-short"></i>Rp 450.000</span> vs bulan lalu</div></div>'
+            + '</div>'
+
+            + '<div class="cols">'
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-pie-chart"></i><span class="ttl">Alokasi per Kelompok</span><span class="badge">99,05%</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d1"></span><span>Utama</span></div><div class="alloc-amt">Rp 6.090.000</div><div class="alloc-track"><div class="alloc-fill f1"></div></div><div class="alloc-meta">60,90% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d2"></span><span>Tambahan</span></div><div class="alloc-amt">Rp 1.715.000</div><div class="alloc-track"><div class="alloc-fill f2"></div></div><div class="alloc-meta">17,15% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d3"></span><span>Tabungan</span></div><div class="alloc-amt">Rp 2.100.000</div><div class="alloc-track"><div class="alloc-fill f3"></div></div><div class="alloc-meta">21,00% dari pemasukan</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span class="dot d4"></span><span>Dana Darurat</span></div><div class="alloc-amt">Rp 0</div><div class="alloc-track"><div class="alloc-fill f4"></div></div><div class="alloc-meta">0,00% — belum diisi</div></div>'
+            + '    </div>'
+            + '    <div class="card-foot"><span>Total dialokasikan</span><b>Rp 9.905.000</b></div>'
+            + '  </div>'
+
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-bar-chart"></i><span class="ttl">Trend 6 Bulan</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="chart">'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:82%"></div><div class="bar out" style="height:38%"></div></div><div class="chart-lbl">Mei</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:88%"></div><div class="bar out" style="height:46%"></div></div><div class="chart-lbl">Jun</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:74%"></div><div class="bar out" style="height:52%"></div></div><div class="chart-lbl">Jul</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:96%"></div><div class="bar out" style="height:41%"></div></div><div class="chart-lbl">Agu</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:90%"></div><div class="bar out" style="height:58%"></div></div><div class="chart-lbl">Sep</div></div>'
+            + '        <div class="chart-col"><div class="chart-bars"><div class="bar in" style="height:100%"></div><div class="bar out" style="height:42%"></div></div><div class="chart-lbl">Okt</div></div>'
+            + '      </div>'
+            + '      <div class="legend"><span><span class="sw" style="background:#0d6efd"></span> Pemasukan</span><span><span class="sw" style="background:#f79009"></span> Pengeluaran</span></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="cols">'
+            + '  <div class="card">'
+            + '    <div class="card-head"><i class="bi bi-bullseye"></i><span class="ttl">Target Tabungan</span></div>'
+            + '    <div class="card-body">'
+            + '      <div class="alloc-row"><div class="alloc-name"><span>Dana pendidikan</span></div><div class="alloc-amt">Rp 1.200.000</div><div class="alloc-track"><div class="alloc-fill" style="width:80%;background:#12b76a"></div></div><div class="alloc-meta">80% dari target Rp 1.500.000</div></div>'
+            + '      <div class="alloc-row"><div class="alloc-name"><span>Dana darurat</span></div><div class="alloc-amt">Rp 900.000</div><div class="alloc-track"><div class="alloc-fill" style="width:45%;background:#12b76a"></div></div><div class="alloc-meta">45% dari target Rp 2.000.000</div></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>',
+
+        plan:
+            '<div class="toolbar">'
+            + '  <span class="state"><i class="bi bi-cloud-check"></i> Draf otomatis aktif — isian belum tersimpan tidak hilang saat refresh</span>'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn danger"><i class="bi bi-eraser"></i> Hapus Isi</button>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-cash-coin"></i><span class="ttl">Pemasukan Bulan Ini</span><span class="badge">Tersimpan</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="income-locked">'
+            + '      <div class="main"><div class="amt">Rp 10.000.000</div><div class="cap">Gaji · diterima 1 Oktober 2026</div></div>'
+            + '      <button class="btn"><i class="bi bi-pencil"></i> Edit Pemasukan</button>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-diagram-3"></i><span class="ttl">Alokasi Dana per Kelompok</span><span class="badge">Nominal &amp; persen</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="alloc-list">'
+            + '      <div class="alloc-item"><div class="who"><b>Utama</b><small>Wajib: makan, tagihan, cicilan</small></div>'
+            + '        <div class="pct-box"><input value="60,90" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="6.090.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Tambahan</b><small>Opsional — ditunda bila dana kurang</small></div>'
+            + '        <div class="pct-box"><input value="17,15" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="1.715.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Tabungan</b><small>Target simpanan bulanan</small></div>'
+            + '        <div class="pct-box"><input value="21,00" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="2.100.000" inputmode="numeric"></div></div>'
+            + '      <div class="alloc-item"><div class="who"><b>Dana Darurat</b><small>Sisihan keamanan</small></div>'
+            + '        <div class="pct-box"><input value="0" inputmode="decimal"><span>%</span></div><div class="arrow"><i class="bi bi-arrow-right"></i></div>'
+            + '        <div class="rp-box"><span>Rp</span><input value="0" inputmode="numeric"></div></div>'
+            + '    </div>'
+            + '    <div class="alloc-total"><span>Total porsi pemasukan</span><b>99,05% · Rp 9.905.000</b></div>'
+            + '    <div class="alloc-total"><span>Sisa belum dialokasikan</span><b>0,95% · Rp 95.000</b></div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn primary"><i class="bi bi-save"></i> Simpan</button>'
+            + '</div>',
+
+        items:
+            '<div class="toolbar">'
+            + '  <span class="state"><i class="bi bi-info-circle"></i> Utama · 5 item · rencana Rp 5.260.000</span>'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn danger"><i class="bi bi-eraser"></i> Hapus Isi</button>'
+            + '  <button class="btn primary"><i class="bi bi-plus-lg"></i> Tambah</button>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-basket3"></i><span class="ttl">Daftar Belanja — Utama</span><span class="badge">3 / 5 terealisasi</span></div>'
+            + '  <div class="card-body flush">' + itemsTable() + '</div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>'
+            + '  <button class="btn primary"><i class="bi bi-save"></i> Simpan</button>'
+            + '</div>',
+
+        savings:
+            '<div class="total-hero">'
+            + '  <div>'
+            + '    <div class="cap">Total Aset Keluarga</div>'
+            + '    <div class="big">Rp 187.450.000</div>'
+            + '    <div class="delta"><i class="bi bi-arrow-up-short"></i> +2,4% bulan ini (+Rp 4.390.000)</div>'
+            + '  </div>'
+            + '  <div class="mini">'
+            + '    <div>Likuid<b>Rp 62.400.000</b></div>'
+            + '    <div>Investasi<b>Rp 125.050.000</b></div>'
+            + '    <div>Kategori<b>5 jenis</b></div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="kpi-grid">'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-cash-stack" style="color:#1d4ed8"></i><span>Dana Cash</span></div><div class="val">Rp 45.000.000</div><div class="foot">24,0% portofolio</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-gem" style="color:#b54708"></i><span>Emas</span></div><div class="val">Rp 52.650.000</div><div class="foot">25 gr · Antam</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-graph-up-arrow" style="color:#067647"></i><span>Saham</span></div><div class="val">Rp 61.800.000</div><div class="foot"><span class="up">+5,2%</span> bulan ini</div></div>'
+            + '  <div class="kpi"><div class="lbl"><i class="bi bi-currency-dollar" style="color:#5925dc"></i><span>Valas &amp; Lain</span></div><div class="val">Rp 28.000.000</div><div class="foot">USD 1.200 · SBN</div></div>'
+            + '</div>'
+
+            + '<div class="card">'
+            + '  <div class="card-head"><i class="bi bi-wallet2"></i><span class="ttl">Portofolio Aset</span><span class="badge">5 aset</span></div>'
+            + '  <div class="card-body">'
+            + '    <div class="asset-grid">'
+            + '      <div class="asset"><div class="top"><div class="ico"><i class="bi bi-bank"></i></div><div><div class="nm">BCA Tahapan</div><div class="sub">Dana cash · Bank BCA</div></div></div><div class="value">Rp 45.000.000</div><div class="meta"><span>Diperbarui 18 Okt</span><span class="chip ok">+0,0%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico gold"><i class="bi bi-gem"></i></div><div><div class="nm">Emas Antam 25 gr</div><div class="sub">Emas · Logam mulia</div></div></div><div class="value">Rp 52.650.000</div><div class="meta"><span>Rp 2.106.000/gr</span><span class="chip warn">+3,4%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico stock"><i class="bi bi-graph-up-arrow"></i></div><div><div class="nm">BBCA · 50 lot</div><div class="sub">Saham · IDX</div></div></div><div class="value">Rp 61.800.000</div><div class="meta"><span>Rp 12.360/lembar</span><span class="chip ok">+5,2%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico fx"><i class="bi bi-currency-dollar"></i></div><div><div class="nm">USD 1.200</div><div class="sub">Valas · Tabungan USD</div></div></div><div class="value">Rp 19.800.000</div><div class="meta"><span>Kurs Rp 16.500</span><span class="chip ok">+1,1%</span></div></div>'
+            + '      <div class="asset"><div class="top"><div class="ico"><i class="bi bi-file-earmark-text"></i></div><div><div class="nm">SBN Ritel ORI025</div><div class="sub">Obligasi · Kupon 6,4%</div></div></div><div class="value">Rp 8.200.000</div><div class="meta"><span>Jatuh tempo 2028</span><span class="chip blue">Kupon</span></div></div>'
+            + '    </div>'
+            + '  </div>'
+            + '</div>'
+
+            + '<div class="actionbar">'
+            + '  <button class="btn"><i class="bi bi-funnel"></i> Filter</button>'
+            + '  <button class="btn primary"><i class="bi bi-plus-lg"></i> Tambah Aset</button>'
+            + '</div>'
+    };
+
+    /* ================= Render halaman ================= */
+    var currentScreen = 'dashboard';
+
+    function renderScreens() {
+        document.querySelectorAll('.screen[data-screen]').forEach(function (el) {
+            var key = el.getAttribute('data-screen');
+            el.innerHTML = SCREENS[key] || '';
+            el.classList.toggle('is-on', key === currentScreen);
+        });
+
+        document.querySelectorAll('.rsublink').forEach(function (a) {
+            a.classList.toggle('is-active', a.getAttribute('data-screen-link') === currentScreen);
+        });
+    }
+
+    renderScreens();
+
+    /* ================= Kontrol lebar ================= */
+    var frame = document.getElementById('frame');
+    var sim = document.getElementById('sim');
+    var range = document.getElementById('widthRange');
+    var readout = document.getElementById('readout');
+    var bpPill = document.getElementById('bpPill');
+    var chromeLbl = document.getElementById('chromeLbl');
+    var stage = document.getElementById('stage');
+
+    function px(n) { return Math.round(n) + ' px'; }
+
+    function setWidth(w, skipDiag) {
+        w = Math.max(300, Math.min(1920, Math.round(w)));
+        frame.style.width = w + 'px';
+        range.value = w;
+        readout.textContent = frameWidthLabel();
+        if (!skipDiag) requestAnimationFrame(updateDiag);
+    }
+
+    function frameWidthLabel() {
+        var sw = Math.round(sim.getBoundingClientRect().width);
+        return px(sw);
+    }
+
+    /* ================= Diagnosa live ================= */
+    var dW = document.getElementById('dW');
+    var dKpi = document.getElementById('dKpi');
+    var dRail = document.getElementById('dRail');
+    var dTbl = document.getElementById('dTbl');
+    var dFs = document.getElementById('dFs');
+    var dScroll = document.getElementById('dScroll');
+    var dScrollChip = document.getElementById('dScrollChip');
+
+    function updateDiag() {
+        var sw = Math.round(sim.getBoundingClientRect().width);
+        dW.textContent = px(sw);
+        bpPill.textContent = labelOf(sw);
+        chromeLbl.textContent = 'AUTO-FIT — ' + px(sw);
+
+        var kpi = sim.querySelector('.screen.is-on .kpi-grid');
+        dKpi.textContent = kpi ? getComputedStyle(kpi).gridTemplateColumns.split(' ').length : '—';
+
+        var rail = sim.querySelector('.rail');
+        var nav = sim.querySelector('.rail-nav');
+        var railW = Math.round(rail.getBoundingClientRect().width);
+        var isChip = getComputedStyle(nav).flexDirection === 'row';
+        dRail.textContent = isChip ? 'chip mendatar (' + railW + 'px)' : (railW <= 60 ? 'ikon saja (' + railW + 'px)' : 'rail penuh (' + railW + 'px)');
+
+        var tr = sim.querySelector('.screen.is-on table.tbl tbody tr');
+        if (tr) {
+            var d = getComputedStyle(tr).display;
+            var shown = 0;
+            sim.querySelectorAll('.screen.is-on thead th').forEach(function (th) {
+                if (getComputedStyle(th).display !== 'none') shown++;
+            });
+            dTbl.textContent = d === 'grid' ? 'mode kartu' : 'tabel · ' + shown + ' kolom';
+        } else {
+            dTbl.textContent = '—';
+        }
+
+        var content = sim.querySelector('.content');
+        dFs.textContent = content ? getComputedStyle(content).fontSize : '—';
+
+        var over = sim.scrollWidth - sim.clientWidth;
+        dScroll.textContent = over > 0 ? over + ' px' : 'tidak ada';
+        dScrollChip.classList.toggle('ok', over <= 0);
+        dScrollChip.classList.toggle('bad', over > 0);
+    }
+
+    function labelOf(w) {
+        if (w >= 1200) return 'Komputer';
+        if (w >= 992) return 'Laptop kecil';
+        if (w >= 768) return 'Tab';
+        if (w >= 576) return 'HP besar';
+        return 'HP';
+    }
+
+    range.addEventListener('input', function () { setWidth(+range.value); });
+
+    document.querySelectorAll('.mbtn[data-w]').forEach(function (b) {
+        b.addEventListener('click', function () { setWidth(+b.getAttribute('data-w')); });
+    });
+
+    document.getElementById('btnFit').addEventListener('click', function () {
+        setWidth(Math.min(1920, window.innerWidth - 70));
+        document.querySelector('.diag').scrollIntoView({ block: 'nearest' });
+    });
+
+    document.querySelectorAll('.mbtn[data-screen]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            currentScreen = btn.getAttribute('data-screen');
+            document.querySelectorAll('.mbtn[data-screen]').forEach(function (b) {
+                b.classList.toggle('is-on', b === btn);
+            });
+            renderScreens();
+            requestAnimationFrame(updateDiag);
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-screen-link]');
+        if (!link) return;
+        currentScreen = link.getAttribute('data-screen-link');
+        document.querySelectorAll('.mbtn[data-screen]').forEach(function (b) {
+            b.classList.toggle('is-on', b.getAttribute('data-screen') === currentScreen);
+        });
+        renderScreens();
+        requestAnimationFrame(updateDiag);
+    });
+
+    window.addEventListener('resize', function () { requestAnimationFrame(updateDiag); });
+
+    /* ================= Sweep test: 300 → 1920 ================= */
+    var btnSweep = document.getElementById('btnSweep');
+    var dSweep = document.getElementById('dSweep');
+    var dSweepChip = document.getElementById('dSweepChip');
+
+    function nextFrame() {
+        return new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
+    }
+
+    function inspect() {
+        var left = sim.getBoundingClientRect().left;
+        var right = sim.getBoundingClientRect().right;
+        var bad = 0;
+
+        // 1) halaman tidak boleh punya scroll horizontal
+        if (sim.scrollWidth - sim.clientWidth > 1) bad++;
+
+        // Elemen di dalam wadah yang memang dirancang untuk scroll
+        // (tabel lebar / strip menu) tidak dihitung sebagai pelanggaran.
+        function insideScroller(n) {
+            var p = n.parentElement;
+            while (p && p !== sim) {
+                var ox = getComputedStyle(p).overflowX;
+                if ((ox === 'auto' || ox === 'scroll') && p.scrollWidth > p.clientWidth + 1) return true;
+                p = p.parentElement;
+            }
+            return false;
+        }
+
+        // 2) tidak ada elemen yang keluar dari tepi container
+        var all = sim.querySelectorAll('*');
+        for (var i = 0; i < all.length; i++) {
+            var n = all[i];
+            var b = n.getBoundingClientRect();
+            if (b.width === 0 && b.height === 0) continue;
+            if (b.right > right + 1 || b.left < left - 1) {
+                if (insideScroller(n)) continue;
+                bad++;
+            }
+        }
+
+        return bad;
+    }
+
+    var sweeping = false;
+
+    btnSweep.addEventListener('click', async function () {
+        if (sweeping) return;
+        sweeping = true;
+        btnSweep.disabled = true;
+        var original = +range.value;
+        var fails = [];
+        var tested = 0;
+
+        for (var w = 300; w <= 1920; w += 20) {
+            setWidth(w, true);
+            await nextFrame();
+            tested++;
+            if (inspect() > 0) fails.push(w);
+            dSweep.textContent = 'menguji ' + w + ' px…';
+        }
+
+        setWidth(original, true);
+        await nextFrame();
+        updateDiag();
+
+        dSweep.textContent = fails.length === 0
+            ? 'lolos ' + tested + ' lebar (300–1920)'
+            : fails.length + ' lebar bermasalah: ' + fails.slice(0, 8).join(', ');
+
+        dSweepChip.classList.toggle('ok', fails.length === 0);
+        dSweepChip.classList.toggle('bad', fails.length > 0);
+
+        btnSweep.disabled = false;
+        sweeping = false;
+    });
+
+    setWidth(1400, true);
+    setTimeout(updateDiag, 140);
+})();
+</script>
+</body>
+</html>

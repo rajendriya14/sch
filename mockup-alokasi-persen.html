@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Alokasi Dana Rp ⇄ %</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="file:///d:/Data%20Ivan/AT%20SCH%202/scheduling-system/public/assets/css/style.css">
+<style>
+    body { background: #f1f3f5; padding: 18px; }
+    .mock-note { border-left: 4px solid #0d6efd; background: #e7f1ff; }
+    /* Dua kolom input: % dan Rp, berdampingan */
+    .ffr-alloc-input-pair {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+    .ffr-pct-box { width: 78px; flex: 0 0 78px; }
+    .ffr-rp-box { width: 142px; flex: 0 0 142px; }
+    .ffr-pct-box input,
+    .ffr-rp-box input { text-align: right; }
+    .ffr-arrow { color: #adb5bd; font-size: .8rem; }
+    @media (max-width: 575.98px) {
+        .ffr-alloc-row > .d-flex:first-child { flex-wrap: wrap; }
+        .ffr-alloc-input-pair { width: 100%; margin-top: 6px; }
+        .ffr-pct-box { flex: 1 1 0; width: auto; }
+        .ffr-rp-box { flex: 2 1 0; width: auto; }
+    }
+</style>
+</head>
+<body>
+<div class="container-fluid" style="max-width: 1100px;">
+
+    <div class="alert mock-note mb-3">
+        <strong><i class="bi bi-tools"></i> Mockup pratinjau</strong> — ini file terpisah,
+        aplikasi asli belum diubah. Coba ketik angka di kolom <strong>%</strong> atau
+        <strong>Rp</strong> dan lihat kolom lainnya ikut menyesuaikan.
+    </div>
+
+    <!-- Panel simulasi -->
+    <div class="card mb-3">
+        <div class="card-header bg-dark text-white">
+            <i class="bi bi-sliders"></i> Panel simulasi (khusus mockup)
+        </div>
+        <div class="card-body d-flex flex-wrap gap-2 align-items-end">
+            <div>
+                <label class="form-label small mb-1" for="simIncome">Total pemasukan</label>
+                <div class="input-group input-group-sm" style="width: 190px;">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" class="form-control ffr-amount text-end" id="simIncome" value="10.000.000">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNaik">
+                <i class="bi bi-arrow-up-right"></i> Pemasukan naik jadi 12.000.000
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnReset">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset 60,9 / 17,15 / 21
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="btnLebih">
+                <i class="bi bi-exclamation-triangle"></i> Buat total 105% (uji peringatan)
+            </button>
+        </div>
+    </div>
+
+    <!-- Banner hitung ulang -->
+    <div class="alert alert-warning d-none align-items-center justify-content-between flex-wrap gap-2"
+         id="recalcBanner">
+        <div>
+            <i class="bi bi-arrow-repeat"></i>
+            <strong>Pemasukan berubah</strong>
+            <span id="recalcText" class="ms-1"></span>
+            Alokasi tersimpan dibuat dari persen — mau dihitung ulang?
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-warning" id="btnRecalc">
+                <i class="bi bi-calculator"></i> Hitung Ulang
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnBiarkan">
+                Biarkan (kunci nominal)
+            </button>
+        </div>
+    </div>
+
+    <!-- Kartu alokasi -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <i class="bi bi-wallet2"></i> Alokasi Dana per Kelompok
+        </div>
+        <div class="card-body">
+            <div class="ffr-alloc-list" id="allocList"><!-- baris diisi JS --></div>
+
+            <div class="border-top pt-3 mt-1">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total pemasukan</span>
+                    <strong id="totalIncome">Rp 10.000.000</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total dialokasikan</span>
+                    <strong id="totalAlloc">Rp 0</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total porsi pemasukan</span>
+                    <strong id="totalPct">0%</strong>
+                </div>
+                <div class="d-flex justify-content-between fs-5">
+                    <span>Belum dialokasikan</span>
+                    <strong id="unallocated">Rp 0</strong>
+                </div>
+                <div class="small text-end mt-1" id="unallocPct"></div>
+                <div class="progress ffr-progress mt-2">
+                    <div class="progress-bar bg-dark" id="unallocBar" style="width: 0%"></div>
+                </div>
+                <div class="alert alert-danger py-2 small mt-2 mb-0 d-none" id="overWarn">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Total persen melebihi 100%. Masih boleh disimpan, tapi dana yang dialokasikan
+                    lebih besar dari pemasukan.
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" id="btnSave">
+                <i class="bi bi-save"></i> Simpan Rencana
+            </button>
+            <span class="small align-self-center text-muted" id="saveInfo"></span>
+        </div>
+    </div>
+
+    <p class="text-muted small mt-3 mb-0">
+        Catatan: teks <em>“100% dari dana”</em> di tiap baris sengaja dibiarkan seperti sekarang
+        (itu rasio rencana item vs dana kelompok, bukan porsi pemasukan).
+    </p>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var buckets = [
+        { id: 1, name: 'Utama',    type: 'Wajib',    planItems: 6090000, itemCount: 10 },
+        { id: 2, name: 'Tambahan', type: 'Opsional', planItems: 1715000, itemCount: 9 },
+        { id: 3, name: 'Tabungan', type: 'Simpanan', planItems: 2100000, itemCount: 1 }
+    ];
+
+    // state awal: tersimpan sebagai persen, sama seperti data asli pengguna
+    buckets[0].pct = 60.9;  buckets[0].amount = 6090000; buckets[0].source = 'percent';
+    buckets[1].pct = 17.15; buckets[1].amount = 1715000; buckets[1].source = 'percent';
+    buckets[2].pct = 21;    buckets[2].amount = 2100000; buckets[2].source = 'percent';
+
+    var income = 10000000;
+    var savedIncome = 10000000;   // pemasukan saat alokasi terakhir disimpan
+
+    var list = document.getElementById('allocList');
+    var incomeInput = document.getElementById('simIncome');
+    var banner = document.getElementById('recalcBanner');
+
+    /* ---------- format helpers ---------- */
+    function thousands(digits) {
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    function fmtRp(n) {
+        var v = Math.round(Number(n) || 0);
+        var s = String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return (v < 0 ? '−' : '') + s;
+    }
+    function rupiah(n) { return 'Rp ' + fmtRp(n); }
+    function parseRp(str) {
+        var d = String(str == null ? '' : str).replace(/[^0-9]/g, '');
+        return d === '' ? 0 : parseInt(d, 10);
+    }
+    function fmtPct(n) {
+        var v = Number(n) || 0;
+        var s = v.toFixed(2).replace(/\.?0+$/, '');
+        return s.replace('.', ',');
+    }
+    function parsePct(str) {
+        var t = String(str == null ? '' : str).replace(/[^0-9,.]/g, '').replace(',', '.');
+        var v = parseFloat(t);
+        return isNaN(v) ? 0 : v;
+    }
+    function pctOf(amount) { return income > 0 ? (amount / income) * 100 : 0; }
+    function amountOf(pct) { return Math.round((pct / 100) * income); }
+
+    /* ---------- render ---------- */
+    function rowHtml(b) {
+        var alloc = b.amount;
+        var ratio = alloc > 0 ? Math.min(100, (b.planItems / alloc) * 100) : (b.planItems > 0 ? 100 : 0);
+        var barClass = ratio >= 100 ? 'bg-success' : (ratio >= 90 ? 'bg-warning' : 'bg-secondary');
+        return '' +
+            '<div class="ffr-alloc-row" data-id="' + b.id + '">' +
+              '<div class="d-flex justify-content-between align-items-start gap-2">' +
+                '<div>' +
+                  '<strong>' + b.name + '</strong>' +
+                  '<span class="badge bg-light text-dark border ms-1">' + b.type + '</span>' +
+                  '<span class="badge bg-success ms-1"><i class="bi bi-check-circle"></i> Aman</span>' +
+                '</div>' +
+                '<div class="ffr-alloc-input-pair">' +
+                  '<div class="input-group input-group-sm ffr-pct-box">' +
+                    '<input type="text" inputmode="decimal" class="form-control text-end ffr-pct" ' +
+                           'data-id="' + b.id + '" value="' + fmtPct(b.pct) + '" aria-label="Persen">' +
+                    '<span class="input-group-text">%</span>' +
+                  '</div>' +
+                  '<i class="bi bi-arrow-left-right ffr-arrow"></i>' +
+                  '<div class="input-group input-group-sm ffr-rp-box">' +
+                    '<span class="input-group-text">Rp</span>' +
+                    '<input type="text" inputmode="numeric" class="form-control text-end ffr-rp" ' +
+                           'data-id="' + b.id + '" value="' + fmtRp(b.amount) + '" aria-label="Rupiah">' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="progress ffr-progress mt-1">' +
+                '<div class="progress-bar ' + barClass + '" style="width: ' + ratio + '%"></div>' +
+              '</div>' +
+              '<div class="d-flex justify-content-between small text-muted">' +
+                '<span>Rencana item: ' + rupiah(b.planItems) + ' (' + b.itemCount + ' item)</span>' +
+                '<span>' + fmtPct(ratio) + '% dari dana</span>' +
+              '</div>' +
+            '</div>';
+    }
+
+    function render() {
+        list.innerHTML = buckets.map(rowHtml).join('');
+        updateTotals();
+    }
+
+    function updateTotals() {
+        var totalAlloc = 0, totalPct = 0;
+        buckets.forEach(function (b) { totalAlloc += b.amount; totalPct += b.pct; });
+
+        var sisa = income - totalAlloc;
+        var sisaPct = income > 0 ? (sisa / income) * 100 : 0;
+
+        document.getElementById('totalIncome').textContent = rupiah(income);
+        document.getElementById('totalAlloc').textContent = rupiah(totalAlloc);
+
+        var tp = document.getElementById('totalPct');
+        tp.textContent = fmtPct(totalPct) + '%';
+        tp.className = totalPct > 100 ? 'text-danger' : '';
+
+        var un = document.getElementById('unallocated');
+        un.textContent = (sisa < 0 ? '−' : '') + rupiah(Math.abs(sisa));
+        un.className = sisa < 0 ? 'text-danger' : 'text-success';
+
+        var up = document.getElementById('unallocPct');
+        up.textContent = '= ' + (sisa < 0 ? '−' : '') + fmtPct(Math.abs(sisaPct)) + '% dari pemasukan';
+        up.className = 'small text-end mt-1 ' + (sisa < 0 ? 'text-danger' : 'text-muted');
+
+        document.getElementById('unallocBar').style.width = Math.min(100, Math.abs(sisaPct)) + '%';
+        document.getElementById('overWarn').classList.toggle('d-none', totalPct <= 100);
+    }
+
+    /* ---------- input dua arah ---------- */
+    list.addEventListener('input', function (e) {
+        var el = e.target;
+        var id = Number(el.dataset.id);
+        var b = buckets.filter(function (x) { return x.id === id; })[0];
+        if (!b) return;
+
+        if (el.classList.contains('ffr-pct')) {
+            // persen -> rupiah
+            b.pct = parsePct(el.value);
+            b.amount = amountOf(b.pct);
+            b.source = 'percent';
+            var rp = list.querySelector('.ffr-rp[data-id="' + id + '"]');
+            if (rp) rp.value = fmtRp(b.amount);
+            updateTotals();
+        } else if (el.classList.contains('ffr-rp')) {
+            // rupiah -> persen (format ribuan langsung, kursor dijaga)
+            var pos = el.selectionStart;
+            var before = el.value.length;
+            b.amount = parseRp(el.value);
+            var formatted = fmtRp(b.amount);
+            if (el.value !== formatted) {
+                el.value = formatted;
+                var diff = formatted.length - before;
+                if (pos !== null) el.setSelectionRange(pos + diff, pos + diff);
+            }
+            b.pct = pctOf(b.amount);
+            b.source = 'rp';
+            var pc = list.querySelector('.ffr-pct[data-id="' + id + '"]');
+            if (pc) pc.value = fmtPct(b.pct);
+            updateTotals();
+        }
+    });
+
+    // rapikan tampilan saat fokus keluar
+    list.addEventListener('blur', function (e) {
+        var el = e.target;
+        var id = Number(el.dataset.id);
+        var b = buckets.filter(function (x) { return x.id === id; })[0];
+        if (!b) return;
+        if (el.classList.contains('ffr-rp')) {
+            el.value = fmtRp(b.amount);
+        } else if (el.classList.contains('ffr-pct')) {
+            el.value = fmtPct(b.pct);
+        }
+    }, true);
+
+    /* ---------- panel simulasi ---------- */
+    incomeInput.addEventListener('input', function () {
+        income = parseRp(this.value);
+        // setiap baris: nominal dihitung ulang kalau sumbernya persen
+        buckets.forEach(function (b) {
+            if (b.source === 'percent') b.amount = amountOf(b.pct);
+            else b.pct = pctOf(b.amount);
+        });
+        render();
+        maybeShowBanner();
+    });
+
+    incomeInput.addEventListener('blur', function () {
+        this.value = fmtRp(income);
+    });
+
+    document.getElementById('btnNaik').addEventListener('click', function () {
+        income = 12000000;
+        incomeInput.value = fmtRp(income);
+        buckets.forEach(function (b) {
+            if (b.source === 'percent') b.amount = amountOf(b.pct);
+        });
+        render();
+        maybeShowBanner();
+    });
+
+    document.getElementById('btnReset').addEventListener('click', function () {
+        income = 10000000;
+        incomeInput.value = fmtRp(income);
+        var preset = [{ p: 60.9 }, { p: 17.15 }, { p: 21 }];
+        buckets.forEach(function (b, i) {
+            b.pct = preset[i].p;
+            b.amount = amountOf(b.pct);
+            b.source = 'percent';
+        });
+        savedIncome = income;
+        banner.classList.add('d-none');
+        banner.classList.remove('d-flex');
+        render();
+    });
+
+    document.getElementById('btnLebih').addEventListener('click', function () {
+        var extra = [{ p: 62 }, { p: 22 }, { p: 21 }];   // total 105%
+        buckets.forEach(function (b, i) {
+            b.pct = extra[i].p;
+            b.amount = amountOf(b.pct);
+            b.source = 'percent';
+        });
+        render();
+    });
+
+    /* ---------- banner hitung ulang ---------- */
+    function maybeShowBanner() {
+        var perlu = buckets.some(function (b) {
+            return b.source === 'percent' && Math.abs(amountOf(b.pct) - b.amount) >= 1;
+        }) || (income !== savedIncome && buckets.some(function (b) { return b.source === 'percent'; }));
+
+        if (!perlu) {
+            banner.classList.add('d-none');
+            banner.classList.remove('d-flex');
+            return;
+        }
+        document.getElementById('recalcText').textContent =
+            '(Rp ' + fmtRp(savedIncome) + ' → Rp ' + fmtRp(income) + ').';
+        banner.classList.remove('d-none');
+        banner.classList.add('d-flex');
+    }
+
+    document.getElementById('btnRecalc').addEventListener('click', function () {
+        buckets.forEach(function (b) {
+            if (b.source === 'percent' || Math.abs(amountOf(b.pct) - b.amount) >= 1) {
+                b.amount = amountOf(b.pct);
+                b.source = 'percent';
+            }
+        });
+        savedIncome = income;
+        banner.classList.add('d-none');
+        banner.classList.remove('d-flex');
+        render();
+    });
+
+    document.getElementById('btnBiarkan').addEventListener('click', function () {
+        buckets.forEach(function (b) { b.source = 'rp'; b.pct = pctOf(b.amount); });
+        savedIncome = income;
+        banner.classList.add('d-none');
+        banner.classList.remove('d-flex');
+        render();
+    });
+
+    /* ---------- simpan (mockup) ---------- */
+    document.getElementById('btnSave').addEventListener('click', function () {
+        var totalPct = buckets.reduce(function (a, b) { return a + b.pct; }, 0);
+        var info = document.getElementById('saveInfo');
+        info.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Tersimpan (mockup): ' +
+            buckets.map(function (b) {
+                return b.name + ' ' + fmtRp(b.amount) + ' (' + fmtPct(b.pct) + '%)';
+            }).join(' · ') +
+            (totalPct > 100 ? ' — total ' + fmtPct(totalPct) + '% (peringatan, tetap disimpan)' : '') +
+            '</span>';
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>
