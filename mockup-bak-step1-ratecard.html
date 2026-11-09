@@ -5305,34 +5305,21 @@
         window.projectSlaState = projectSlaState;
 
         function syncProjectIncentives(jobcode, fileKey = null) {
-            if (!jobcode) return;
+            if (!jobcode && !currentProjectData) return;
             const fullKey = fileKey || jobcode;
             
             if (incentiveState.currentKey !== fullKey) {
                 incentiveState.currentKey = fullKey;
-                incentiveState.currentJobcode = jobcode;
-                if (PROJECT_INCENTIVES_STORE[fullKey]) {
+                incentiveState.currentJobcode = jobcode || currentProjectData?.jobcode;
+
+                // Hanya load demo incentives jika ID adalah project demo bawaan (id: 5, 52, 6)
+                const isDemoProject = currentProjectData && [5, 52, 6].includes(currentProjectData.id);
+                if (isDemoProject && PROJECT_INCENTIVES_STORE[fullKey]) {
                     incentiveState.items = JSON.parse(JSON.stringify(PROJECT_INCENTIVES_STORE[fullKey]));
-                } else if (PROJECT_INCENTIVES_STORE[jobcode]) {
+                } else if (isDemoProject && PROJECT_INCENTIVES_STORE[jobcode]) {
                     incentiveState.items = JSON.parse(JSON.stringify(PROJECT_INCENTIVES_STORE[jobcode]));
-                } else if (wfmState.employees && wfmState.employees.length > 0) {
-                    const defaults = [810000, 50000, 810000, 835000, 860000, 885000, 910000, 935000];
-                    incentiveState.items = wfmState.employees.slice(0, 8).map((emp, i) => {
-                        const nikVal = String(emp.nik || emp.nip || "");
-                        return {
-                            nik: nikVal,
-                            nip: nikVal,
-                            name: emp.name || "",
-                            posisi: currentProjectData?.project || "Project",
-                            channel: emp.jobTitle || emp.position || "Staff Tier 1",
-                            position: emp.jobTitle || emp.position || "Staff Tier 1",
-                            remark: "Incentive PA Payroll September",
-                            kpi: "Incentive PA Payroll September",
-                            amount: defaults[i % defaults.length]
-                        };
-                    });
-                    PROJECT_INCENTIVES_STORE[fullKey] = JSON.parse(JSON.stringify(incentiveState.items));
                 } else {
+                    // Proyek baru / non-demo mulai dari data kosong (blank)
                     incentiveState.items = [];
                 }
             }
@@ -5353,20 +5340,21 @@
         }
 
         function syncProjectSla(jobcode, fileKey = null) {
-            if (!jobcode) return;
+            if (!jobcode && !currentProjectData) return;
             const fullKey = fileKey || jobcode;
             if (projectSlaState.currentKey !== fullKey) {
                 projectSlaState.currentKey = fullKey;
-                projectSlaState.currentJobcode = jobcode;
-                if (PROJECT_SLA_STORE[fullKey]) {
+                projectSlaState.currentJobcode = jobcode || currentProjectData?.jobcode;
+
+                // Hanya muat SLA demo jika project adalah demo bawaan
+                const isDemoProject = currentProjectData && [5, 52, 6, 1, 2, 3].includes(currentProjectData.id);
+                if (isDemoProject && PROJECT_SLA_STORE[fullKey]) {
                     projectSlaState.items = JSON.parse(JSON.stringify(PROJECT_SLA_STORE[fullKey]));
-                } else if (PROJECT_SLA_STORE[jobcode]) {
+                } else if (isDemoProject && PROJECT_SLA_STORE[jobcode]) {
                     projectSlaState.items = JSON.parse(JSON.stringify(PROJECT_SLA_STORE[jobcode]));
                 } else {
-                    projectSlaState.items = [
-                        { id: "SLA-01", kpi: "Service Level (SL 20s)", clientTarget: ">= 90.00%", actual: "94.50%", type: "incentive", amount: 5000000, remark: "Pencapaian performa di atas target klien" },
-                        { id: "SLA-02", kpi: "Abandonment Rate", clientTarget: "<= 3.00%", actual: "4.20%", type: "penalty", amount: 2000000, remark: "Capaian performa di bawah target klien" }
-                    ];
+                    // Proyek baru mulai dari data kosong (0 target, 0 penalty)
+                    projectSlaState.items = [];
                 }
             }
             syncIncentivesToManpower();
@@ -5405,6 +5393,7 @@
 
             // Grand Total Penagihan = Direct Labor + Staff Incentive + Project Incentive - Project Penalty
             let base = 0;
+            const hasManpowerData = (wfmState.positions && wfmState.positions.length > 0) || (wfmState.employees && wfmState.employees.length > 0);
             if (wfmState.mode === "labour_supply") {
                 base = (wfmState.totalFixIncome || 0) + (wfmState.totalBpjs || 0);
             } else {
@@ -5412,12 +5401,26 @@
                     base += (p.subtotal || 0);
                 });
             }
-            wfmState.grandTotal = base + totalStaffIncentive + totalProjectIncentive - totalProjectPenalty;
+
+            // Jika belum ada posisi atau karyawan (project baru kosong), grand total Manpower tetap Rp 0
+            if (!hasManpowerData && totalStaffIncentive === 0 && totalProjectIncentive === 0 && totalProjectPenalty === 0) {
+                wfmState.grandTotal = 0;
+            } else {
+                wfmState.grandTotal = base + totalStaffIncentive + totalProjectIncentive - totalProjectPenalty;
+            }
 
             // Sinkronkan ke Hourly State jika aktif
             if (typeof hourlyState !== 'undefined') {
                 hourlyState.totalIncentive = totalStaffIncentive;
                 hourlyState.projectIncentive = totalProjectIncentive;
+                hourlyState.projectPenalty = totalProjectPenalty;
+                if (!hourlyState.employees || hourlyState.employees.length === 0) {
+                    hourlyState.grandTotal = 0;
+                } else {
+                    hourlyState.grandTotal = (hourlyState.totalHourlyRevenue || 0) + totalStaffIncentive + totalProjectIncentive - totalProjectPenalty;
+                }
+            }
+        }
                 hourlyState.projectPenalty = totalProjectPenalty;
                 hourlyState.grandTotal = (hourlyState.totalHourlyRevenue || 0) + totalStaffIncentive + totalProjectIncentive - totalProjectPenalty;
             }
@@ -5946,24 +5949,18 @@
             // Fallback template jika belum ada di store
             if (!matched) {
                 const projStr = typeof proj === 'string' ? proj : '';
-                const projLow = projStr.toLowerCase();
                 let defaultTypes = ['Manpower'];
-                if (projLow.includes('tiket') || projLow.includes('039301')) {
-                    defaultTypes = ['Manpower'];
-                } else if (projLow.includes('tokopedia') || projLow.includes('044120')) {
-                    defaultTypes = ['Interaction', 'Daily Worker'];
-                } else if (projLow.includes('panasonic') || projLow.includes('022941')) {
-                    defaultTypes = ['Manpower'];
-                } else if (projLow.includes('daikin') || projLow.includes('033106')) {
-                    defaultTypes = ['Manpower', 'Hourly'];
-                }
                 matched = {
-                    jobcode: projStr.includes('·') ? projStr.split('·')[0].trim() : (projLow.includes('tiket') ? '039301' : '033106'),
-                    project: projStr.includes('·') ? projStr.split('·')[1].trim() : (projStr || 'Tiket.com'),
-                    fileName: 'Acuan_Standard.xlsx',
+                    id: Date.now(),
+                    jobcode: projStr.includes('·') ? projStr.split('·')[0].trim() : (projStr || 'NEW-PROJ'),
+                    project: projStr.includes('·') ? projStr.split('·')[1].trim() : (projStr || 'Project Baru'),
+                    fileName: '',
                     billingTypes: defaultTypes,
+                    headcountScope: 'Project',
                     currency: 'IDR',
-                    rateAmount: 'Rp 637.380.142'
+                    rateAmount: 'Rp 0',
+                    positions: [],
+                    employees: []
                 };
             }
             currentProjectData = matched;
@@ -5997,12 +5994,46 @@
                     wfmState.positions.forEach(p => grandTot += (p.subtotal || ((p.price || 0) * (p.sumRate || p.head || 1))));
                     wfmState.grandTotal = grandTot;
                 } else {
+                    // Proyek baru wajib 100% BLANK / KOSONG
                     wfmState.positions = [];
                     wfmState.employees = [];
                     wfmState.totalPeople = 0;
                     wfmState.billableCount = 0;
                     wfmState.excludedCount = 0;
                     wfmState.grandTotal = 0;
+                    wfmState.totalBasicSalary = 0;
+                    wfmState.totalAllowances = 0;
+                    wfmState.totalFixIncome = 0;
+                    wfmState.totalBpjs = 0;
+                    wfmState.totalLabourCost = 0;
+                    wfmState.totalIncentive = 0;
+                    wfmState.projectIncentive = 0;
+                    wfmState.projectPenalty = 0;
+                    wfmState.netProjectAdjustment = 0;
+                    wfmState.incentivesByNip = {};
+                    wfmState.fileName = matched.fileName || '';
+                }
+            }
+
+            // Reset hourlyState untuk proyek baru (hanya muat demo jika ID demo bawaan)
+            const isHourlyDemoProject = [1, 5, 52].includes(matched.id);
+            if (!isHourlyDemoProject || !wfmState.employees || wfmState.employees.length === 0) {
+                hourlyState.employees = [];
+                hourlyState.roles = [];
+                hourlyState.totalPeople = 0;
+                hourlyState.totalTargetHours = 0;
+                hourlyState.totalActualHours = 0;
+                hourlyState.totalFte = 0;
+                hourlyState.totalHourlyRevenue = 0;
+                hourlyState.totalIncentive = 0;
+                hourlyState.grandTotal = 0;
+            }
+
+            // Reset Biaya Tambahan (Step 2) jika bukan proyek demo bawaan
+            const isDemoInitialProject = [5, 52, 6, 1, 2, 3].includes(matched.id);
+            if (!isDemoInitialProject) {
+                if (typeof additionalCostsState !== 'undefined' && additionalCostsState) {
+                    additionalCostsState.items = [];
                 }
             }
 
@@ -7018,13 +7049,19 @@
             // Posisi hanya berasal dari rate card proyek aktif atau berkas yang diunggah
             if (wfmState.positions && wfmState.positions.length > 0) return;
             if (currentProjectData) {
-                if (currentProjectData.jobcode === '039301') {
+                if (currentProjectData.id === 5) {
+                    // Demo Bawaan: Tiket Model Regular
                     loadTiketModelWfmData();
-                } else if (currentProjectData.jobcode === '022988') {
+                } else if (currentProjectData.id === 6) {
+                    // Demo Bawaan: Akulaku AFI Labour Supply
                     loadLabourSupplyModelData();
                 } else if (currentProjectData.positions && currentProjectData.positions.length > 0) {
                     wfmState.positions = JSON.parse(JSON.stringify(currentProjectData.positions));
                     wfmState.employees = currentProjectData.employees ? JSON.parse(JSON.stringify(currentProjectData.employees)) : [];
+                } else {
+                    // Proyek baru wajib blank
+                    wfmState.positions = [];
+                    wfmState.employees = [];
                 }
             }
         }
@@ -7546,31 +7583,31 @@
                                                 <i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN: LABOUR SUPPLY
                                             </td>
                                             <td class="text-center text-white font-monospace" id="wfmTotalPeopleFoot">
-                                                ${wfmState.totalPeople} HC
+                                                ${wfmState.totalPeople || 0} HC
                                             </td>
                                             <td class="text-end text-white-50 font-monospace">
-                                                Rp ${Math.round(wfmState.totalBasicSalary || 55366095).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalBasicSalary || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-white-50 font-monospace">
-                                                Rp ${Math.round(wfmState.totalAllowances || 6500000).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalAllowances || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-primary-subtle font-monospace fw-bold" id="wfmTotalSumRateFoot">
-                                                Rp ${Math.round(wfmState.totalFixIncome || 61866095).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalFixIncome || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-success-subtle font-monospace fw-bold">
-                                                Rp ${Math.round(wfmState.totalBpjs || 7619852).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalBpjs || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-white-50 font-monospace" id="wfmTotalLabourCostFoot">
-                                                Rp ${Math.round(wfmState.totalLabourCost || 69485947).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalLabourCost || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-warning font-monospace fs-6 py-3 fw-bold" id="wfmTotalIncentiveFoot" style="background: #78350F; border-left: 1.5px solid rgba(255,255,255,0.2); border-right: 1.5px solid rgba(255,255,255,0.2);">
-                                                Rp ${Math.round(wfmState.totalIncentive || 6095000).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.totalIncentive || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-warning font-monospace fs-6 py-3 fw-bold" id="wfmGrandTotalAmountFoot" style="background: #451A03;">
-                                                Rp ${Math.round(wfmState.grandTotal || 75580947).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.grandTotal || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-white-50 font-monospace small" id="wfmAvgPerHcFoot">
-                                                Rp ${Math.round((wfmState.grandTotal || 75580947) / (wfmState.totalPeople || 1)).toLocaleString('id-ID')}
+                                                Rp ${wfmState.totalPeople > 0 ? Math.round((wfmState.grandTotal || 0) / wfmState.totalPeople).toLocaleString('id-ID') : '0'}
                                             </td>
                                             <td colspan="2" class="text-white-50 small font-monospace">
                                                 Fix Income + BPJS + Insentif
@@ -7582,7 +7619,7 @@
                                                 <i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL: MANPOWER
                                             </td>
                                             <td class="text-center text-white font-monospace" id="wfmTotalPeopleFoot">
-                                                ${wfmState.billableCount} HC
+                                                ${wfmState.billableCount || 0} HC
                                             </td>
                                             <td class="text-center text-warning font-monospace" id="wfmTotalSumRateFoot">
                                                 ${totalSumRate.toFixed(2)} HC
@@ -7595,7 +7632,7 @@
                                                 Rp ${Math.round(wfmState.totalIncentive || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td class="text-end text-warning font-monospace fs-6 py-3 fw-bold" id="wfmGrandTotalAmountFoot" style="background: #451A03;">
-                                                Rp ${Math.round(wfmState.grandTotal || grandTotal).toLocaleString('id-ID')}
+                                                Rp ${Math.round(wfmState.grandTotal || grandTotal || 0).toLocaleString('id-ID')}
                                             </td>
                                             <td colspan="2" class="text-white-50 small font-monospace">
                                                 Manpower + Insentif
@@ -7732,11 +7769,16 @@
             if (!wfmState.positions || wfmState.positions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="${isLS ? 10 : 7}" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary opacity-50"></i>
-                            <strong class="text-dark">Tidak ada posisi yang terdaftar pada Rate Card atau Berkas proyek ini.</strong>
-                            <div class="small mt-1 text-muted">
-                                Posisi hanya ditampilkan jika ada di Master Rate Card proyek ini atau terdapat pada berkas Excel yang diunggah.
+                        <td colspan="${isLS ? 12 : 9}" class="text-center text-muted py-5">
+                            <div class="py-3">
+                                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                                <strong class="text-dark fs-6">Data Penagihan Posisi Masih Kosong (Blank)</strong>
+                                <div class="small mt-1 text-muted" style="max-width: 520px; margin: 0 auto;">
+                                    Proyek baru ini belum memiliki data personil atau posisi terdaftar. Silakan unggah berkas Excel acuan absensi / payroll pada Section 1A atau tambahkan posisi manual.
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 mt-3 shadow-xs" onclick="addNewWfmPositionPrompt()">
+                                    <i class="bi bi-plus-lg me-1"></i> Tambah Posisi Manual
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -7744,9 +7786,17 @@
                 const footPeople = document.getElementById('wfmTotalPeopleFoot');
                 const footSumRate = document.getElementById('wfmTotalSumRateFoot');
                 const footTotal = document.getElementById('wfmGrandTotalAmountFoot');
+                const footSubtotal = document.getElementById('wfmSubtotalManpowerFoot');
+                const footInc = document.getElementById('wfmTotalIncentiveFoot');
+                const footAvg = document.getElementById('wfmAvgPerHcFoot');
+                const footLabourCost = document.getElementById('wfmTotalLabourCostFoot');
                 if (footPeople) footPeople.textContent = '0 HC';
-                if (footSumRate) footSumRate.textContent = 'Rp 0';
+                if (footSumRate) footSumRate.textContent = isLS ? 'Rp 0' : '0.00 HC';
+                if (footSubtotal) footSubtotal.textContent = 'Rp 0';
+                if (footInc) footInc.textContent = 'Rp 0';
                 if (footTotal) footTotal.textContent = 'Rp 0';
+                if (footAvg) footAvg.textContent = 'Rp 0';
+                if (footLabourCost) footLabourCost.textContent = 'Rp 0';
                 return;
             }
 
@@ -8707,10 +8757,10 @@
         };
 
         function getStep1BillingTotal() {
-            if (wfmState && typeof wfmState.grandTotal === 'number' && wfmState.grandTotal > 0) {
+            if (wfmState && typeof wfmState.grandTotal === 'number') {
                 return wfmState.grandTotal;
             }
-            return 69485947;
+            return 0;
         }
 
         function getStep1IncentiveTotal() {
@@ -11059,6 +11109,15 @@
         }
 
         function initHourlyData(forceReset = false) {
+            // Proyek non-demo tanpa absensi/timesheet mulai dari blank
+            const isHourlyDemoProject = currentProjectData && [1, 5, 52].includes(currentProjectData.id);
+            if (!isHourlyDemoProject && (!wfmState.employees || wfmState.employees.length === 0)) {
+                hourlyState.employees = [];
+                hourlyState.roles = [];
+                recalculateHourlyTotals();
+                return;
+            }
+
             if (hourlyState.employees.length > 0 && !forceReset) {
                 recalculateHourlyTotals();
                 return;
@@ -11083,7 +11142,7 @@
             const fteBase = hourlyState.monthlyFteHours || 174;
             const wDays = hourlyState.workingDays || 22;
 
-            if (baseEmployees.length > 0) {
+            if (baseEmployees.length > 0 && isHourlyDemoProject) {
                 hourlyState.employees = baseEmployees.map((emp, idx) => {
                     const pos = emp.jobTitle || emp.position || 'Agent';
                     const workingDays = emp.workingDays || wDays;
@@ -11820,6 +11879,51 @@
 
             validationModuleState.lastSyncedProject = currentProjName;
             validationModuleState.isAligned = false;
+
+            const isPredefinedDemo = currentProjectData && [5, 52, 6, 1, 2, 3].includes(currentProjectData.id);
+            if (!isPredefinedDemo) {
+                // Proyek baru / non-demo: jika belum ada posisi, ledger validasi kosong (blank)
+                if (!wfmState.positions || wfmState.positions.length === 0) {
+                    validationModuleState.items = [];
+                    return;
+                }
+                const customItems = [];
+                wfmState.positions.forEach((p, idx) => {
+                    const qty = p.sumRate || p.head || 1;
+                    const rate = p.price || 0;
+                    const tot = p.subtotal || (qty * rate);
+                    customItems.push({
+                        id: `pos_custom_${idx + 1}`,
+                        sectionCode: 'manpower',
+                        sectionTitle: '1. Operation Management - Headcount Cost per Role',
+                        prefix: `1${String.fromCharCode(97 + (idx % 26))}.`,
+                        no: idx + 1,
+                        name: `${currentProjName} - ${p.position}`,
+                        category: 'Billing Pokok: Manpower',
+                        forecastQty: qty,
+                        forecastUnit: 'Headcount',
+                        forecastRate: rate,
+                        forecastTotal: tot,
+                        inputQty: qty,
+                        inputUnit: 'Headcount',
+                        inputRate: rate,
+                        inputTotal: tot,
+                        varianceTotal: 0,
+                        variancePercent: "0.0",
+                        status: 'match',
+                        hasDifference: false,
+                        reasonCategory: 'Balanced Reconciliation',
+                        whatIsDifferent: 'Data aligned with rate card input',
+                        explanation: 'Data matches input rate card and headcount',
+                        isReasonSaved: true,
+                        isEditable: true,
+                        isCustom: true,
+                        source: 'Step 1: Input Rate Card'
+                    });
+                });
+                validationModuleState.items = customItems;
+                return;
+            }
 
             const isLabourSupply = (currentProjectData?.headcountScope === 'Labour Supply');
             const addItems = additionalCostsState.items || [];
@@ -13735,6 +13839,9 @@
                     unit: 'Headcount',
                     note: p.notes || 'Monthly Charge'
                 }));
+            } else {
+                bakOutputState.sec1Title = `1. Operation Management - ${projName} Headcount Cost`;
+                bakOutputState.sec1Items = [];
             }
 
             // Tarik biaya tambahan dari Step 2
@@ -13748,6 +13855,9 @@
                     unit: item.unit || 'Unit',
                     note: item.notes || 'Monthly Charge'
                 }));
+            } else {
+                bakOutputState.sec2Title = '2. Additional Operational & Facility Cost';
+                bakOutputState.sec2Items = [];
             }
 
             // Tarik insentif
@@ -13765,6 +13875,9 @@
                         note: 'Monthly Charge'
                     }
                 ];
+            } else {
+                bakOutputState.sec3Title = '3. Performance Incentive';
+                bakOutputState.sec3Items = [];
             }
 
             const container = document.getElementById('step4BakOutputContainer');
@@ -14617,6 +14730,67 @@
             } else if (model === 'Hourly') {
                 renderHourlyProductivityContent(container);
             } else if (model === 'Interaction') {
+                const isDemoTokopedia = (currentProjectData && currentProjectData.id === 3);
+                const interactionTbody = isDemoTokopedia ? `
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-telephone-inbound text-secondary me-2"></i>Inbound Voice Call Support</td>
+                        <td class="text-center font-monospace">45.200 Cases</td>
+                        <td class="text-center font-monospace fw-semibold">45.000 Cases</td>
+                        <td class="text-center text-success fw-semibold">99.56%</td>
+                        <td class="text-end font-monospace text-muted">Rp 5.500</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 247.500.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-chat-dots text-secondary me-2"></i>Live Chat Realtime Handling</td>
+                        <td class="text-center font-monospace">72.800 Cases</td>
+                        <td class="text-center font-monospace fw-semibold">72.500 Cases</td>
+                        <td class="text-center text-success fw-semibold">99.59%</td>
+                        <td class="text-end font-monospace text-muted">Rp 4.200</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 304.500.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-envelope-paper text-secondary me-2"></i>Email Ticket & Social Media Care</td>
+                        <td class="text-center font-monospace">25.100 Cases</td>
+                        <td class="text-center font-monospace fw-semibold">25.000 Cases</td>
+                        <td class="text-center text-success fw-semibold">99.60%</td>
+                        <td class="text-end font-monospace text-muted">Rp 3.500</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 87.500.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                ` : `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <div class="py-3">
+                                <i class="bi bi-chat-dots fs-2 text-success d-block mb-2 opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Data Interaksi / Kasus Masih Kosong (Blank)</h6>
+                                <p class="small text-muted mb-0">Belum ada volume kasus / tiket terdata untuk proyek ini. Silakan input volume atau lampirkan berkas log tiket.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                const interactionTfoot = isDemoTokopedia ? `
+                    <tr>
+                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL INTERACTION</td>
+                        <td class="text-center text-warning font-monospace">142.500 Cases</td>
+                        <td class="text-center text-success font-monospace">Avg 99.58%</td>
+                        <td class="text-end text-muted font-monospace">Rate: Rp 4.500</td>
+                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 639.500.000</td>
+                        <td class="text-center"><span class="badge bg-warning text-dark px-2 py-1">FINAL</span></td>
+                    </tr>
+                ` : `
+                    <tr>
+                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL INTERACTION</td>
+                        <td class="text-center text-warning font-monospace">0 Cases</td>
+                        <td class="text-center text-muted font-monospace">0.00%</td>
+                        <td class="text-end text-muted font-monospace">Rp 0</td>
+                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 0</td>
+                        <td class="text-center"><span class="badge bg-secondary text-white px-2 py-1">BLANK</span></td>
+                    </tr>
+                `;
+
                 container.innerHTML = `
                     <div class="rate-table-card mb-4 fade-in-up">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -14647,43 +14821,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-telephone-inbound text-secondary me-2"></i>Inbound Voice Call Support</td>
-                                        <td class="text-center font-monospace">45.200 Cases</td>
-                                        <td class="text-center font-monospace fw-semibold">45.000 Cases</td>
-                                        <td class="text-center text-success fw-semibold">99.56%</td>
-                                        <td class="text-end font-monospace text-muted">Rp 5.500</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 247.500.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-chat-dots text-secondary me-2"></i>Live Chat Realtime Handling</td>
-                                        <td class="text-center font-monospace">72.800 Cases</td>
-                                        <td class="text-center font-monospace fw-semibold">72.500 Cases</td>
-                                        <td class="text-center text-success fw-semibold">99.59%</td>
-                                        <td class="text-end font-monospace text-muted">Rp 4.200</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 304.500.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-envelope-paper text-secondary me-2"></i>Email Ticket & Social Media Care</td>
-                                        <td class="text-center font-monospace">25.100 Cases</td>
-                                        <td class="text-center font-monospace fw-semibold">25.000 Cases</td>
-                                        <td class="text-center text-success fw-semibold">99.60%</td>
-                                        <td class="text-end font-monospace text-muted">Rp 3.500</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 87.500.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
+                                    ${interactionTbody}
                                 </tbody>
                                 <tfoot style="background: #0F172A; color: #FFFFFF; font-weight: 800;">
-                                    <tr>
-                                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL INTERACTION</td>
-                                        <td class="text-center text-warning font-monospace">142.500 Cases</td>
-                                        <td class="text-center text-success font-monospace">Avg 99.58%</td>
-                                        <td class="text-end text-muted font-monospace">Rate: Rp 4.500</td>
-                                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 639.500.000</td>
-                                        <td class="text-center"><span class="badge bg-warning text-dark px-2 py-1">FINAL</span></td>
-                                    </tr>
+                                    ${interactionTfoot}
                                 </tfoot>
                             </table>
                         </div>
@@ -14691,6 +14832,67 @@
                     </div>
                 `;
             } else if (model === 'Daily Worker') {
+                const isDemoTokopedia = (currentProjectData && currentProjectData.id === 3);
+                const dailyTbody = isDemoTokopedia ? `
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-tag-fill text-warning me-2"></i>Flash Sale Mega Campaign Support</td>
+                        <td class="text-center font-monospace">8 HC</td>
+                        <td class="text-center font-monospace fw-semibold">64 Mandays</td>
+                        <td class="text-center text-muted">8.0 Jam / Hari</td>
+                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 22.400.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-cash-stack text-warning me-2"></i>Payday Peak Campaign Extra Support</td>
+                        <td class="text-center font-monospace">6 HC</td>
+                        <td class="text-center font-monospace fw-semibold">36 Mandays</td>
+                        <td class="text-center text-muted">8.0 Jam / Hari</td>
+                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 12.600.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-3"><i class="bi bi-truck text-warning me-2"></i>Weekend Operations & Surge Handling</td>
+                        <td class="text-center font-monospace">4 HC</td>
+                        <td class="text-center font-monospace fw-semibold">20 Mandays</td>
+                        <td class="text-center text-muted">8.0 Jam / Hari</td>
+                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
+                        <td class="text-end font-monospace fw-semibold text-dark">Rp 7.000.000</td>
+                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
+                    </tr>
+                ` : `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <div class="py-3">
+                                <i class="bi bi-calendar-check fs-2 text-warning d-block mb-2 opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Data Daily Worker Masih Kosong (Blank)</h6>
+                                <p class="small text-muted mb-0">Belum ada alokasi tenaga kerja harian lepas / event peak season untuk proyek ini.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                const dailyTfoot = isDemoTokopedia ? `
+                    <tr>
+                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL DAILY WORKER</td>
+                        <td class="text-center text-warning font-monospace">120 Mandays</td>
+                        <td class="text-center text-muted">Total 18 HC</td>
+                        <td class="text-end text-muted font-monospace">Rp 350.000 / Day</td>
+                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 42.000.000</td>
+                        <td class="text-center"><span class="badge bg-warning text-dark px-2 py-1">FINAL</span></td>
+                    </tr>
+                ` : `
+                    <tr>
+                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL DAILY WORKER</td>
+                        <td class="text-center text-warning font-monospace">0 Mandays</td>
+                        <td class="text-center text-muted">0 HC</td>
+                        <td class="text-end text-muted font-monospace">Rp 0 / Day</td>
+                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 0</td>
+                        <td class="text-center"><span class="badge bg-secondary text-white px-2 py-1">BLANK</span></td>
+                    </tr>
+                `;
+
                 container.innerHTML = `
                     <div class="rate-table-card mb-4 fade-in-up">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -14721,49 +14923,17 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-tag-fill text-warning me-2"></i>Flash Sale Mega Campaign Support</td>
-                                        <td class="text-center font-monospace">8 HC</td>
-                                        <td class="text-center font-monospace fw-semibold">64 Mandays</td>
-                                        <td class="text-center text-muted">8.0 Jam / Hari</td>
-                                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 22.400.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-cash-stack text-warning me-2"></i>Payday Peak Campaign Extra Support</td>
-                                        <td class="text-center font-monospace">6 HC</td>
-                                        <td class="text-center font-monospace fw-semibold">36 Mandays</td>
-                                        <td class="text-center text-muted">8.0 Jam / Hari</td>
-                                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 12.600.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-3"><i class="bi bi-truck text-warning me-2"></i>Weekend Operations & Surge Handling</td>
-                                        <td class="text-center font-monospace">4 HC</td>
-                                        <td class="text-center font-monospace fw-semibold">20 Mandays</td>
-                                        <td class="text-center text-muted">8.0 Jam / Hari</td>
-                                        <td class="text-end font-monospace text-muted">Rp 350.000</td>
-                                        <td class="text-end font-monospace fw-semibold text-dark">Rp 7.000.000</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check2"></i> Verified</span></td>
-                                    </tr>
+                                    ${dailyTbody}
                                 </tbody>
                                 <tfoot style="background: #0F172A; color: #FFFFFF; font-weight: 800;">
-                                    <tr>
-                                        <td colspan="2" class="text-white py-3 ps-3"><i class="bi bi-calculator me-2 text-warning"></i>TOTAL PENAGIHAN MODEL DAILY WORKER</td>
-                                        <td class="text-center text-warning font-monospace">120 Mandays</td>
-                                        <td class="text-center text-muted">Total 18 HC</td>
-                                        <td class="text-end text-muted font-monospace">Rp 350.000 / Day</td>
-                                        <td class="text-end text-warning font-monospace fs-6 py-3">Rp 42.000.000</td>
-                                        <td class="text-center"><span class="badge bg-warning text-dark px-2 py-1">FINAL</span></td>
-                                    </tr>
+                                    ${dailyTfoot}
                                 </tfoot>
                             </table>
                         </div>
                         ${renderBillingCardFooter('Daily Worker')}
                     </div>
                 `;
+            }
             }
         }
 
