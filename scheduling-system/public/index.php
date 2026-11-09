@@ -81,6 +81,7 @@ $respondApiError = static function (int $status, string $message): void {
 // Map page names to controller classes
 $controllerMap = [
     'portal'             => 'Controllers\\PortalController',
+    'notebook'           => 'Controllers\\NotebookController',
     'dashboard'          => 'Controllers\\DashboardController',
     'shifts'             => 'Controllers\\ShiftController',
     'staff'              => 'Controllers\\StaffController',

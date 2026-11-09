@@ -157,6 +157,18 @@ export interface MaxPotentialEarnings {
 
 /* ---------------------------- Absensi (Step 1A–1C) ----------------------- */
 
+/** Pos biaya operasional tambahan (Step 2). */
+export interface OperationalCostItem {
+  id?: number;
+  period: string;
+  category: string;
+  item_name: string;
+  amount: number;
+  notes?: string | null;
+  sort_order?: number;
+  delete?: boolean;
+}
+
 /** Satu orang yang hari kerjanya kurang dari hari kerja standar. */
 export interface AttendanceShortfall {
   name: string;
@@ -361,7 +373,7 @@ export interface BAKStepperProps {
   /** Base URL API BAK. Default: `/api/bak`. */
   apiBaseUrl?: string;
   /** Step pembuka (1-4). Default: 1 (WFM Calculation). */
-  initialStep?: 1 | 2 | 3 | 4;
+  initialStep?: 1 | 2 | 3 | 4 | 5;
   /** Dipanggil setelah semua row berhasil di-approve & lock. */
   onLocked?: (rows: ActualInputRow[]) => void;
   /**
@@ -1254,6 +1266,9 @@ export interface BAKApi {
   addAttendancePositions(period: string, positions: string[]): Promise<{ summary: AttendanceSummary }>;
   syncAttendance(period: string): Promise<AttendanceSyncResult>;
   removeAttendance(period: string): Promise<AttendancePayload>;
+  getOperationalCosts(period: string): Promise<{ period: string; items: OperationalCostItem[]; total: number }>;
+  saveOperationalCosts(period: string, items: OperationalCostItem[]): Promise<{ period: string; items: OperationalCostItem[]; total: number }>;
+  syncOperationalCosts(period: string, items?: OperationalCostItem[]): Promise<AttendanceSyncResult>;
 }
 
 export function createBakApi(baseUrl: string = DEFAULT_API_BASE): BAKApi {
@@ -1390,6 +1405,18 @@ export function createBakApi(baseUrl: string = DEFAULT_API_BASE): BAKApi {
       request<AttendancePayload>('/attendance/remove', {
         method: 'POST',
         body: JSON.stringify({ period }),
+      }),
+    getOperationalCosts: (period) =>
+      request<{ period: string; items: OperationalCostItem[]; total: number }>(/operational-costs?period=),
+    saveOperationalCosts: (period, items) =>
+      request<{ period: string; items: OperationalCostItem[]; total: number }>('/operational-costs', {
+        method: 'POST',
+        body: JSON.stringify({ period, items }),
+      }),
+    syncOperationalCosts: (period, items) =>
+      request<AttendanceSyncResult>('/operational-costs/sync', {
+        method: 'POST',
+        body: JSON.stringify({ period, items }),
       }),
   };
 }
@@ -2161,9 +2188,10 @@ border-bottom:1px solid #f8fafc;font-size:12.5px}
 
 const STEPS = [
   { id: 1 as const, title: 'WFM Calculation', subtitle: 'Absensi, rekap & harga posisi' },
-  { id: 2 as const, title: 'Max Potential Earnings', subtitle: 'Rate card & quantity' },
-  { id: 3 as const, title: 'Accrual Input', subtitle: 'Input nilai accrual' },
-  { id: 4 as const, title: 'Actual Input', subtitle: 'Verifikasi finance' },
+  { id: 2 as const, title: 'Operational Cost', subtitle: 'Biaya operasional & tambahan' },
+  { id: 3 as const, title: 'Max Potential Earnings', subtitle: 'Rate card & quantity' },
+  { id: 4 as const, title: 'Accrual Input', subtitle: 'Input nilai accrual' },
+  { id: 5 as const, title: 'Actual Input', subtitle: 'Verifikasi finance' },
 ];
 
 export default function BAKStepper({
@@ -2204,7 +2232,7 @@ export default function BAKStepper({
   const { toasts, pushToast, dismiss } = useToasts();
 
   /* ------------------------------- State ---------------------------------- */
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(initialStep);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(initialStep);
 
   const [maxPotential, setMaxPotential] = useState<MaxPotentialEarnings | null>(null);
   const [sellerRows, setSellerRows] = useState<SellerInputRow[]>([]);
@@ -2220,7 +2248,7 @@ export default function BAKStepper({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [showSellerErrors, setShowSellerErrors] = useState(false);
   const [showActualErrors, setShowActualErrors] = useState(false);
-  const [pendingNav, setPendingNav] = useState<1 | 2 | 3 | 4 | null>(null);
+  const [pendingNav, setPendingNav] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   /** Step yang isian manualnya sedang dikonfirmasi untuk di-reset. */
   const [resetTarget, setResetTarget] = useState<'seller' | 'actual' | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
@@ -2232,6 +2260,180 @@ export default function BAKStepper({
 
   /* ------------------- Absensi (Step 1A–1C) ------------------- */
   /** Periode absensi (YYYY-MM). Default: bulan berjalan. */
+  /* ------------------- Biaya Operasional (Step 2) ------------------- */
+  const [opCosts, setOpCosts] = useState<OperationalCostItem[]>([]);
+  const [opBusy, setOpBusy] = useState(false);
+  const [opDirty, setOpDirty] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingCategoryNewName, setEditingCategoryNewName] = useState('');
+  const [editingItemKey, setEditingItemKey] = useState<number | string | null>(null);
+  const [editingItemNewName, setEditingItemNewName] = useState('');
+  const [newCatInput, setNewCatInput] = useState('');
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [addingSubCat, setAddingSubCat] = useState<string | null>(null);
+  const [newSubItemName, setNewSubItemName] = useState('');
+  const [newSubItemAmount, setNewSubItemAmount] = useState('');
+
+  const loadOperationalCosts = useCallback(
+    async (period: string) => {
+      setOpBusy(true);
+      try {
+        const res = await api.getOperationalCosts(period);
+        setOpCosts(res.items || []);
+        setOpDirty(false);
+      } catch (err) {
+        pushToast('error', Gagal memuat biaya operasional: );
+      } finally {
+        setOpBusy(false);
+      }
+    },
+    [api, pushToast],
+  );
+
+  const handleSaveOpCosts = useCallback(
+    async (showSuccessToast = true) => {
+      setOpBusy(true);
+      try {
+        const res = await api.saveOperationalCosts(attPeriod, opCosts);
+        setOpCosts(res.items || []);
+        setOpDirty(false);
+        if (showSuccessToast) pushToast('success', 'Biaya operasional berhasil disimpan.');
+        return true;
+      } catch (err) {
+        pushToast('error', Gagal menyimpan biaya operasional: );
+        return false;
+      } finally {
+        setOpBusy(false);
+      }
+    },
+    [api, attPeriod, opCosts, pushToast],
+  );
+
+  const handleSyncOpCosts = useCallback(async () => {
+    setOpBusy(true);
+    try {
+      const syncRes = await api.syncOperationalCosts(attPeriod, opCosts);
+      setOpCosts((prev) => prev.filter((it) => !it.delete));
+      setOpDirty(false);
+      setMaxPotential(normalizeMaxPotential({ items: syncRes.items, categories: syncRes.categories, grand_total: syncRes.grand_total }));
+      setEditingMax(false);
+      setMaxDirty(false);
+      pushToast('success', 'Biaya operasional & absensi berhasil disinkronkan ke Max Potential Earnings.');
+      setStep(3);
+    } catch (err) {
+      pushToast('error', Gagal sinkronisasi: );
+    } finally {
+      setOpBusy(false);
+    }
+  }, [api, attPeriod, opCosts, pushToast]);
+
+  const handleAddCategorySubmit = useCallback(() => {
+    const trimmed = newCatInput.trim();
+    if (!trimmed) return;
+    const exists = opCosts.some((it) => !it.delete && it.category.toLowerCase() === trimmed.toLowerCase());
+    if (exists) {
+      pushToast('error', 'Kategori tersebut sudah ada.');
+      return;
+    }
+    setOpCosts((prev) => [
+      ...prev,
+      {
+        period: attPeriod,
+        category: trimmed,
+        item_name: 'Item Baru',
+        amount: 0,
+        sort_order: prev.length + 1,
+      },
+    ]);
+    setOpDirty(true);
+    setShowAddCat(false);
+    setNewCatInput('');
+  }, [attPeriod, newCatInput, opCosts, pushToast]);
+
+  const handleSaveCategoryRename = useCallback((oldCat: string) => {
+    const trimmed = editingCategoryNewName.trim();
+    if (!trimmed || trimmed === oldCat) {
+      setEditingCategory(null);
+      return;
+    }
+    setOpCosts((prev) =>
+      prev.map((it) => (it.category === oldCat ? { ...it, category: trimmed } : it)),
+    );
+    setOpDirty(true);
+    setEditingCategory(null);
+  }, [editingCategoryNewName]);
+
+  const handleDeleteCategory = useCallback((cat: string) => {
+    if (!window.confirm(Hapus kategori "" dan seluruh sub-itemnya?)) return;
+    setOpCosts((prev) =>
+      prev.map((it) => (it.category === cat ? { ...it, delete: true } : it)),
+    );
+    setOpDirty(true);
+  }, []);
+
+  const handleAddSubItemSubmit = useCallback((category: string) => {
+    const name = newSubItemName.trim();
+    if (!name) {
+      pushToast('error', 'Nama sub list tidak boleh kosong.');
+      return;
+    }
+    const amt = parseFloat(newSubItemAmount.replace(/[^0-9.-]/g, '')) || 0;
+    setOpCosts((prev) => [
+      ...prev,
+      {
+        period: attPeriod,
+        category,
+        item_name: name,
+        amount: amt,
+        sort_order: prev.length + 1,
+      },
+    ]);
+    setOpDirty(true);
+    setAddingSubCat(null);
+    setNewSubItemName('');
+    setNewSubItemAmount('');
+  }, [attPeriod, newSubItemAmount, newSubItemName, pushToast]);
+
+  const handleSaveItemRename = useCallback((item: OperationalCostItem, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === item.item_name) {
+      setEditingItemKey(null);
+      return;
+    }
+    setOpCosts((prev) =>
+      prev.map((it) => (it === item || (it.id && it.id === item.id) ? { ...it, item_name: trimmed } : it)),
+    );
+    setOpDirty(true);
+    setEditingItemKey(null);
+  }, []);
+
+  const handleUpdateItemAmount = useCallback((item: OperationalCostItem, amount: number) => {
+    setOpCosts((prev) =>
+      prev.map((it) => (it === item || (it.id && it.id === item.id) ? { ...it, amount } : it)),
+    );
+    setOpDirty(true);
+  }, []);
+
+  const handleDeleteSubItem = useCallback((item: OperationalCostItem) => {
+    if (!window.confirm(Hapus sub list ""?)) return;
+    setOpCosts((prev) =>
+      prev.map((it) => (it === item || (it.id && it.id === item.id) ? { ...it, delete: true } : it)),
+    );
+    setOpDirty(true);
+  }, []);
+
+  const categoriesList = useMemo(() => {
+    const set = new Set<string>();
+    opCosts.forEach((it) => {
+      if (!it.delete && it.category) set.add(it.category);
+    });
+    return Array.from(set);
+  }, [opCosts]);
+
+  const totalOpCosts = useMemo(() => {
+    return opCosts.reduce((acc, it) => (!it.delete ? acc + (Number(it.amount) || 0) : acc), 0);
+  }, [opCosts]);
+
   const [attPeriod, setAttPeriod] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -2312,7 +2514,7 @@ export default function BAKStepper({
   const isDirty = pendingIds.length > 0;
   /** Perubahan belum tersimpan pada step yang sedang aktif. */
   const stepDirty =
-    step === 4 ? actualDirty : step === 2 ? maxDirty : step === 3 ? isDirty : false;
+    step === 5 ? actualDirty : step === 3 ? maxDirty : step === 4 ? isDirty : step === 2 ? opDirty : false;
 
   /** Breakdown kategori + grand total dihitung dari baris terkini (mengikuti hasil edit). */
   const maxSummary = useMemo(() => {
@@ -2885,13 +3087,19 @@ export default function BAKStepper({
   }, [loadAttendance, attPeriod]);
 
   useEffect(() => {
-    if (step === 3 && !loaded.current.seller && maxPotential) {
+    if (step === 2 && opCosts.length === 0) {
+      void loadOperationalCosts(attPeriod);
+    }
+  }, [step, attPeriod, loadOperationalCosts, opCosts.length]);
+
+  useEffect(() => {
+    if (step === 4 && !loaded.current.seller && maxPotential) {
       void loadSellerInput();
     }
   }, [step, maxPotential, loadSellerInput]);
 
   useEffect(() => {
-    if (step === 4 && !loaded.current.actual) {
+    if (step === 5 && !loaded.current.actual) {
       void loadActualInput();
     }
   }, [step, loadActualInput]);
@@ -3074,11 +3282,15 @@ export default function BAKStepper({
   /* ----------------------------- Navigation ------------------------------- */
 
   const performNavigation = useCallback(
-    async (target: 1 | 2 | 3 | 4) => {
+    async (target: 1 | 2 | 3 | 4 | 5) => {
       // Step 4 (Actual Input) memakai baris seller_input sebagai acuan, jadi
       // baris accrual harus tersimpan lebih dulu. Simpan hanya bila ada data /
       // perubahan tertunda — jangan memicu POST saat memang tidak ada apa pun.
-      if (target > step && step === 3) {
+      if (target > step && step === 2 && opDirty) {
+        const ok = await handleSaveOpCosts(false);
+        if (!ok) return;
+      }
+      if (target > step && step === 4) {
         const hasPending = timersRef.current.size > 0;
         const hasInput = sellerRowsRef.current.some((row) => row.seller_input != null);
         if (hasPending || hasInput) {
@@ -3086,7 +3298,7 @@ export default function BAKStepper({
           if (!ok) return;
         }
       }
-      if (target > step && step === 4) {
+      if (target > step && step === 5) {
         const issues = validateActualRows(actualRowsRef.current, false);
         if (issues.length > 0) {
           setShowActualErrors(true);
@@ -3100,7 +3312,7 @@ export default function BAKStepper({
   );
 
   const requestNavigation = useCallback(
-    (target: 1 | 2 | 3 | 4) => {
+    (target: 1 | 2 | 3 | 4 | 5) => {
       if (target === step) return;
       if (stepDirty || saving) {
         setPendingNav(target);
@@ -3116,12 +3328,16 @@ export default function BAKStepper({
     setShowSellerErrors(false);
     setShowActualErrors(false);
     setActualDirty(false);
-    if (step === 2) cancelMaxEdit();
-    if (step === 3) {
+    if (step === 2) {
+      setOpDirty(false);
+      void loadOperationalCosts(attPeriod);
+    }
+    if (step === 3) cancelMaxEdit();
+    if (step === 4) {
       loaded.current.seller = false;
       void loadSellerInput();
     }
-    if (step === 4) {
+    if (step === 5) {
       loaded.current.actual = false;
       void loadActualInput();
     }
@@ -3270,9 +3486,11 @@ export default function BAKStepper({
           {step === 1 ? (
             <span className="bak-badge bak-badge--readonly">HASIL HITUNG WFM</span>
           ) : step === 2 ? (
+            <span className="bak-badge bak-badge--readonly">BIAYA OPERASIONAL</span>
+          ) : step === 3 ? (
             <span className="bak-badge bak-badge--readonly">RATE CARD</span>
           ) : (
-            <StatusBadge status={step === 4 ? actualStatus : sellerStatus} />
+            <StatusBadge status={step === 5 ? actualStatus : sellerStatus} />
           )}
         </div>
       </div>
@@ -3881,9 +4099,360 @@ export default function BAKStepper({
         </div>
       </StepPanel>
 
-      {/* ------------------------------ STEP 2 ------------------------------ */}
+      {/* ------------------------------ STEP 2: OPERATIONAL COST ------------------------------ */}
       <StepPanel
         visible={step === 2}
+        loading={opBusy}
+        loadingLabel="Memuat biaya operasional..."
+        error={null}
+      >
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#1e293b' }}>
+                <i className="bi bi-card-checklist me-1"></i> Operational Cost &amp; Additional Expenses
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                Kelola pos biaya operasional tambahan (Performance Incentive, Facility/Seat Cost, dsb.) untuk periode <strong>{attPeriod}</strong> sebelum disinkronkan ke Max Potential Earnings.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="bak-btn bak-btn--primary bak-btn--sm"
+              onClick={() => {
+                setShowAddCat(true);
+                setNewCatInput('');
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <span>+</span> Tambah Kategori Baru
+            </button>
+          </div>
+
+          {showAddCat ? (
+            <div style={{ marginTop: 14, padding: 14, background: '#fff', borderRadius: 8, border: '1px dashed #3b82f6', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                className="bak-input"
+                style={{ flex: 1, padding: '6px 12px', fontSize: '0.9rem' }}
+                placeholder="Nama kategori baru (contoh: C. Facility Cost)"
+                value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddCategorySubmit();
+                }}
+                autoFocus
+              />
+              <button type="button" className="bak-btn bak-btn--primary bak-btn--sm" onClick={handleAddCategorySubmit}>
+                Simpan Kategori
+              </button>
+              <button type="button" className="bak-btn bak-btn--ghost bak-btn--sm" onClick={() => setShowAddCat(false)}>
+                Batal
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Categories & Sub-items list */}
+        {categoriesList.map((catName) => {
+          const itemsInCat = opCosts.filter((item) => !item.delete && item.category === catName);
+          const subtotalCat = itemsInCat.reduce((acc, it) => acc + (Number(it.amount) || 0), 0);
+
+          return (
+            <div
+              key={catName}
+              style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: 12,
+                marginBottom: 20,
+                overflow: 'hidden',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+              }}
+            >
+              {/* Category Header */}
+              <div
+                style={{
+                  background: '#f1f5f9',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '12px 18px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {editingCategory === catName ? (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        className="bak-input"
+                        style={{ padding: '4px 8px', fontSize: '0.95rem', fontWeight: 700 }}
+                        value={editingCategoryNewName}
+                        onChange={(e) => setEditingCategoryNewName(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        className="bak-btn bak-btn--primary bak-btn--sm"
+                        style={{ padding: '2px 8px' }}
+                        onClick={() => handleSaveCategoryRename(catName)}
+                      >
+                        <i className="bi bi-check-lg"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="bak-btn bak-btn--ghost bak-btn--sm"
+                        style={{ padding: '2px 8px' }}
+                        onClick={() => setEditingCategory(null)}
+                      >
+                        <i className="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>
+                        {catName}
+                      </span>
+                      <button
+                        type="button"
+                        className="bak-btn bak-btn--ghost bak-btn--sm"
+                        style={{ padding: '2px 6px', fontSize: '0.8rem', color: '#64748b' }}
+                        title="Modifikasi nama kategori"
+                        onClick={() => {
+                          setEditingCategory(catName);
+                          setEditingCategoryNewName(catName);
+                        }}
+                      >
+                        <i className="bi bi-pencil me-1"></i> Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="bak-btn bak-btn--ghost bak-btn--sm"
+                        style={{ padding: '2px 6px', fontSize: '0.8rem', color: '#ef4444' }}
+                        title="Hapus kategori dan seluruh itemnya"
+                        onClick={() => handleDeleteCategory(catName)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                    Subtotal: <strong>Rp {formatCurrency(subtotalCat) || '0'}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    className="bak-btn bak-btn--primary bak-btn--sm"
+                    style={{ fontSize: '0.8rem', padding: '4px 10px' }}
+                    onClick={() => {
+                      setAddingSubCat(catName);
+                      setNewSubItemName('');
+                      setNewSubItemAmount('');
+                    }}
+                  >
+                    + Tambah Sub List
+                  </button>
+                </div>
+              </div>
+
+              {/* Inline Add Sub Item Form */}
+              {addingSubCat === catName ? (
+                <div style={{ padding: '12px 18px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e40af' }}>Sub item baru:</span>
+                  <input
+                    type="text"
+                    className="bak-input"
+                    style={{ flex: '1 1 200px', padding: '5px 10px', fontSize: '0.85rem' }}
+                    placeholder="Nama sub-item (contoh: Performance Incentive)"
+                    value={newSubItemName}
+                    onChange={(e) => setNewSubItemName(e.target.value)}
+                    autoFocus
+                  />
+                  <input
+                    type="number"
+                    className="bak-input"
+                    style={{ width: 160, padding: '5px 10px', fontSize: '0.85rem' }}
+                    placeholder="Nominal Rp (manual)"
+                    value={newSubItemAmount}
+                    onChange={(e) => setNewSubItemAmount(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="bak-btn bak-btn--primary bak-btn--sm"
+                    onClick={() => handleAddSubItemSubmit(catName)}
+                  >
+                    Simpan Item
+                  </button>
+                  <button
+                    type="button"
+                    className="bak-btn bak-btn--ghost bak-btn--sm"
+                    onClick={() => setAddingSubCat(null)}
+                  >
+                    Batal
+                  </button>
+                </div>
+              ) : null}
+
+              {/* Sub-items Table */}
+              <div className="bak-table-wrap" style={{ margin: 0, border: 0 }}>
+                <table className="bak-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 50, textAlign: 'center' }}>No</th>
+                      <th>Nama Sub List</th>
+                      <th style={{ width: 220, textAlign: 'right' }}>Nominal (Rp) Manual</th>
+                      <th style={{ width: 80, textAlign: 'center' }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itemsInCat.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center', color: '#94a3b8', padding: '18px 0' }}>
+                          Belum ada sub list di kategori ini. Klik <strong>+ Tambah Sub List</strong> di atas.
+                        </td>
+                      </tr>
+                    ) : (
+                      itemsInCat.map((item, itemIdx) => {
+                        const isEditingName = editingItemKey === (item.id ?? 	mp_);
+                        return (
+                          <tr key={item.id ?? 	mp_}>
+                            <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+                              {itemIdx + 1}.
+                            </td>
+                            <td>
+                              {isEditingName ? (
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                  <input
+                                    type="text"
+                                    className="bak-input"
+                                    style={{ padding: '4px 8px', fontSize: '0.85rem', width: 260 }}
+                                    value={editingItemNewName}
+                                    onChange={(e) => setEditingItemNewName(e.target.value)}
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    className="bak-btn bak-btn--primary bak-btn--sm"
+                                    style={{ padding: '2px 8px' }}
+                                    onClick={() => handleSaveItemRename(item, editingItemNewName)}
+                                  >
+                                    <i className="bi bi-check-lg"></i>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="bak-btn bak-btn--ghost bak-btn--sm"
+                                    style={{ padding: '2px 8px' }}
+                                    onClick={() => setEditingItemKey(null)}
+                                  >
+                                    <i className="bi bi-x-lg"></i>
+                                  </button>
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontWeight: 600, color: '#334155' }}>{item.item_name}</span>
+                                  <button
+                                    type="button"
+                                    className="bak-btn bak-btn--ghost bak-btn--sm"
+                                    style={{ padding: '1px 5px', fontSize: '0.75rem', color: '#64748b' }}
+                                    title="Modifikasi nama sub list"
+                                    onClick={() => {
+                                      setEditingItemKey(item.id ?? 	mp_);
+                                      setEditingItemNewName(item.item_name);
+                                    }}
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Rp</span>
+                                <input
+                                  type="number"
+                                  className="bak-input"
+                                  style={{
+                                    width: 170,
+                                    textAlign: 'right',
+                                    fontWeight: 700,
+                                    padding: '5px 8px'
+                                  }}
+                                  value={item.amount || ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleUpdateItemAmount(item, parseFloat(e.target.value) || 0)}
+                                />
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="bak-btn bak-btn--ghost bak-btn--sm"
+                                style={{ color: '#ef4444', padding: '3px 8px' }}
+                                title="Hapus sub list"
+                                onClick={() => handleDeleteSubItem(item)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Total Banner */}
+        <div className="bak-total" style={{ marginTop: 12 }}>
+          <span>Grand Total Biaya Operasional Tambahan</span>
+          <span className="bak-total__value">
+            Rp {formatCurrency(totalOpCosts) || '0'}
+          </span>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="bak-footer">
+          <div className="bak-footer__left">
+            <button
+              type="button"
+              className="bak-btn bak-btn--ghost"
+              onClick={() => setStep(1)}
+            >
+              &larr; Kembali ke WFM Calculation
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="bak-btn bak-btn--secondary"
+              onClick={() => void handleSaveOpCosts(true)}
+              disabled={opBusy}
+            >
+              <i className="bi bi-save me-1"></i> Simpan Perubahan
+            </button>
+            <button
+              type="button"
+              className="bak-btn bak-btn--primary"
+              onClick={() => void handleSyncOpCosts()}
+              disabled={opBusy}
+            >
+              {opBusy ? <Spinner size={12} label="Memproses..." /> : 'â‡„ Sinkronkan ke Max Potential Earnings &rarr;'}
+            </button>
+          </div>
+        </div>
+      </StepPanel>
+
+      {/* ------------------------------ STEP 5 ------------------------------ */}
+      <StepPanel
+        visible={step === 3}
         loading={loading}
         loadingLabel="Memuat max potential earnings…"
         error={loadError}
@@ -4311,9 +4880,9 @@ export default function BAKStepper({
         </div>
       </StepPanel>
 
-      {/* ------------------------------ STEP 3 ------------------------------ */}
+      {/* ------------------------------ STEP 5 ------------------------------ */}
       <StepPanel
-        visible={step === 3}
+        visible={step === 4}
         loading={loading}
         loadingLabel="Memuat seller input…"
         error={loadError}
@@ -4597,9 +5166,9 @@ export default function BAKStepper({
         </div>
       </StepPanel>
 
-      {/* ------------------------------ STEP 4 ------------------------------ */}
+      {/* ------------------------------ STEP 5 ------------------------------ */}
       <StepPanel
-        visible={step === 4}
+        visible={step === 5}
         loading={loading}
         loadingLabel="Memuat actual input…"
         error={loadError}
@@ -5047,12 +5616,15 @@ export default function BAKStepper({
               if (target == null) return;
               void (async () => {
                 if (step === 2) {
-                  const ok = await saveMaxPotential();
+                  const ok = await handleSaveOpCosts(false);
                   if (!ok) return;
                 } else if (step === 3) {
-                  const ok = await saveSellerDraft({ silent: true });
+                  const ok = await saveMaxPotential();
                   if (!ok) return;
                 } else if (step === 4) {
+                  const ok = await saveSellerDraft({ silent: true });
+                  if (!ok) return;
+                } else if (step === 5) {
                   const ok = await persistActualRows(actualStatus, { silent: true });
                   if (!ok) return;
                 }

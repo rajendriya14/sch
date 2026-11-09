@@ -270,6 +270,54 @@ class BAKController
                 ]);
             }
 
+            /* ---------------- Operational Costs (Step 2) ---------------- */
+
+            if ($path === 'operational-costs' && $method === 'GET') {
+                $period = $this->attendancePeriod($_GET['period'] ?? null);
+                $items  = \Models\BakOperationalCost::allByPeriod($period);
+                $total  = array_reduce($items, fn($carry, $item) => $carry + (float) $item['amount'], 0.0);
+                $this->respond([
+                    'period' => $period,
+                    'items'  => $items,
+                    'total'  => round($total, 2),
+                ]);
+            }
+
+            if ($path === 'operational-costs' && $method === 'POST') {
+                $body   = $this->readJsonBody();
+                $period = $this->attendancePeriod($body['period'] ?? null);
+                $items  = $body['items'] ?? [];
+                if (!is_array($items)) {
+                    throw new \InvalidArgumentException('Field "items" harus berupa array.');
+                }
+                $saved = \Models\BakOperationalCost::saveItems($period, $items);
+                $total = array_reduce($saved, fn($carry, $item) => $carry + (float) $item['amount'], 0.0);
+                $this->respond([
+                    'period' => $period,
+                    'items'  => $saved,
+                    'total'  => round($total, 2),
+                ]);
+            }
+
+            if ($path === 'operational-costs/sync' && $method === 'POST') {
+                $body   = $this->readJsonBody();
+                $period = $this->attendancePeriod($body['period'] ?? null);
+                if (!empty($body['items']) && is_array($body['items'])) {
+                    \Models\BakOperationalCost::saveItems($period, $body['items']);
+                }
+                try {
+                    BakAttendance::syncToMaxPotential($period);
+                } catch (\Throwable $e) {
+                    \Models\BakOperationalCost::syncToMaxPotential($period);
+                }
+                $summary = MaxPotentialEarning::summary();
+                $this->respond([
+                    'items'       => MaxPotentialEarning::all(),
+                    'categories'  => $summary['categories'],
+                    'grand_total' => $summary['grand_total'],
+                ]);
+            }
+
             if (
                 $method === 'POST'
                 && count($parts) === 3

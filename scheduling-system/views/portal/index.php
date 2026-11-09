@@ -17,28 +17,30 @@
     </div>
 <?php endif; ?>
 
-<div class="row g-4 justify-content-center portal-grid">
-    <?php foreach ($apps as $app): ?>
-        <div class="col-md-6 col-xl-5">
-            <a href="<?= htmlspecialchars($app['url']) ?>" class="portal-card text-decoration-none">
-                <div class="card h-100">
-                    <div class="card-body d-flex align-items-start gap-3">
-                        <div class="portal-icon">
-                            <i class="bi <?= htmlspecialchars($app['icon']) ?>"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h2 class="h5 mb-0"><?= htmlspecialchars($app['title']) ?></h2>
-                                <?php if (!empty($app['badge'])): ?>
-                                    <span class="badge bg-secondary"><?= htmlspecialchars($app['badge']) ?></span>
-                                <?php endif; ?>
+<div class="mx-auto" style="max-width: 1080px;">
+    <div class="row g-4 portal-grid">
+        <?php foreach ($apps as $app): ?>
+            <div class="col-12 col-md-6">
+                <a href="<?= htmlspecialchars($app['url']) ?>" class="portal-card text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body d-flex align-items-start gap-3">
+                            <div class="portal-icon">
+                                <i class="bi <?= htmlspecialchars($app['icon']) ?>"></i>
                             </div>
-                            <p class="text-muted small mb-0"><?= htmlspecialchars($app['description']) ?></p>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h2 class="h5 mb-0"><?= htmlspecialchars($app['title']) ?></h2>
+                                    <?php if (!empty($app['badge'])): ?>
+                                        <span class="badge bg-secondary"><?= htmlspecialchars($app['badge']) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="text-muted small mb-0"><?= htmlspecialchars($app['description']) ?></p>
+                            </div>
+                            <i class="bi bi-arrow-right-circle portal-arrow"></i>
                         </div>
-                        <i class="bi bi-arrow-right-circle portal-arrow"></i>
                     </div>
-                </div>
-            </a>
-        </div>
-    <?php endforeach; ?>
+                </a>
+            </div>
+        <?php endforeach; ?>
+    </div>
 </div>

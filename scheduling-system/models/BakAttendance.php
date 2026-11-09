@@ -1205,6 +1205,31 @@ class BakAttendance
                 $upd->execute([$cat, 'Headcount', $price, $qty, round($price * $qty, 2), (int) $existing['id']]);
             }
 
+            // Sertakan juga pos biaya operasional tambahan (Step 2)
+            try {
+                $opCosts = \Models\BakOperationalCost::allByPeriod($period);
+                foreach ($opCosts as $op) {
+                    $opRole = (string) $op['item_name'];
+                    $seen[] = $opRole;
+                    $opAmt  = round((float) $op['amount'], 2);
+                    $opCat  = (string) $op['category'];
+
+                    $find->execute([$opRole]);
+                    $existingOp = $find->fetch();
+                    if (!$existingOp) {
+                        $ins->execute([$opRole, $opCat, 'Headcount', $opAmt, 1, $opAmt]);
+                        $db->prepare('UPDATE max_potential_earnings SET manual_amount = ?, is_custom = 1 WHERE role = ?')
+                           ->execute([$opAmt, $opRole]);
+                    } else {
+                        $upd->execute([$opCat, 'Headcount', $opAmt, 1, $opAmt, (int) $existingOp['id']]);
+                        $db->prepare('UPDATE max_potential_earnings SET manual_amount = ?, is_custom = 1 WHERE id = ?')
+                           ->execute([$opAmt, (int) $existingOp['id']]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Abaikan jika belum ada
+            }
+
             // Rate card yang tidak ada di absensi periode ini: rate (quantity)
             // dikosongkan supaya tampil 0, tetapi harga manual, nilai Max
             // Potential manual, dan role tambahan manual tetap dipertahankan.

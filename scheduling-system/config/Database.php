@@ -189,6 +189,12 @@ class Database
 
         // Tabel absensi BAK (upload rekap attendance per bulan + harga per posisi).
         self::ensureBakAttendanceTables();
+
+        // Tabel notebook (task, kalender, dan timeline pribadi).
+        self::ensureNotebookTables();
+
+        // Tabel biaya operasional tambahan BAK.
+        self::ensureBakOperationalCostTable();
     }
 
     /**
@@ -309,6 +315,59 @@ class Database
             ');
         } catch (\PDOException $e) {
             error_log('ensureBakAttendanceTables: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tabel notebook_tasks untuk catatan personal, timeline & kalender.
+     */
+    public static function ensureNotebookTables(): void
+    {
+        try {
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS notebook_tasks (
+                    id          INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id     INT NOT NULL,
+                    title       VARCHAR(255) NOT NULL,
+                    notes       TEXT DEFAULT NULL,
+                    due_date    DATE NOT NULL,
+                    due_time    TIME DEFAULT NULL,
+                    priority    ENUM("Low", "Medium", "High") NOT NULL DEFAULT "Medium",
+                    status      ENUM("Todo", "In Progress", "Done") NOT NULL DEFAULT "Todo",
+                    color       VARCHAR(20) DEFAULT "#2563eb",
+                    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_user_due (user_id, due_date),
+                    INDEX idx_user_status (user_id, status)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
+        } catch (\PDOException $e) {
+            error_log('ensureNotebookTables: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tabel bak_operational_costs untuk biaya operasional tambahan BAK.
+     */
+    public static function ensureBakOperationalCostTable(): void
+    {
+        try {
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS bak_operational_costs (
+                    id          INT AUTO_INCREMENT PRIMARY KEY,
+                    period      VARCHAR(7) NOT NULL,
+                    category    VARCHAR(100) NOT NULL DEFAULT "B. Operational Cost",
+                    item_name   VARCHAR(100) NOT NULL,
+                    amount      DECIMAL(18,2) NOT NULL DEFAULT 0,
+                    notes       VARCHAR(255) DEFAULT NULL,
+                    sort_order  INT NOT NULL DEFAULT 0,
+                    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_boc_period (period)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
+        } catch (\PDOException $e) {
+            error_log('ensureBakOperationalCostTable: ' . $e->getMessage());
         }
     }
 
@@ -504,6 +563,8 @@ class Database
                 UNIQUE KEY uq_actual_seller_input (seller_input_id)
             ) ENGINE=InnoDB
         ');
+
+
     }
 
     /**

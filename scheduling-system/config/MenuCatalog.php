@@ -20,6 +20,7 @@ class MenuCatalog
      */
     private const MENUS = [
         'portal'            => ['label' => 'Portal',                    'icon' => 'bi-grid-1x2',       'group' => 'Utama',       'always' => true],
+        'notebook'          => ['label' => 'Notebook',                  'icon' => 'bi-journal-bookmark', 'group' => 'Utama',       'always' => true],
         'dashboard'         => ['label' => 'Dashboard',                 'icon' => 'bi-speedometer2',   'group' => 'Utama'],
         'bak'               => ['label' => 'Berita Acara Kerja (BAK)',  'icon' => 'bi-receipt',        'group' => 'Utama'],
         'billing'           => ['label' => 'Billing Management System', 'icon' => 'bi-cash-stack',     'group' => 'Utama'],

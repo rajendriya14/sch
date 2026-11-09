@@ -35,6 +35,14 @@ class PortalController
 
         $apps = [
             [
+                'menu'        => 'notebook',
+                'title'       => 'Personal Notebook',
+                'description' => 'Catatan pribadi, checklist timeline, dan kalender deadline task Anda.',
+                'icon'        => 'bi-journal-bookmark-fill',
+                'url'         => 'index.php?page=notebook',
+                'badge'       => 'Personal',
+            ],
+            [
                 'menu'        => 'dashboard',
                 'title'       => 'Workforce Scheduler',
                 'description' => 'Kelola jadwal shift, staff, forecast, dan Berita Acara Kerja (BAK).',
