@@ -4199,13 +4199,19 @@
                 </button>
                 <div class="fp-divider"></div>
 
-                <!-- 1. Row button -->
+                <!-- 1. Row buttons -->
                 <button class="fp-btn" id="fpBtnAddRow" title="Tambah Baris (+ Baris)">
                     <svg width="18" height="18" viewBox="0 0 18 18"><line x1="2" y1="4" x2="16" y2="4" stroke="currentColor" stroke-width="2.5"/><line x1="9" y1="8" x2="9" y2="15" stroke="currentColor" stroke-width="2"/><line x1="5.5" y1="11.5" x2="12.5" y2="11.5" stroke="currentColor" stroke-width="2"/></svg>
                 </button>
-                <!-- 2. Column button -->
+                <button class="fp-btn" id="fpBtnDeleteRow" title="Hapus Baris / Jalur (- Baris)">
+                    <svg width="18" height="18" viewBox="0 0 18 18"><line x1="2" y1="4" x2="16" y2="4" stroke="currentColor" stroke-width="2.5"/><line x1="5.5" y1="11.5" x2="12.5" y2="11.5" stroke="#ef4444" stroke-width="2.2"/></svg>
+                </button>
+                <!-- 2. Column buttons -->
                 <button class="fp-btn" id="fpBtnAddCol" title="Tambah Kolom (+ Kolom)">
                     <svg width="18" height="18" viewBox="0 0 18 18"><line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2.5"/><line x1="8" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2"/><line x1="11.5" y1="5.5" x2="11.5" y2="12.5" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+                <button class="fp-btn" id="fpBtnDeleteCol" title="Hapus Kolom (- Kolom)">
+                    <svg width="18" height="18" viewBox="0 0 18 18"><line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2.5"/><line x1="8" y1="9" x2="15" y2="9" stroke="#ef4444" stroke-width="2.2"/></svg>
                 </button>
 
                 <!-- Terminal Special Tools: Wrap Text & Merge Cells -->
@@ -4346,8 +4352,8 @@
                     <span class="fp-more-shortcut">Delete</span>
                 </div>
                 <div class="fp-more-item" id="ctxDeleteCells" style="display:none;">
-                    <span class="fp-more-label" style="color:#ef4444; font-weight:600;">Hapus Cell</span>
-                    <span class="fp-more-shortcut" style="color:#ef4444;">Shift+Del</span>
+                    <span class="fp-more-label" style="color:#ef4444; font-weight:600;">Hapus Cell / Jalur</span>
+                    <span class="fp-more-shortcut" style="color:#ef4444;">Del</span>
                 </div>
                 <div class="ctx-divider" id="ctxAddDivider" style="height:1px; background:rgba(0,0,0,0.08); margin:4px 0;"></div>
                 <div class="fp-more-item" id="ctxAddCol" style="display:none;">
@@ -4357,6 +4363,14 @@
                 <div class="fp-more-item" id="ctxAddRow" style="display:none;">
                     <span class="fp-more-label" style="font-weight:600; color:#2563eb;">+ Tambah Baris</span>
                     <span class="fp-more-shortcut">+ Baris</span>
+                </div>
+                <div class="fp-more-item" id="ctxDeleteRow" style="display:none;">
+                    <span class="fp-more-label" style="font-weight:600; color:#ef4444;">- Hapus Baris / Jalur</span>
+                    <span class="fp-more-shortcut">- Baris</span>
+                </div>
+                <div class="fp-more-item" id="ctxDeleteCol" style="display:none;">
+                    <span class="fp-more-label" style="font-weight:600; color:#ef4444;">- Hapus Kolom</span>
+                    <span class="fp-more-shortcut">- Kolom</span>
                 </div>
                 <div class="ctx-divider" id="ctxTableDivider"></div>
                 <div class="fp-more-item" id="ctxMerge">
@@ -5151,7 +5165,9 @@
             // Floating Property Bar Elements
             const floatingPropBar = document.getElementById('floatingPropBar');
             const fpBtnAddRow = document.getElementById('fpBtnAddRow');
+            const fpBtnDeleteRow = document.getElementById('fpBtnDeleteRow');
             const fpBtnAddCol = document.getElementById('fpBtnAddCol');
+            const fpBtnDeleteCol = document.getElementById('fpBtnDeleteCol');
             const fpFontFamily = document.getElementById('fpFontFamily');
             const fpBtnSizeDec = document.getElementById('fpBtnSizeDec');
             const fpBtnSizeInc = document.getElementById('fpBtnSizeInc');
@@ -5214,6 +5230,8 @@
             const ctxDeleteCells = document.getElementById('ctxDeleteCells');
             const ctxAddCol = document.getElementById('ctxAddCol');
             const ctxAddRow = document.getElementById('ctxAddRow');
+            const ctxDeleteRow = document.getElementById('ctxDeleteRow');
+            const ctxDeleteCol = document.getElementById('ctxDeleteCol');
             const ctxAddDivider = document.getElementById('ctxAddDivider');
             const ctxTableDivider = document.getElementById('ctxTableDivider');
             const ctxMerge = document.getElementById('ctxMerge');
@@ -5257,10 +5275,39 @@
                 });
             }
 
+            if (ctxDeleteRow) {
+                ctxDeleteRow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    closeTableContextMenu();
+                    if (node) {
+                        deleteTableRow(node);
+                    }
+                });
+            }
+
+            if (ctxDeleteCol) {
+                ctxDeleteCol.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    closeTableContextMenu();
+                    if (node) {
+                        deleteTableColumn(node);
+                    }
+                });
+            }
+
             function deleteSelectedTableCells() {
                 const targetId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
                 const targetNode = state.nodes.find(n => n.id === targetId);
-                if (!targetNode || !targetNode.isTable || !targetNode.selectedCells) return;
+                if (!targetNode) return;
+                if (targetNode.isSwimlane) {
+                    deleteSwimlaneLane(targetNode);
+                    return;
+                }
+                if (!targetNode.isTable || !targetNode.selectedCells) return;
 
                 const sel = targetNode.selectedCells;
                 const minR = Math.min(sel.minR, sel.maxR);
@@ -5270,25 +5317,39 @@
                 const totalCols = (targetNode.columns || []).length;
                 const totalRows = (targetNode.rows || []).length;
 
+                const headerH = targetNode.headerHeight || 26;
+                const defaultRowH = (targetNode.height - headerH) / Math.max(1, totalRows);
+                const defaultColW = targetNode.width / Math.max(1, totalCols);
+
                 // Point 2: Menghapus cell yang di-blok
                 if (minC === 0 && maxC >= totalCols - 1) {
                     if (totalRows > 1) {
                         const numToDelete = maxR - minR + 1;
+                        let delH = 0;
+                        for (let r = minR; r <= maxR; r++) {
+                            delH += (targetNode.rowHeights && targetNode.rowHeights[r] !== undefined) ? targetNode.rowHeights[r] : defaultRowH;
+                        }
                         targetNode.rows.splice(minR, numToDelete);
                         if (targetNode.rowHeights && targetNode.rowHeights.length >= totalRows) {
                             targetNode.rowHeights.splice(minR, numToDelete);
                         }
+                        targetNode.height = Math.max(50, targetNode.height - delH);
                     } else {
                         targetNode.rows[0] = targetNode.rows[0].map(() => '');
                     }
                 } else if (minR === 0 && maxR >= totalRows - 1) {
                     if (totalCols > 1) {
                         const numToDelete = maxC - minC + 1;
+                        let delW = 0;
+                        for (let c = minC; c <= maxC; c++) {
+                            delW += (targetNode.colWidths && targetNode.colWidths[c] !== undefined) ? targetNode.colWidths[c] : defaultColW;
+                        }
                         targetNode.columns.splice(minC, numToDelete);
                         if (targetNode.colWidths && targetNode.colWidths.length >= totalCols) {
                             targetNode.colWidths.splice(minC, numToDelete);
                         }
                         targetNode.rows.forEach(r => r.splice(minC, numToDelete));
+                        targetNode.width = Math.max(80, targetNode.width - delW);
                     } else {
                         targetNode.columns[0] = 'Kolom 1';
                         targetNode.rows.forEach(r => { r[0] = ''; });
@@ -5296,15 +5357,25 @@
                 } else {
                     if (totalRows > 1) {
                         const numToDelete = maxR - minR + 1;
+                        let delH = 0;
+                        for (let r = minR; r <= maxR; r++) {
+                            delH += (targetNode.rowHeights && targetNode.rowHeights[r] !== undefined) ? targetNode.rowHeights[r] : defaultRowH;
+                        }
                         targetNode.rows.splice(minR, numToDelete);
                         if (targetNode.rowHeights && targetNode.rowHeights.length >= totalRows) {
                             targetNode.rowHeights.splice(minR, numToDelete);
                         }
+                        targetNode.height = Math.max(50, targetNode.height - delH);
                     } else if (totalCols > 1) {
                         const numToDelete = maxC - minC + 1;
+                        let delW = 0;
+                        for (let c = minC; c <= maxC; c++) {
+                            delW += (targetNode.colWidths && targetNode.colWidths[c] !== undefined) ? targetNode.colWidths[c] : defaultColW;
+                        }
                         targetNode.columns.splice(minC, numToDelete);
                         if (targetNode.colWidths) targetNode.colWidths.splice(minC, numToDelete);
                         targetNode.rows.forEach(r => r.splice(minC, numToDelete));
+                        targetNode.width = Math.max(80, targetNode.width - delW);
                     } else {
                         targetNode.rows[0][0] = '';
                     }
@@ -5318,6 +5389,8 @@
                 targetNode.selectedCells = null;
                 saveSnapshot('Hapus Cell Terminal');
                 renderNodes();
+                renderConnections();
+                renderSelection();
                 updateFloatingAndPlusBars();
                 statusHintText.textContent = 'Cell matriks terminal berhasil dihapus.';
             }
@@ -5438,6 +5511,102 @@
                 updateFloatingAndPlusBars();
                 statusHintText.textContent = 'Baris baru berhasil ditambahkan ke terminal!';
                 saveSnapshot('Tambah Baris Terminal');
+            }
+
+            function deleteTableRow(node, rowIdx) {
+                if (!node) return;
+                if (node.isSwimlane) {
+                    deleteSwimlaneLane(node, rowIdx);
+                    return;
+                }
+                if (!node.isTable) return;
+                node.rows = node.rows || [];
+                if (node.rows.length <= 1) {
+                    statusHintText.textContent = 'Terminal matriks minimal harus memiliki 1 baris.';
+                    return;
+                }
+                if (rowIdx === undefined || rowIdx === null) {
+                    if (node.selectedCells && node.selectedCells.minR !== undefined) {
+                        rowIdx = node.selectedCells.minR;
+                    } else {
+                        rowIdx = node.rows.length - 1;
+                    }
+                }
+                rowIdx = Math.max(0, Math.min(rowIdx, node.rows.length - 1));
+                const headerH = node.headerHeight || 26;
+                const defaultRowH = (node.height - headerH) / Math.max(1, node.rows.length);
+                const delH = (node.rowHeights && node.rowHeights[rowIdx] !== undefined) ? node.rowHeights[rowIdx] : defaultRowH;
+
+                node.rows.splice(rowIdx, 1);
+                if (node.rowHeights && node.rowHeights.length > rowIdx) {
+                    node.rowHeights.splice(rowIdx, 1);
+                }
+                node.height = Math.max(50, node.height - delH);
+
+                if (node.merges) {
+                    node.merges = node.merges.filter(m => !(rowIdx >= m.minR && rowIdx <= m.maxR)).map(m => {
+                        if (m.minR > rowIdx) { m.minR--; m.maxR--; }
+                        return m;
+                    });
+                }
+
+                node.selectedCells = null;
+                saveSnapshot('Hapus Baris Terminal');
+                renderNodes();
+                renderConnections();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `Baris ke-${rowIdx + 1} berhasil dihapus dari terminal.`;
+            }
+
+            function deleteTableColumn(node, colIdx) {
+                if (!node) return;
+                if (node.isSwimlane && node.orientation === 'vertical') {
+                    deleteSwimlaneLane(node, colIdx);
+                    return;
+                }
+                if (!node.isTable) return;
+                node.columns = node.columns || ['Kolom 1'];
+                node.rows = node.rows || [];
+                if (node.columns.length <= 1) {
+                    statusHintText.textContent = 'Terminal matriks minimal harus memiliki 1 kolom.';
+                    return;
+                }
+                if (colIdx === undefined || colIdx === null) {
+                    if (node.selectedCells && node.selectedCells.minC !== undefined) {
+                        colIdx = node.selectedCells.minC;
+                    } else {
+                        colIdx = node.columns.length - 1;
+                    }
+                }
+                colIdx = Math.max(0, Math.min(colIdx, node.columns.length - 1));
+                const defaultColW = node.width / Math.max(1, node.columns.length);
+                const delW = (node.colWidths && node.colWidths[colIdx] !== undefined) ? node.colWidths[colIdx] : defaultColW;
+
+                const colName = node.columns[colIdx] || `Kolom ${colIdx + 1}`;
+                node.columns.splice(colIdx, 1);
+                if (node.colWidths && node.colWidths.length > colIdx) {
+                    node.colWidths.splice(colIdx, 1);
+                }
+                node.rows.forEach(r => {
+                    if (r.length > colIdx) r.splice(colIdx, 1);
+                });
+                node.width = Math.max(80, node.width - delW);
+
+                if (node.merges) {
+                    node.merges = node.merges.filter(m => !(colIdx >= m.minC && colIdx <= m.maxC)).map(m => {
+                        if (m.minC > colIdx) { m.minC--; m.maxC--; }
+                        return m;
+                    });
+                }
+
+                node.selectedCells = null;
+                saveSnapshot('Hapus Kolom Terminal');
+                renderNodes();
+                renderConnections();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `Kolom '${colName}' berhasil dihapus dari terminal.`;
             }
 
             // Direct in-shape editor active reference is managed in JS
@@ -8135,6 +8304,38 @@
                 statusHintText.textContent = `Jalur/sel baru (Data ${count}) berhasil ditambahkan ke ${node.text || 'Swimlane'}.`;
             }
 
+            function deleteSwimlaneLane(node, laneIdx) {
+                if (!node || !node.isSwimlane) return;
+                node.lanes = node.lanes || [];
+                if (node.lanes.length <= 1) {
+                    statusHintText.textContent = 'Swimlane minimal harus memiliki 1 jalur/sel.';
+                    return;
+                }
+                if (laneIdx === undefined || laneIdx === null) {
+                    laneIdx = (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null)
+                        ? node.selectedLaneIdx
+                        : (node.lanes.length - 1);
+                }
+                laneIdx = Math.max(0, Math.min(laneIdx, node.lanes.length - 1));
+                const deletedLane = node.lanes[laneIdx];
+                const isH = node.orientation !== 'vertical';
+                const delSize = deletedLane ? (deletedLane.size || (isH ? 100 : 160)) : (isH ? 100 : 160);
+
+                node.lanes.splice(laneIdx, 1);
+                if (isH) {
+                    node.height = Math.max(80, node.height - delSize);
+                } else {
+                    node.width = Math.max(120, node.width - delSize);
+                }
+                node.selectedLaneIdx = null;
+
+                saveSnapshot('Hapus Jalur Swimlane');
+                renderNodes();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `Jalur '${deletedLane ? deletedLane.title : ''}' berhasil dihapus dari swimlane.`;
+            }
+
             function toggleSwimlaneGrouping(node) {
                 if (!node || !node.isSwimlane) return;
                 node.isGrouped = (node.isGrouped === false) ? true : false;
@@ -8319,9 +8520,21 @@
                 document.querySelectorAll('.terminal-only-tool').forEach(el => {
                     el.style.display = isTable ? 'flex' : 'none';
                 });
-                // Row and Col buttons are ALWAYS visible for both shapes and tables!
+                // Row and Col buttons
                 if (fpBtnAddRow) fpBtnAddRow.style.display = 'flex';
                 if (fpBtnAddCol) fpBtnAddCol.style.display = 'flex';
+                if (fpBtnDeleteRow) fpBtnDeleteRow.style.display = (isTable || isSwimlane) ? 'flex' : 'none';
+                if (fpBtnDeleteCol) fpBtnDeleteCol.style.display = (isTable || (isSwimlane && node.orientation === 'vertical')) ? 'flex' : 'none';
+
+                if (isSwimlane) {
+                    if (fpBtnDeleteRow) fpBtnDeleteRow.title = 'Hapus Baris / Jalur (- Jalur)';
+                    if (fpBtnAddRow) fpBtnAddRow.title = 'Tambah Baris / Jalur (+ Jalur)';
+                } else if (isTable) {
+                    if (fpBtnDeleteRow) fpBtnDeleteRow.title = 'Hapus Baris Terminal (- Baris)';
+                    if (fpBtnDeleteCol) fpBtnDeleteCol.title = 'Hapus Kolom Terminal (- Kolom)';
+                    if (fpBtnAddRow) fpBtnAddRow.title = 'Tambah Baris Terminal (+ Baris)';
+                    if (fpBtnAddCol) fpBtnAddCol.title = 'Tambah Kolom Terminal (+ Kolom)';
+                }
 
                 if (isTable) {
                     if (fpBtnWrapText) fpBtnWrapText.classList.toggle('active', !!node.isWrapText);
@@ -8482,6 +8695,8 @@
                 if (ctxAddDivider) ctxAddDivider.style.display = isTableOrSwimlane ? 'block' : 'none';
                 if (ctxAddCol) ctxAddCol.style.display = isTableOrSwimlane ? 'flex' : 'none';
                 if (ctxAddRow) ctxAddRow.style.display = isTableOrSwimlane ? 'flex' : 'none';
+                if (ctxDeleteRow) ctxDeleteRow.style.display = isTableOrSwimlane ? 'flex' : 'none';
+                if (ctxDeleteCol) ctxDeleteCol.style.display = (targetNode && (targetNode.isTable || (targetNode.isSwimlane && targetNode.orientation === 'vertical'))) ? 'flex' : 'none';
 
                 if (ctxTableDivider) ctxTableDivider.style.display = hasMultiCells ? 'block' : 'none';
                 if (ctxMerge) ctxMerge.style.display = hasMultiCells ? 'flex' : 'none';
@@ -8497,7 +8712,7 @@
                     ctxDeleteLabel.textContent = isTableSelection ? 'Hapus Isi Sel' : 'Delete';
                 }
                 if (ctxDeleteCells) {
-                    ctxDeleteCells.style.display = isTableSelection ? 'flex' : 'none';
+                    ctxDeleteCells.style.display = (isTableSelection || isTableOrSwimlane) ? 'flex' : 'none';
                 }
 
                 tableContextMenu.style.display = 'flex';
@@ -9536,15 +9751,40 @@
             if (ctxDelete) {
                 ctxDelete.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
                     closeTableContextMenu();
+                    if (node && node.isTable && node.selectedCells) {
+                        const sel = node.selectedCells;
+                        for (let r = sel.minR; r <= sel.maxR; r++) {
+                            for (let c = sel.minC; c <= sel.maxC; c++) {
+                                if (node.rows[r] && node.rows[r][c] !== undefined) {
+                                    node.rows[r][c] = '';
+                                }
+                            }
+                        }
+                        node.selectedCells = null;
+                        saveSnapshot('Hapus Isi Sel');
+                        renderNodes();
+                        statusHintText.textContent = 'Isi sel terminal berhasil dikosongkan.';
+                        return;
+                    }
                     deleteSelected();
                 });
             }
             if (ctxDeleteCells) {
                 ctxDeleteCells.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
                     closeTableContextMenu();
-                    deleteSelectedTableCells();
+                    if (node && node.isSwimlane) {
+                        deleteSwimlaneLane(node);
+                    } else if (node && node.isTable) {
+                        deleteSelectedTableCells();
+                    } else {
+                        deleteSelected();
+                    }
                 });
             }
             if (ctxMerge) {
@@ -9591,6 +9831,18 @@
                 }
             });
 
+            // Hapus Kolom (- Kolom)
+            if (fpBtnDeleteCol) {
+                fpBtnDeleteCol.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = state.selectedNodeId || (state.selectedNodeIds && state.selectedNodeIds[0]);
+                    if (!activeId) return;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    if (!node) return;
+                    deleteTableColumn(node);
+                });
+            }
+
             // Tambah Baris (+ Baris) for shapes and tables (Point 5 - Same Size Guaranteed)
             fpBtnAddRow.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -9619,6 +9871,18 @@
                     selectNode(nextNode.id, false);
                 }
             });
+
+            // Hapus Baris / Jalur (- Baris / - Jalur)
+            if (fpBtnDeleteRow) {
+                fpBtnDeleteRow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = state.selectedNodeId || (state.selectedNodeIds && state.selectedNodeIds[0]);
+                    if (!activeId) return;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    if (!node) return;
+                    deleteTableRow(node);
+                });
+            }
 
             [btnPlusTop, btnPlusRight, btnPlusBottom, btnPlusLeft, btnPlusInside].forEach(btn => {
                 btn.addEventListener('mousedown', (e) => {
@@ -10392,6 +10656,21 @@
                     }
                 }
 
+                // Shortcut '-' / '_' to delete row/lane in terminal table or swimlane
+                if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const targetNode = state.nodes.find(n => n.id === activeId);
+                    if (targetNode && targetNode.isTable) {
+                        e.preventDefault();
+                        deleteTableRow(targetNode);
+                        return;
+                    } else if (targetNode && targetNode.isSwimlane) {
+                        e.preventDefault();
+                        deleteSwimlaneLane(targetNode);
+                        return;
+                    }
+                }
+
                 if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
                     e.preventDefault();
                     openProjectFile();
@@ -10416,13 +10695,12 @@
                 }
 
                 if (e.key === 'Delete' || e.key === 'Backspace') {
-                    if (e.shiftKey) {
-                        const targetId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
-                        const targetNode = state.nodes.find(n => n.id === targetId);
-                        if (targetNode && targetNode.isTable && targetNode.selectedCells) {
-                            deleteSelectedTableCells();
-                            return;
-                        }
+                    const targetId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const targetNode = state.nodes.find(n => n.id === targetId);
+                    if (targetNode && targetNode.isTable && targetNode.selectedCells) {
+                        e.preventDefault();
+                        deleteSelectedTableCells();
+                        return;
                     }
                     deleteSelected();
                     return;
@@ -11207,6 +11485,9 @@
                                 laneHRect.setAttribute('data-edit-target', 'swimlane-lane-title');
                                 laneHRect.setAttribute('data-lane-idx', lIdx);
                                 laneHRect.style.cursor = 'pointer';
+                                laneHRect.addEventListener('click', () => {
+                                    node.selectedLaneIdx = lIdx;
+                                });
                                 laneHRect.addEventListener('dblclick', (e) => {
                                     e.stopPropagation();
                                     openDirectInShapeEditor(node, laneHRect);
@@ -11306,6 +11587,23 @@
                                     divG.appendChild(hitL);
                                     swimlaneResizers.appendChild(divG);
                                 }
+
+                                const laneHRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                                laneHRect.setAttribute('x', curX); laneHRect.setAttribute('y', poolHeaderH);
+                                laneHRect.setAttribute('width', laneW); laneHRect.setAttribute('height', lhH);
+                                laneHRect.setAttribute('fill', 'rgba(0, 0, 0, 0.025)');
+                                laneHRect.setAttribute('class', 'swimlane-lane-hitzone');
+                                laneHRect.setAttribute('data-edit-target', 'swimlane-lane-title');
+                                laneHRect.setAttribute('data-lane-idx', lIdx);
+                                laneHRect.style.cursor = 'pointer';
+                                laneHRect.addEventListener('click', () => {
+                                    node.selectedLaneIdx = lIdx;
+                                });
+                                laneHRect.addEventListener('dblclick', (e) => {
+                                    e.stopPropagation();
+                                    openDirectInShapeEditor(node, laneHRect);
+                                });
+                                shapeEl.appendChild(laneHRect);
 
                                 const laneTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                                 laneTitle.setAttribute('x', curX + (laneW / 2)); laneTitle.setAttribute('y', poolHeaderH + (lhH / 2));
@@ -12377,6 +12675,11 @@
                     const nodeId = nodeGroup.getAttribute('data-id');
                     targetNode = state.nodes.find(n => n.id === nodeId);
                     if (targetNode) {
+                        const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
+                        if (swimlaneLaneHitzone) {
+                            const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
+                            if (!isNaN(lIdx)) targetNode.selectedLaneIdx = lIdx;
+                        }
                         if (!state.selectedNodeIds.includes(nodeId)) {
                             selectNode(nodeId, false);
                         }
