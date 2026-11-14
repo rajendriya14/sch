@@ -5237,6 +5237,8 @@
                     closeTableContextMenu();
                     if (node && node.isTable) {
                         addTableColumn(node);
+                    } else if (node && node.isSwimlane) {
+                        addSwimlaneLane(node);
                     }
                 });
             }
@@ -5249,6 +5251,8 @@
                     closeTableContextMenu();
                     if (node && node.isTable) {
                         addTableRow(node);
+                    } else if (node && node.isSwimlane) {
+                        addSwimlaneLane(node);
                     }
                 });
             }
@@ -8110,19 +8114,25 @@
                 node.lanes = node.lanes || [];
                 const count = node.lanes.length + 1;
                 if (node.orientation === 'horizontal') {
-                    const newLaneH = 110;
-                    node.lanes.push({ id: 'lane_' + Date.now(), title: 'Data ' + count, size: newLaneH });
+                    const avgH = (node.lanes.length > 0) 
+                        ? Math.round(node.lanes.reduce((acc, l) => acc + (l.size || 100), 0) / node.lanes.length) 
+                        : 110;
+                    const newLaneH = Math.max(50, avgH);
+                    node.lanes.push({ id: 'lane_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), title: 'Data ' + count, size: newLaneH });
                     node.height += newLaneH;
                 } else {
-                    const newLaneW = 160;
-                    node.lanes.push({ id: 'lane_' + Date.now(), title: 'Data ' + count, size: newLaneW });
+                    const avgW = (node.lanes.length > 0) 
+                        ? Math.round(node.lanes.reduce((acc, l) => acc + (l.size || 100), 0) / node.lanes.length) 
+                        : 160;
+                    const newLaneW = Math.max(60, avgW);
+                    node.lanes.push({ id: 'lane_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), title: 'Data ' + count, size: newLaneW });
                     node.width += newLaneW;
                 }
                 saveSnapshot('Tambah Jalur Swimlane');
                 renderNodes();
                 renderSelection();
                 updateFloatingAndPlusBars();
-                statusHintText.textContent = `Jalur baru () berhasil ditambahkan ke ${node.text || 'Swimlane'}.`;
+                statusHintText.textContent = `Jalur/sel baru (Data ${count}) berhasil ditambahkan ke ${node.text || 'Swimlane'}.`;
             }
 
             function toggleSwimlaneGrouping(node) {
@@ -8223,6 +8233,19 @@
                         btnPlusLeft.title = 'Tambah Kolom Terminal (+ Kolom)';
                         btnPlusBottom.title = 'Tambah Baris Terminal (+ Baris)';
                         btnPlusTop.title = 'Tambah Baris Terminal (+ Baris)';
+                    } else if (node.isSwimlane) {
+                        btnPlusInside.style.display = 'none';
+                        if (node.orientation === 'horizontal') {
+                            btnPlusBottom.title = 'Tambah Baris / Jalur Baru (+ Jalur)';
+                            btnPlusTop.title = 'Tambah Baris / Jalur Baru (+ Jalur)';
+                            btnPlusRight.title = 'Tambah Bentuk di Kanan';
+                            btnPlusLeft.title = 'Tambah Bentuk di Kiri';
+                        } else {
+                            btnPlusRight.title = 'Tambah Kolom / Jalur Baru (+ Kolom)';
+                            btnPlusLeft.title = 'Tambah Kolom / Jalur Baru (+ Kolom)';
+                            btnPlusBottom.title = 'Tambah Bentuk di Bawah';
+                            btnPlusTop.title = 'Tambah Bentuk di Atas';
+                        }
                     } else if (node.isEntity) {
                         btnPlusInside.style.left = `${screenX + screenW / 2 - 11}px`;
                         btnPlusInside.style.top = `${screenY + screenH / 2 - 11}px`;
@@ -8452,13 +8475,13 @@
                 closeMorePopover();
 
                 const isTableSelection = targetNode && targetNode.isTable && targetNode.selectedCells;
-                const isTable = !!(targetNode && targetNode.isTable);
+                const isTableOrSwimlane = !!(targetNode && (targetNode.isTable || targetNode.isSwimlane));
                 const hasMultiCells = isTableSelection && 
                     (targetNode.selectedCells.minR !== targetNode.selectedCells.maxR || targetNode.selectedCells.minC !== targetNode.selectedCells.maxC);
 
-                if (ctxAddDivider) ctxAddDivider.style.display = isTable ? 'block' : 'none';
-                if (ctxAddCol) ctxAddCol.style.display = isTable ? 'flex' : 'none';
-                if (ctxAddRow) ctxAddRow.style.display = isTable ? 'flex' : 'none';
+                if (ctxAddDivider) ctxAddDivider.style.display = isTableOrSwimlane ? 'block' : 'none';
+                if (ctxAddCol) ctxAddCol.style.display = isTableOrSwimlane ? 'flex' : 'none';
+                if (ctxAddRow) ctxAddRow.style.display = isTableOrSwimlane ? 'flex' : 'none';
 
                 if (ctxTableDivider) ctxTableDivider.style.display = hasMultiCells ? 'block' : 'none';
                 if (ctxMerge) ctxMerge.style.display = hasMultiCells ? 'flex' : 'none';
@@ -9549,6 +9572,8 @@
 
                 if (node.isTable) {
                     addTableColumn(node);
+                } else if (node.isSwimlane) {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 50;
                     const nextNode = createNode(node.type || 'process', node.x + node.width + gap + (node.width / 2), node.y + (node.height / 2), '');
@@ -9576,6 +9601,8 @@
 
                 if (node.isTable) {
                     addTableRow(node);
+                } else if (node.isSwimlane) {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 40;
                     const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y + node.height + gap + (node.height / 2), '');
@@ -9608,6 +9635,8 @@
 
                 if (node.isTable) {
                     addTableColumn(node);
+                } else if (node.isSwimlane && node.orientation === 'vertical') {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 50;
                     const nextNode = createNode(node.type || 'process', node.x + node.width + gap + (node.width / 2), node.y + (node.height / 2), '');
@@ -9631,6 +9660,8 @@
 
                 if (node.isTable) {
                     addTableRow(node);
+                } else if (node.isSwimlane) {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 40;
                     const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y + node.height + gap + (node.height / 2), '');
@@ -9654,6 +9685,8 @@
 
                 if (node.isTable) {
                     addTableRow(node);
+                } else if (node.isSwimlane) {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 40;
                     const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y - gap - (node.height / 2), '');
@@ -9677,6 +9710,8 @@
 
                 if (node.isTable) {
                     addTableColumn(node);
+                } else if (node.isSwimlane && node.orientation === 'vertical') {
+                    addSwimlaneLane(node);
                 } else {
                     const gap = 50;
                     const nextNode = createNode(node.type || 'process', node.x - gap - (node.width / 2), node.y + (node.height / 2), '');
@@ -10342,13 +10377,17 @@
                     }
                 }
 
-                // Shortcut '+' / '=' to add column in terminal table
+                // Shortcut '+' / '=' to add column/lane in terminal table or swimlane
                 if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
                     const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
                     const targetNode = state.nodes.find(n => n.id === activeId);
                     if (targetNode && targetNode.isTable) {
                         e.preventDefault();
                         addTableColumn(targetNode);
+                        return;
+                    } else if (targetNode && targetNode.isSwimlane) {
+                        e.preventDefault();
+                        addSwimlaneLane(targetNode);
                         return;
                     }
                 }
