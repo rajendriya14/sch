@@ -12969,7 +12969,15 @@
                 }
 
                 try {
-                    const response = await fetch('index.php?page=rekha&action=session');
+                    const response = await fetch('index.php?page=rekha&action=session', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (response.status === 401) {
+                        if (window.location.protocol.startsWith('http')) {
+                            window.location.href = 'index.php?page=auth&action=login';
+                        }
+                        return;
+                    }
                     if (!response.ok) return;
                     const res = await response.json();
 
