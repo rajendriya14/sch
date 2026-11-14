@@ -29,9 +29,9 @@
                     <div class="card h-100">
                         <?php if (!empty($app['logo_only'])): ?>
                             <div class="card-body d-flex align-items-center justify-content-between p-3" style="min-height: 98px;">
-                                <div style="width: 24px; visibility: hidden;" class="d-none d-sm-block" aria-hidden="true"></div>
+                                <div style="width: 28px; visibility: hidden;" class="d-none d-sm-block" aria-hidden="true"></div>
                                 <div class="d-flex align-items-center justify-content-center flex-grow-1">
-                                    <svg viewBox="0 0 108 36" width="138" height="46" xmlns="http://www.w3.org/2000/svg" style="display: block; transition: transform 0.2s ease;">
+                                    <svg viewBox="0 0 108 36" width="190" height="62" xmlns="http://www.w3.org/2000/svg" style="display: block; max-width: 100%; height: auto; max-height: 58px; transition: transform 0.2s ease;">
                                         <defs>
                                             <pattern id="portalPencilHatchPattern" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                                                 <line x1="0" y1="0" x2="0" y2="4" stroke="#1e293b" stroke-width="1.2" opacity="0.82" />
