@@ -1,3 +1,7 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
 <div class="portal-hero text-center">
     <?php
         $jamNow   = (int) (new DateTime('now', new DateTimeZone('Asia/Jakarta')))->format('G');
@@ -25,7 +29,14 @@
                     <div class="card h-100">
                         <?php if (!empty($app['logo_only'])): ?>
                             <div class="card-body d-flex align-items-center justify-content-center p-3" style="min-height: 98px;">
-                                <img src="rekha-logo.png" alt="rekha" style="max-height: 48px; width: auto; max-width: 80%; object-fit: contain; transition: transform 0.2s ease;">
+                                <svg viewBox="0 0 108 36" width="138" height="46" xmlns="http://www.w3.org/2000/svg" style="display: block; transition: transform 0.2s ease;">
+                                    <defs>
+                                        <pattern id="portalPencilHatchPattern" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                                            <line x1="0" y1="0" x2="0" y2="4" stroke="#1e293b" stroke-width="1.2" opacity="0.82" />
+                                        </pattern>
+                                    </defs>
+                                    <text x="4" y="27" font-family="'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5px" fill="url(#portalPencilHatchPattern)" stroke="#0f172a" stroke-width="1.15" stroke-linejoin="round">rekha</text>
+                                </svg>
                             </div>
                         <?php else: ?>
                             <div class="card-body d-flex align-items-start gap-3">
