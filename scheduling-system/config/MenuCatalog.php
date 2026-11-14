@@ -36,6 +36,7 @@ class MenuCatalog
         'leave'             => ['label' => 'Leave Request',             'icon' => 'bi-file-text',      'group' => 'Content Moderator — Configuration'],
 
         'ffr'               => ['label' => 'Family Financial Report',   'icon' => 'bi-piggy-bank',     'group' => 'Keuangan'],
+        'rekha'             => ['label' => 'Rekha Diagram Studio',       'icon' => 'bi-diagram-3',      'group' => 'Tools & Desain'],
     ];
 
     public static function all(): array

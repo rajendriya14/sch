@@ -96,6 +96,7 @@ $controllerMap = [
     'auth'               => 'Controllers\\AuthController',
     'ffr'                => 'Controllers\\FfrController',
     'users'              => 'Controllers\\UserController',
+    'rekha'              => 'Controllers\\RekhaController',
 ];
 
 /** Halaman yang boleh diakses tanpa login. */

@@ -58,6 +58,15 @@ class PortalController
                 'url'         => self::FINANCE_URL,
                 'badge'       => null,
             ],
+            [
+                'menu'        => 'rekha',
+                'title'       => 'Rekha Diagram Studio',
+                'description' => 'Desain diagram alir, arsitektur, dan flowchart.',
+                'icon'        => 'bi-diagram-3',
+                'url'         => 'rekha.html',
+                'badge'       => null,
+                'logo_only'   => true,
+            ],
         ];
 
         // Saring sesuai izin; kartu Workforce dianggap terbuka bila salah satu
