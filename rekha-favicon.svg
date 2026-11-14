@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <pattern id="h" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="#1e293b" stroke-width="1.2" opacity="0.85"/>
+    </pattern>
+  </defs>
+  <text x="16" y="25" text-anchor="middle" font-family="'Space Grotesk', 'Inter', -apple-system, sans-serif" font-size="28" font-weight="700" fill="url(#h)" stroke="#0f172a" stroke-width="1.15" stroke-linejoin="round">r</text>
+</svg>

@@ -28,15 +28,19 @@
                 <a href="<?= htmlspecialchars($app['url']) ?>" class="portal-card text-decoration-none">
                     <div class="card h-100">
                         <?php if (!empty($app['logo_only'])): ?>
-                            <div class="card-body d-flex align-items-center justify-content-center p-3" style="min-height: 98px;">
-                                <svg viewBox="0 0 108 36" width="138" height="46" xmlns="http://www.w3.org/2000/svg" style="display: block; transition: transform 0.2s ease;">
-                                    <defs>
-                                        <pattern id="portalPencilHatchPattern" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                                            <line x1="0" y1="0" x2="0" y2="4" stroke="#1e293b" stroke-width="1.2" opacity="0.82" />
-                                        </pattern>
-                                    </defs>
-                                    <text x="4" y="27" font-family="'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5px" fill="url(#portalPencilHatchPattern)" stroke="#0f172a" stroke-width="1.15" stroke-linejoin="round">rekha</text>
-                                </svg>
+                            <div class="card-body d-flex align-items-center justify-content-between p-3" style="min-height: 98px;">
+                                <div style="width: 24px; visibility: hidden;" class="d-none d-sm-block" aria-hidden="true"></div>
+                                <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                                    <svg viewBox="0 0 108 36" width="138" height="46" xmlns="http://www.w3.org/2000/svg" style="display: block; transition: transform 0.2s ease;">
+                                        <defs>
+                                            <pattern id="portalPencilHatchPattern" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                                                <line x1="0" y1="0" x2="0" y2="4" stroke="#1e293b" stroke-width="1.2" opacity="0.82" />
+                                            </pattern>
+                                        </defs>
+                                        <text x="4" y="27" font-family="'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5px" fill="url(#portalPencilHatchPattern)" stroke="#0f172a" stroke-width="1.15" stroke-linejoin="round">rekha</text>
+                                    </svg>
+                                </div>
+                                <i class="bi bi-arrow-right-circle portal-arrow"></i>
                             </div>
                         <?php else: ?>
                             <div class="card-body d-flex align-items-start gap-3">
