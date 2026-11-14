@@ -5279,6 +5279,124 @@
                 statusHintText.textContent = 'Cell matriks terminal berhasil dihapus.';
             }
 
+            function updateTableSelectionOverlay(node) {
+                if (!node || !node.isTable) return;
+                const nodeGroup = document.querySelector(`.diagram-node[data-id="${node.id}"]`);
+                if (!nodeGroup) return;
+                const shapeEl = nodeGroup.querySelector('.table-shape-group') 
+                    || (nodeGroup.querySelector('.table-grid-resizers') ? nodeGroup.querySelector('.table-grid-resizers').parentElement : nodeGroup);
+                let sRect = shapeEl.querySelector('.terminal-selection-box');
+
+                if (!node.selectedCells) {
+                    if (sRect) sRect.remove();
+                    return;
+                }
+
+                const sc = node.selectedCells;
+                const cols = node.columns || ['Kolom 1', 'Kolom 2'];
+                const rows = node.rows || [];
+                const headerH = node.headerHeight || 26;
+
+                function getColX(ci) {
+                    let x = 0;
+                    for (let k = 0; k < ci; k++) {
+                        x += (node.colWidths && node.colWidths[k] !== undefined) ? node.colWidths[k] : (node.width / cols.length);
+                    }
+                    return x;
+                }
+                function getColW(ci) {
+                    return (node.colWidths && node.colWidths[ci] !== undefined) ? node.colWidths[ci] : (node.width / cols.length);
+                }
+                function getRowY(ri) {
+                    let y = headerH;
+                    for (let k = 0; k < ri; k++) {
+                        y += (node.rowHeights && node.rowHeights[k] !== undefined) ? node.rowHeights[k] : ((node.height - headerH) / Math.max(1, rows.length));
+                    }
+                    return y;
+                }
+                function getRowH(ri) {
+                    return (node.rowHeights && node.rowHeights[ri] !== undefined) ? node.rowHeights[ri] : ((node.height - headerH) / Math.max(1, rows.length));
+                }
+
+                const selX = getColX(sc.minC);
+                const selY = getRowY(sc.minR);
+                let selW = 0;
+                for (let k = sc.minC; k <= sc.maxC; k++) selW += getColW(k);
+                let selH = 0;
+                for (let k = sc.minR; k <= sc.maxR; k++) selH += getRowH(k);
+
+                if (!sRect) {
+                    sRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    sRect.setAttribute('class', 'terminal-selection-box');
+                    sRect.setAttribute('fill', 'rgba(59, 130, 246, 0.22)');
+                    sRect.setAttribute('stroke', '#2563eb');
+                    sRect.setAttribute('stroke-width', '1.8');
+                    sRect.setAttribute('stroke-dasharray', '4 2');
+                    sRect.setAttribute('pointer-events', 'none');
+                    const resizerGroup = shapeEl.querySelector('.table-grid-resizers');
+                    if (resizerGroup && resizerGroup.parentNode === shapeEl) {
+                        shapeEl.insertBefore(sRect, resizerGroup);
+                    } else {
+                        shapeEl.appendChild(sRect);
+                    }
+                }
+
+                sRect.setAttribute('x', selX);
+                sRect.setAttribute('y', selY);
+                sRect.setAttribute('width', Math.max(0, selW));
+                sRect.setAttribute('height', Math.max(0, selH));
+                sRect.style.display = 'block';
+            }
+
+            function addTableColumn(node) {
+                if (!node || !node.isTable) return;
+                node.columns = node.columns || ['Kolom 1'];
+                node.rows = node.rows || [];
+                const newColIdx = node.columns.length + 1;
+                const newColName = `Kolom ${newColIdx}`;
+                node.columns.push(newColName);
+                node.rows.forEach((r, ri) => {
+                    r.push(`Data ${ri + 1}.${newColIdx}`);
+                });
+                const addedW = 75;
+                node.width += addedW;
+                if (node.colWidths && node.colWidths.length === node.columns.length - 1) {
+                    node.colWidths.push(addedW);
+                } else {
+                    const defaultColW = node.width / node.columns.length;
+                    node.colWidths = node.columns.map(() => defaultColW);
+                }
+                renderNodes();
+                renderConnections();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `Kolom baru '${newColName}' berhasil ditambahkan ke terminal!`;
+                saveSnapshot('Tambah Kolom Terminal');
+            }
+
+            function addTableRow(node) {
+                if (!node || !node.isTable) return;
+                node.columns = node.columns || ['Kolom 1', 'Kolom 2'];
+                node.rows = node.rows || [];
+                const newRow = node.columns.map((_, i) => `Data ${node.rows.length + 1}.${i + 1}`);
+                node.rows.push(newRow);
+                const addedH = 26;
+                node.height += addedH;
+                if (node.rowHeights && node.rowHeights.length === node.rows.length - 1) {
+                    node.rowHeights.push(addedH);
+                } else {
+                    const headerH = node.headerHeight || 26;
+                    const defaultRowH = (node.height - headerH) / Math.max(1, node.rows.length);
+                    node.rowHeights = node.rows.map(() => defaultRowH);
+                }
+                renderNodes();
+                renderConnections();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = 'Baris baru berhasil ditambahkan ke terminal!';
+                saveSnapshot('Tambah Baris Terminal');
+            }
+
             // Direct in-shape editor active reference is managed in JS
 
             // Floating "+" Buttons
@@ -8060,12 +8178,24 @@
                     btnPlusLeft.style.top = `${screenY + screenH / 2 - 11}px`;
                     btnPlusLeft.style.display = 'flex';
 
-                    if (node.isTable || node.isEntity) {
+                    if (node.isTable) {
                         btnPlusInside.style.left = `${screenX + screenW / 2 - 11}px`;
                         btnPlusInside.style.top = `${screenY + screenH / 2 - 11}px`;
                         btnPlusInside.style.display = 'flex';
+                        btnPlusInside.title = 'Tambah Kolom Terminal (+ Kolom)';
+                        btnPlusRight.title = 'Tambah Kolom Terminal (+ Kolom)';
+                        btnPlusBottom.title = 'Tambah Baris Terminal (+ Baris)';
+                    } else if (node.isEntity) {
+                        btnPlusInside.style.left = `${screenX + screenW / 2 - 11}px`;
+                        btnPlusInside.style.top = `${screenY + screenH / 2 - 11}px`;
+                        btnPlusInside.style.display = 'flex';
+                        btnPlusInside.title = 'Tambah Field Entitas (+ Field)';
+                        btnPlusRight.title = 'Tambah Kolom / Bentuk di Kanan';
+                        btnPlusBottom.title = 'Tambah Baris / Bentuk di Bawah';
                     } else {
                         btnPlusInside.style.display = 'none';
+                        btnPlusRight.title = 'Tambah Kolom / Bentuk di Kanan';
+                        btnPlusBottom.title = 'Tambah Baris / Bentuk di Bawah';
                     }
                 }
 
@@ -9373,10 +9503,9 @@
                 if (!activeId) return;
                 const node = state.nodes.find(n => n.id === activeId);
                 if (!node) return;
-                
 
-                    if (node.isTable) {
-                    btnPlusRight.click();
+                if (node.isTable) {
+                    addTableColumn(node);
                 } else {
                     const gap = 50;
                     const nextNode = createNode(node.type || 'process', node.x + node.width + gap + (node.width / 2), node.y + (node.height / 2), '');
@@ -9401,10 +9530,9 @@
                 if (!activeId) return;
                 const node = state.nodes.find(n => n.id === activeId);
                 if (!node) return;
-                
 
-                    if (node.isTable) {
-                    btnPlusBottom.click();
+                if (node.isTable) {
+                    addTableRow(node);
                 } else {
                     const gap = 40;
                     const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y + node.height + gap + (node.height / 2), '');
@@ -9435,21 +9563,8 @@
                 const node = state.nodes.find(n => n.id === state.selectedNodeId);
                 if (!node) return;
 
-                
-
-                    if (node.isTable) {
-                    node.columns = node.columns || ['Kolom 1'];
-                    node.rows = node.rows || [];
-                    const newColIdx = node.columns.length + 1;
-                    node.columns.push(`Kolom ${newColIdx}`);
-                    node.rows.forEach((r, ri) => r.push(`Data ${ri + 1}.${newColIdx}`));
-                    node.width += 70;
-                    if (node.colWidths) node.colWidths.push(70);
-                    renderNodes();
-                    renderConnections();
-                    renderSelection();
-                    updateFloatingAndPlusBars();
-                    statusHintText.textContent = `Kolom baru '${node.columns[node.columns.length - 1]}' berhasil ditambahkan ke terminal!`;
+                if (node.isTable) {
+                    addTableColumn(node);
                 } else {
                     const gap = 50;
                     const nextNode = createNode(node.type || 'process', node.x + node.width + gap + (node.width / 2), node.y + (node.height / 2), '');
@@ -9471,20 +9586,8 @@
                 const node = state.nodes.find(n => n.id === state.selectedNodeId);
                 if (!node) return;
 
-                
-
-                    if (node.isTable) {
-                    node.columns = node.columns || ['Kolom 1', 'Kolom 2'];
-                    node.rows = node.rows || [];
-                    const newRow = node.columns.map((_, i) => `Data ${node.rows.length + 1}.${i + 1}`);
-                    node.rows.push(newRow);
-                    node.height += 24;
-                    if (node.rowHeights) node.rowHeights.push(24);
-                    renderNodes();
-                    renderConnections();
-                    renderSelection();
-                    updateFloatingAndPlusBars();
-                    statusHintText.textContent = 'Baris baru berhasil ditambahkan ke tabel!';
+                if (node.isTable) {
+                    addTableRow(node);
                 } else {
                     const gap = 40;
                     const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y + node.height + gap + (node.height / 2), '');
@@ -9554,8 +9657,9 @@
                     renderSelection();
                     updateFloatingAndPlusBars();
                     statusHintText.textContent = `Field '${newField}' berhasil ditambahkan ke entitas!`;
+                    saveSnapshot('Tambah Field Entitas');
                 } else if (node.isTable) {
-                    btnPlusBottom.click();
+                    addTableColumn(node);
                 }
             });
 
@@ -10358,6 +10462,7 @@
 
                     if (node.isTable) {
                         shapeEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        shapeEl.setAttribute('class', 'table-shape-group');
                         const outer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                         outer.setAttribute('class', 'node-body');
                         outer.setAttribute('width', w); outer.setAttribute('height', h);
@@ -10585,13 +10690,14 @@
                                 }
 
                                 hitRect.addEventListener('mousedown', (e) => {
+                                    if (e.button !== 0) return;
                                     e.stopPropagation();
                                     state.activeHeaderNodeId = null;
                                     selectNode(node.id, false);
                                     state.isSelectingTerminalCells = true;
                                     state.terminalCellAnchor = { nodeId: node.id, r: ri, c: ci };
                                     node.selectedCells = { minR: ri, maxR: ri, minC: ci, maxC: ci };
-                                    renderNodes();
+                                    updateTableSelectionOverlay(node);
                                     updateFloatingAndPlusBars();
                                 });
 
@@ -10603,7 +10709,7 @@
                                             minC: Math.min(state.terminalCellAnchor.c, ci),
                                             maxC: Math.max(state.terminalCellAnchor.c, ci)
                                         };
-                                        renderNodes();
+                                        updateTableSelectionOverlay(node);
                                         updateFloatingAndPlusBars();
                                     }
                                 });
@@ -10679,8 +10785,9 @@
                             for (let k = sc.minR; k <= sc.maxR; k++) selH += getRowH(k);
 
                             const sRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            sRect.setAttribute('class', 'terminal-selection-box');
                             sRect.setAttribute('x', selX); sRect.setAttribute('y', selY);
-                            sRect.setAttribute('width', selW); sRect.setAttribute('height', selH);
+                            sRect.setAttribute('width', Math.max(0, selW)); sRect.setAttribute('height', Math.max(0, selH));
                             sRect.setAttribute('fill', 'rgba(59, 130, 246, 0.22)');
                             sRect.setAttribute('stroke', '#2563eb');
                             sRect.setAttribute('stroke-width', '1.8');
@@ -12213,6 +12320,56 @@
                     return;
                 }
 
+                // Terminal table cell drag selection ("Blok Cell")
+                if (state.isSelectingTerminalCells && state.terminalCellAnchor) {
+                    const node = state.nodes.find(n => n.id === state.terminalCellAnchor.nodeId);
+                    if (node && node.isTable) {
+                        const headerH = node.headerHeight || 26;
+                        const relX = canvasCoords.x - node.x;
+                        const relY = canvasCoords.y - node.y - headerH;
+
+                        const cols = node.columns || ['Kolom 1', 'Kolom 2'];
+                        const rows = node.rows || [];
+
+                        let targetCol = 0;
+                        let cumX = 0;
+                        for (let ci = 0; ci < cols.length; ci++) {
+                            const cw = (node.colWidths && node.colWidths[ci] !== undefined) ? node.colWidths[ci] : (node.width / cols.length);
+                            if (relX >= cumX) {
+                                targetCol = ci;
+                            }
+                            cumX += cw;
+                        }
+                        if (relX >= cumX) targetCol = cols.length - 1;
+                        if (relX < 0) targetCol = 0;
+
+                        let targetRow = 0;
+                        let cumY = 0;
+                        for (let ri = 0; ri < rows.length; ri++) {
+                            const rh = (node.rowHeights && node.rowHeights[ri] !== undefined) ? node.rowHeights[ri] : ((node.height - headerH) / Math.max(1, rows.length));
+                            if (relY >= cumY) {
+                                targetRow = ri;
+                            }
+                            cumY += rh;
+                        }
+                        if (relY >= cumY) targetRow = rows.length - 1;
+                        if (relY < 0) targetRow = 0;
+
+                        const newMinR = Math.min(state.terminalCellAnchor.r, targetRow);
+                        const newMaxR = Math.max(state.terminalCellAnchor.r, targetRow);
+                        const newMinC = Math.min(state.terminalCellAnchor.c, targetCol);
+                        const newMaxC = Math.max(state.terminalCellAnchor.c, targetCol);
+
+                        const cur = node.selectedCells;
+                        if (!cur || cur.minR !== newMinR || cur.maxR !== newMaxR || cur.minC !== newMinC || cur.maxC !== newMaxC) {
+                            node.selectedCells = { minR: newMinR, maxR: newMaxR, minC: newMinC, maxC: newMaxC };
+                            updateTableSelectionOverlay(node);
+                            updateFloatingAndPlusBars();
+                        }
+                    }
+                    return;
+                }
+
                 if (state.isResizing && state.selectedNodeId) {
                     const node = state.nodes.find(n => n.id === state.selectedNodeId);
                     if (node && state.resizeInitialRect && !node.isLocked) {
@@ -12497,19 +12654,7 @@
 
                 if (state.isSelectingTerminalCells) {
                     state.isSelectingTerminalCells = false;
-                    // If user clicked a single cell without dragging, dismiss cell drag-selection (Point 4)
-                    let singleCellCleared = false;
-                    state.nodes.forEach(n => {
-                        if (n.isTable && n.selectedCells) {
-                            if (n.selectedCells.minR === n.selectedCells.maxR && n.selectedCells.minC === n.selectedCells.maxC) {
-                                n.selectedCells = null;
-                                singleCellCleared = true;
-                            }
-                        }
-                    });
-                    if (singleCellCleared) {
-                        renderNodes();
-                    }
+                    state.terminalCellAnchor = null;
                 }
 
                 if (state.isDraggingNode) {
