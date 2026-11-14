@@ -25,7 +25,8 @@ class RekhaController
         }
 
         // Arahkan ke file rekha.html yang membawa UI lengkap
-        header('Location: rekha.html');
+        $v = file_exists(__DIR__ . '/../../rekha.html') ? filemtime(__DIR__ . '/../../rekha.html') : time();
+        header("Location: rekha.html?v={$v}");
         exit;
     }
 

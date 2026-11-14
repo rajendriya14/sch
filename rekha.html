@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>rekha - kemaki nomor siji</title>
     <!-- Favicon: Pure Vector 'r' with Graphite Pencil Hatching -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cpattern id='h' width='4' height='4' patternTransform='rotate(45 0 0)' patternUnits='userSpaceOnUse'%3E%3Cline x1='0' y1='0' x2='0' y2='4' stroke='%231e293b' stroke-width='1.2' opacity='0.85'/%3E%3C/pattern%3E%3C/defs%3E%3Ctext x='16' y='25' text-anchor='middle' font-family='Space Grotesk, Inter, sans-serif' font-size='28' font-weight='700' fill='url(%23h)' stroke='%230f172a' stroke-width='1.15' stroke-linejoin='round'%3Er%3C/text%3E%3C/svg%3E">
@@ -4346,6 +4349,15 @@
                     <span class="fp-more-label" style="color:#ef4444; font-weight:600;">Hapus Cell</span>
                     <span class="fp-more-shortcut" style="color:#ef4444;">Shift+Del</span>
                 </div>
+                <div class="ctx-divider" id="ctxAddDivider" style="height:1px; background:rgba(0,0,0,0.08); margin:4px 0;"></div>
+                <div class="fp-more-item" id="ctxAddCol" style="display:none;">
+                    <span class="fp-more-label" style="font-weight:600; color:#2563eb;">+ Tambah Kolom</span>
+                    <span class="fp-more-shortcut">+ Kolom</span>
+                </div>
+                <div class="fp-more-item" id="ctxAddRow" style="display:none;">
+                    <span class="fp-more-label" style="font-weight:600; color:#2563eb;">+ Tambah Baris</span>
+                    <span class="fp-more-shortcut">+ Baris</span>
+                </div>
                 <div class="ctx-divider" id="ctxTableDivider"></div>
                 <div class="fp-more-item" id="ctxMerge">
                     <span class="fp-more-label">Gabung Sel (Merge)</span>
@@ -5200,6 +5212,9 @@
             const ctxDelete = document.getElementById('ctxDelete');
             const ctxDeleteLabel = document.getElementById('ctxDeleteLabel');
             const ctxDeleteCells = document.getElementById('ctxDeleteCells');
+            const ctxAddCol = document.getElementById('ctxAddCol');
+            const ctxAddRow = document.getElementById('ctxAddRow');
+            const ctxAddDivider = document.getElementById('ctxAddDivider');
             const ctxTableDivider = document.getElementById('ctxTableDivider');
             const ctxMerge = document.getElementById('ctxMerge');
             const ctxRotateText = document.getElementById('ctxRotateText');
@@ -5212,7 +5227,31 @@
                     openRotatePopover(lastX, lastY);
                 });
             }
-                        const ctxUnmerge = document.getElementById('ctxUnmerge');
+            const ctxUnmerge = document.getElementById('ctxUnmerge');
+
+            if (ctxAddCol) {
+                ctxAddCol.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    closeTableContextMenu();
+                    if (node && node.isTable) {
+                        addTableColumn(node);
+                    }
+                });
+            }
+
+            if (ctxAddRow) {
+                ctxAddRow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const node = state.nodes.find(n => n.id === activeId);
+                    closeTableContextMenu();
+                    if (node && node.isTable) {
+                        addTableRow(node);
+                    }
+                });
+            }
 
             function deleteSelectedTableCells() {
                 const targetId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
@@ -8179,12 +8218,11 @@
                     btnPlusLeft.style.display = 'flex';
 
                     if (node.isTable) {
-                        btnPlusInside.style.left = `${screenX + screenW / 2 - 11}px`;
-                        btnPlusInside.style.top = `${screenY + screenH / 2 - 11}px`;
-                        btnPlusInside.style.display = 'flex';
-                        btnPlusInside.title = 'Tambah Kolom Terminal (+ Kolom)';
+                        btnPlusInside.style.display = 'none';
                         btnPlusRight.title = 'Tambah Kolom Terminal (+ Kolom)';
+                        btnPlusLeft.title = 'Tambah Kolom Terminal (+ Kolom)';
                         btnPlusBottom.title = 'Tambah Baris Terminal (+ Baris)';
+                        btnPlusTop.title = 'Tambah Baris Terminal (+ Baris)';
                     } else if (node.isEntity) {
                         btnPlusInside.style.left = `${screenX + screenW / 2 - 11}px`;
                         btnPlusInside.style.top = `${screenY + screenH / 2 - 11}px`;
@@ -8414,8 +8452,13 @@
                 closeMorePopover();
 
                 const isTableSelection = targetNode && targetNode.isTable && targetNode.selectedCells;
+                const isTable = !!(targetNode && targetNode.isTable);
                 const hasMultiCells = isTableSelection && 
                     (targetNode.selectedCells.minR !== targetNode.selectedCells.maxR || targetNode.selectedCells.minC !== targetNode.selectedCells.maxC);
+
+                if (ctxAddDivider) ctxAddDivider.style.display = isTable ? 'block' : 'none';
+                if (ctxAddCol) ctxAddCol.style.display = isTable ? 'flex' : 'none';
+                if (ctxAddRow) ctxAddRow.style.display = isTable ? 'flex' : 'none';
 
                 if (ctxTableDivider) ctxTableDivider.style.display = hasMultiCells ? 'block' : 'none';
                 if (ctxMerge) ctxMerge.style.display = hasMultiCells ? 'flex' : 'none';
@@ -9609,17 +9652,21 @@
                 const node = state.nodes.find(n => n.id === state.selectedNodeId);
                 if (!node) return;
 
-                const gap = 40;
-                const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y - gap - (node.height / 2), '');
-                nextNode.width = node.width;
-                nextNode.height = node.height;
-                nextNode.x = node.x;
-                nextNode.y = node.y - node.height - gap;
-                nextNode.customFill = node.customFill;
-                nextNode.customStroke = node.customStroke;
-                nextNode.customTextColor = node.customTextColor;
-                createConnection(node.id, 'top', nextNode.id, 'bottom', 'elbow');
-                selectNode(nextNode.id, false);
+                if (node.isTable) {
+                    addTableRow(node);
+                } else {
+                    const gap = 40;
+                    const nextNode = createNode(node.type || 'process', node.x + (node.width / 2), node.y - gap - (node.height / 2), '');
+                    nextNode.width = node.width;
+                    nextNode.height = node.height;
+                    nextNode.x = node.x;
+                    nextNode.y = node.y - node.height - gap;
+                    nextNode.customFill = node.customFill;
+                    nextNode.customStroke = node.customStroke;
+                    nextNode.customTextColor = node.customTextColor;
+                    createConnection(node.id, 'top', nextNode.id, 'bottom', 'elbow');
+                    selectNode(nextNode.id, false);
+                }
             });
 
             btnPlusLeft.addEventListener('click', (e) => {
@@ -9628,17 +9675,21 @@
                 const node = state.nodes.find(n => n.id === state.selectedNodeId);
                 if (!node) return;
 
-                const gap = 50;
-                const nextNode = createNode(node.type || 'process', node.x - gap - (node.width / 2), node.y + (node.height / 2), '');
-                nextNode.width = node.width;
-                nextNode.height = node.height;
-                nextNode.x = node.x - node.width - gap;
-                nextNode.y = node.y;
-                nextNode.customFill = node.customFill;
-                nextNode.customStroke = node.customStroke;
-                nextNode.customTextColor = node.customTextColor;
-                createConnection(node.id, 'left', nextNode.id, 'right', 'elbow');
-                selectNode(nextNode.id, false);
+                if (node.isTable) {
+                    addTableColumn(node);
+                } else {
+                    const gap = 50;
+                    const nextNode = createNode(node.type || 'process', node.x - gap - (node.width / 2), node.y + (node.height / 2), '');
+                    nextNode.width = node.width;
+                    nextNode.height = node.height;
+                    nextNode.x = node.x - node.width - gap;
+                    nextNode.y = node.y;
+                    nextNode.customFill = node.customFill;
+                    nextNode.customStroke = node.customStroke;
+                    nextNode.customTextColor = node.customTextColor;
+                    createConnection(node.id, 'left', nextNode.id, 'right', 'elbow');
+                    selectNode(nextNode.id, false);
+                }
             });
 
             btnPlusInside.addEventListener('click', (e) => {
@@ -10291,6 +10342,17 @@
                     }
                 }
 
+                // Shortcut '+' / '=' to add column in terminal table
+                if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+                    const activeId = (state.selectedNodeIds && state.selectedNodeIds.length > 0) ? state.selectedNodeIds[0] : state.selectedNodeId;
+                    const targetNode = state.nodes.find(n => n.id === activeId);
+                    if (targetNode && targetNode.isTable) {
+                        e.preventDefault();
+                        addTableColumn(targetNode);
+                        return;
+                    }
+                }
+
                 if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
                     e.preventDefault();
                     openProjectFile();
@@ -10487,6 +10549,10 @@
                             // Do not stop propagation: let event bubble so viewport mousedown can start dragging node!
                             selectNode(node.id, false);
                             state.activeHeaderNodeId = node.id;
+                            if (node.selectedCells) {
+                                node.selectedCells = null;
+                                updateTableSelectionOverlay(node);
+                            }
                             updateFloatingAndPlusBars();
                             statusHintText.textContent = 'Header Matriks Terpilih. Tarik header untuk memindahkan posisi tabel di kanvas.';
                         };
@@ -12258,7 +12324,7 @@
                             r < targetNode.selectedCells.minR || r > targetNode.selectedCells.maxR ||
                             c < targetNode.selectedCells.minC || c > targetNode.selectedCells.maxC) {
                             targetNode.selectedCells = { minR: r, maxR: r, minC: c, maxC: c };
-                            renderNodes();
+                            updateTableSelectionOverlay(targetNode);
                         }
                         openTableContextMenu(e.clientX, e.clientY, targetNode);
                     }

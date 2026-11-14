@@ -63,7 +63,7 @@ class PortalController
                 'title'       => 'Rekha Diagram Studio',
                 'description' => 'Desain diagram alir, arsitektur, dan flowchart.',
                 'icon'        => 'bi-diagram-3',
-                'url'         => 'rekha.html',
+                'url'         => 'rekha.html?v=' . (file_exists(__DIR__ . '/../../rekha.html') ? filemtime(__DIR__ . '/../../rekha.html') : time()),
                 'badge'       => null,
                 'logo_only'   => true,
             ],
