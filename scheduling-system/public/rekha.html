@@ -4111,6 +4111,14 @@
                     <marker id="arrowMarkerStart" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                         <path d="M 9 1 L 0 5 L 9 9 z" fill="currentColor"/>
                     </marker>
+
+                    <marker id="arrowMarkerEndPreview" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1 L 9 5 L 0 9 z" fill="#2563eb"/>
+                    </marker>
+
+                    <marker id="arrowMarkerStartPreview" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 9 1 L 0 5 L 9 9 z" fill="#2563eb"/>
+                    </marker>
                 </defs>
 
                 <rect width="100%" height="100%" fill="url(#gridPattern)" id="canvasBackground" style="pointer-events: all;"/>
@@ -7865,10 +7873,11 @@
                     }
                 }
 
-                const snapThreshold = 32;
+                const snapThreshold = 36;
                 let nearest = null;
                 let minDist = Infinity;
 
+                // 1. Direct proximity snap to any anchor port within threshold
                 state.nodes.forEach(node => {
                     if (node.id === ignoreNodeId) return;
 
@@ -7881,6 +7890,25 @@
                         }
                     });
                 });
+
+                // 2. Shape body snap: if cursor is inside or near any node, snap to its closest port!
+                if (!nearest) {
+                    state.nodes.forEach(node => {
+                        if (node.id === ignoreNodeId) return;
+                        const pad = 24;
+                        if (canvasX >= node.x - pad && canvasX <= node.x + node.width + pad &&
+                            canvasY >= node.y - pad && canvasY <= node.y + node.height + pad) {
+                            const anchors = getNodeAnchorPoints(node);
+                            anchors.forEach(a => {
+                                const dist = Math.hypot(a.x - canvasX, a.y - canvasY);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    nearest = a;
+                                }
+                            });
+                        }
+                    });
+                }
 
                 return nearest;
             }
@@ -8005,7 +8033,7 @@
                 return `M${waypoints[0].x},${waypoints[0].y} ` + waypoints.slice(1).map(p => `L${p.x},${p.y}`).join(' ');
             }
 
-            function createConnection(fromNodeId, fromPort, toNodeId, toPort, type, lineStyle) {
+            function createConnection(fromNodeId, fromPort, toNodeId, toPort, type, lineStyle, fromX, fromY, toX, toY) {
                 const id = 'conn_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
                 let appliedConnStroke = undefined;
                 const arrowThemeId = (state.categoryThemes && state.categoryThemes['arrow']) ? state.categoryThemes['arrow'] : state.activeApplyColorTheme;
@@ -8015,10 +8043,14 @@
                 }
                 const conn = {
                     id: id,
-                    fromNodeId: fromNodeId,
-                    fromPort: fromPort || 'right',
-                    toNodeId: toNodeId,
-                    toPort: toPort || 'left',
+                    fromNodeId: fromNodeId || null,
+                    fromPort: fromPort || (fromNodeId ? 'right' : null),
+                    toNodeId: toNodeId || null,
+                    toPort: toPort || (toNodeId ? 'left' : null),
+                    fromX: (fromX !== undefined) ? fromX : null,
+                    fromY: (fromY !== undefined) ? fromY : null,
+                    toX: (toX !== undefined) ? toX : null,
+                    toY: (toY !== undefined) ? toY : null,
                     type: type || 'elbow',
                     lineStyle: lineStyle || state.activeLineStyle,
                     customStroke: appliedConnStroke,
@@ -8035,12 +8067,23 @@
                 const strokeColor = 'var(--shape-stroke)';
 
                 state.connections.forEach(conn => {
-                    const fromNode = state.nodes.find(n => n.id === conn.fromNodeId);
-                    const toNode = state.nodes.find(n => n.id === conn.toNodeId);
-                    if (!fromNode || !toNode) return;
+                    const fromNode = conn.fromNodeId ? state.nodes.find(n => n.id === conn.fromNodeId) : null;
+                    const toNode = conn.toNodeId ? state.nodes.find(n => n.id === conn.toNodeId) : null;
 
-                    const start = getAnchorCoord(conn.fromNodeId, conn.fromPort);
-                    const end = getAnchorCoord(conn.toNodeId, conn.toPort);
+                    let start = null;
+                    if (fromNode && conn.fromPort) {
+                        start = getAnchorCoord(conn.fromNodeId, conn.fromPort);
+                    } else if (conn.fromX !== null && conn.fromX !== undefined && conn.fromY !== null && conn.fromY !== undefined) {
+                        start = { x: conn.fromX, y: conn.fromY };
+                    }
+
+                    let end = null;
+                    if (toNode && conn.toPort) {
+                        end = getAnchorCoord(conn.toNodeId, conn.toPort);
+                    } else if (conn.toX !== null && conn.toX !== undefined && conn.toY !== null && conn.toY !== undefined) {
+                        end = { x: conn.toX, y: conn.toY };
+                    }
+
                     if (!start || !end) return;
 
                     const isSelected = (state.selectedConnectionIds && state.selectedConnectionIds.includes(conn.id)) || (conn.id === state.selectedConnectionId);
@@ -8061,7 +8104,17 @@
                         d = `M${start.x},${start.y} Q${midX},${start.y} ${end.x},${end.y}`;
                     } else {
                         // Elbow Orthogonal Connection
-                        waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort);
+                        if (fromNode && toNode) {
+                            waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort);
+                        } else {
+                            const midX = (start.x + end.x) / 2;
+                            waypoints = [
+                                { x: start.x, y: start.y },
+                                { x: midX, y: start.y },
+                                { x: midX, y: end.y },
+                                { x: end.x, y: end.y }
+                            ];
+                        }
                         // Apply custom segment offsets if adjusted by user
                         if (conn.customSegments) {
                             Object.keys(conn.customSegments).forEach(idxStr => {
@@ -8222,13 +8275,27 @@
                     }
 
                     g.addEventListener('mousedown', (e) => {
-                        if (e.target.closest('.conn-yellow-handle')) return;
+                        if (e.target.closest('.conn-yellow-handle') || e.target.closest('.conn-endpoint-handle')) return;
                         e.stopPropagation();
                         const isMultiKey = e.shiftKey || e.ctrlKey || e.metaKey;
                         selectConnection(conn.id, isMultiKey);
+
+                        if (!conn.fromNodeId || !conn.toNodeId) {
+                            state.isDraggingConnection = true;
+                            state.dragConnId = conn.id;
+                            const canvasCoords = screenToCanvasCoords(e.clientX, e.clientY);
+                            state.dragConnMouseStart = { x: canvasCoords.x, y: canvasCoords.y };
+                            state.dragConnInitial = {
+                                fromX: conn.fromX !== null && conn.fromX !== undefined ? conn.fromX : (start ? start.x : 0),
+                                fromY: conn.fromY !== null && conn.fromY !== undefined ? conn.fromY : (start ? start.y : 0),
+                                toX: conn.toX !== null && conn.toX !== undefined ? conn.toX : (end ? end.x : 0),
+                                toY: conn.toY !== null && conn.toY !== undefined ? conn.toY : (end ? end.y : 0)
+                            };
+                        }
+
                         statusHintText.textContent = isMultiKey
                             ? 'Menyeleksi panah & objek bersamaan (Ctrl aktif).'
-                            : 'Panah Terpilih. Tarik titik kuning untuk menggeser ruas garis, atau tekan Delete untuk menghapus.';
+                            : 'Panah Terpilih. Tarik titik biru di ujung untuk pindah titik port, titik kuning untuk geser ruas garis, atau tekan Delete untuk menghapus.';
                     });
 
                     layerConnectors.appendChild(g);
@@ -12308,6 +12375,44 @@
                         rect.setAttribute('data-handle', hnd.type);
                         layerSelection.appendChild(rect);
                     });
+
+                    // Magnetic Ports rendered directly on selected shape (on top of edge resize handles!)
+                    // so users can ALWAYS drag an arrow from any port of a selected shape without getting blocked!
+                    const selPorts = [
+                        { id: 'top',    cx: node.x + node.width / 2, cy: node.y },
+                        { id: 'right',  cx: node.x + node.width,     cy: node.y + node.height / 2 },
+                        { id: 'bottom', cx: node.x + node.width / 2, cy: node.y + node.height },
+                        { id: 'left',   cx: node.x,                  cy: node.y + node.height / 2 }
+                    ];
+
+                    selPorts.forEach(p => {
+                        const hitzone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        hitzone.setAttribute('class', 'shadow-anchor-hitzone');
+                        hitzone.setAttribute('cx', p.cx);
+                        hitzone.setAttribute('cy', p.cy);
+                        hitzone.setAttribute('r', '15');
+                        hitzone.setAttribute('style', 'cursor: crosshair; pointer-events: all;');
+
+                        const portCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        portCircle.setAttribute('class', 'shadow-anchor-port snap-active');
+                        portCircle.setAttribute('data-port-id', p.id);
+                        portCircle.setAttribute('cx', p.cx);
+                        portCircle.setAttribute('cy', p.cy);
+                        portCircle.setAttribute('r', '6');
+                        portCircle.setAttribute('style', 'cursor: crosshair; opacity: 1; pointer-events: all;');
+
+                        const onPortDown = (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            startDraggingArrowFromPort(node.id, p.id, p.cx, p.cy);
+                        };
+
+                        hitzone.addEventListener('mousedown', onPortDown);
+                        portCircle.addEventListener('mousedown', onPortDown);
+
+                        layerSelection.appendChild(hitzone);
+                        layerSelection.appendChild(portCircle);
+                    });
                 } else {
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
@@ -12389,11 +12494,19 @@
                 pathEl.setAttribute('class', 'diagram-arrow-live-preview');
                 pathEl.setAttribute('fill', 'none');
                 pathEl.setAttribute('stroke', '#2563eb');
-                pathEl.setAttribute('stroke-width', '2');
-                pathEl.setAttribute('stroke-dasharray', '5 3');
-                pathEl.setAttribute('marker-end', 'url(#arrowMarkerEnd)');
+                pathEl.setAttribute('style', 'color: #2563eb;');
+                pathEl.setAttribute('stroke-width', '2.5');
 
                 const arrowType = state.activeArrowType || 'elbow';
+                const strokeDash = (arrowType === 'dotted-line') ? '3 3' : '5 3';
+                pathEl.setAttribute('stroke-dasharray', strokeDash);
+
+                if (arrowType === 'bidirectional') {
+                    pathEl.setAttribute('marker-start', 'url(#arrowMarkerStartPreview)');
+                    pathEl.setAttribute('marker-end', 'url(#arrowMarkerEndPreview)');
+                } else if (arrowType !== 'line' && arrowType !== 'dotted-line') {
+                    pathEl.setAttribute('marker-end', 'url(#arrowMarkerEndPreview)');
+                }
 
                 if (arrowType === 'elbow') {
                     let d = '';
@@ -12430,6 +12543,52 @@
                     pathEl.setAttribute('d', `M${start.x},${start.y} L${targetX},${targetY}`);
                 }
 
+                layerLivePreview.appendChild(pathEl);
+            }
+
+            function updateLiveReconnectPreview(canvasX, canvasY) {
+                layerLivePreview.innerHTML = '';
+                if (!state.isReconnectingEndpoint || !state.reconnectingConnId) return;
+
+                const conn = state.connections.find(c => c.id === state.reconnectingConnId);
+                if (!conn) return;
+
+                const snapPort = state.currentSnapTarget;
+                let targetX = snapPort ? snapPort.x : canvasX;
+                let targetY = snapPort ? snapPort.y : canvasY;
+
+                if (snapPort) {
+                    const guide = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    guide.setAttribute('cx', snapPort.x); guide.setAttribute('cy', snapPort.y);
+                    guide.setAttribute('r', '8'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.2)');
+                    guide.setAttribute('stroke', '#2563eb'); guide.setAttribute('stroke-width', '2');
+                    layerLivePreview.appendChild(guide);
+                }
+
+                let startX, startY, endX, endY;
+                if (state.reconnectingEndType === 'start') {
+                    startX = targetX;
+                    startY = targetY;
+                    const endCoord = (conn.toNodeId && conn.toPort) ? getAnchorCoord(conn.toNodeId, conn.toPort) : { x: conn.toX, y: conn.toY };
+                    endX = endCoord ? endCoord.x : canvasX;
+                    endY = endCoord ? endCoord.y : canvasY;
+                } else {
+                    const startCoord = (conn.fromNodeId && conn.fromPort) ? getAnchorCoord(conn.fromNodeId, conn.fromPort) : { x: conn.fromX, y: conn.fromY };
+                    startX = startCoord ? startCoord.x : canvasX;
+                    startY = startCoord ? startCoord.y : canvasY;
+                    endX = targetX;
+                    endY = targetY;
+                }
+
+                const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pathEl.setAttribute('class', 'diagram-arrow-live-preview');
+                pathEl.setAttribute('fill', 'none');
+                pathEl.setAttribute('stroke', '#2563eb');
+                pathEl.setAttribute('style', 'color: #2563eb;');
+                pathEl.setAttribute('stroke-width', '2.5');
+                pathEl.setAttribute('stroke-dasharray', '5 3');
+                pathEl.setAttribute('marker-end', 'url(#arrowMarkerEndPreview)');
+                pathEl.setAttribute('d', `M${startX},${startY} L${endX},${endY}`);
                 layerLivePreview.appendChild(pathEl);
             }
 
@@ -12890,6 +13049,25 @@
                     return;
                 }
 
+                if (state.isDraggingConnection && state.dragConnId && state.dragConnInitial) {
+                    const conn = state.connections.find(c => c.id === state.dragConnId);
+                    if (conn) {
+                        const dx = canvasCoords.x - state.dragConnMouseStart.x;
+                        const dy = canvasCoords.y - state.dragConnMouseStart.y;
+                        if (conn.fromNodeId === null && conn.fromX !== null) {
+                            conn.fromX = snap(state.dragConnInitial.fromX + dx);
+                            conn.fromY = snap(state.dragConnInitial.fromY + dy);
+                        }
+                        if (conn.toNodeId === null && conn.toX !== null) {
+                            conn.toX = snap(state.dragConnInitial.toX + dx);
+                            conn.toY = snap(state.dragConnInitial.toY + dy);
+                        }
+                        renderConnections();
+                        renderSelection();
+                    }
+                    return;
+                }
+
                 if (state.isReconnectingEndpoint && state.reconnectingConnId) {
                     const snapPort = findNearestAnchor(canvasCoords.x, canvasCoords.y);
                     state.currentSnapTarget = snapPort;
@@ -13091,13 +13269,60 @@
                 }
 
                 if (state.isDrawingConnection) {
-                    if (state.currentSnapTarget && state.connectStartAnchor) {
+                    if (state.connectStartAnchor) {
                         const start = state.connectStartAnchor;
-                        const target = state.currentSnapTarget;
+                        const target = state.currentSnapTarget || { nodeId: null, id: null, x: canvasCoords.x, y: canvasCoords.y };
+
+                        const startX = start.x;
+                        const startY = start.y;
+                        const targetX = target.x !== undefined ? target.x : canvasCoords.x;
+                        const targetY = target.y !== undefined ? target.y : canvasCoords.y;
+                        const dragDist = Math.hypot(targetX - startX, targetY - startY);
 
                         if (start.nodeId && target.nodeId && start.nodeId !== target.nodeId) {
-                            createConnection(start.nodeId, start.portId, target.nodeId, target.id, state.activeArrowType || 'elbow');
-                            statusHintText.textContent = 'Panah konektor berhasil disambungkan!';
+                            // Two connected shapes
+                            const newConn = createConnection(start.nodeId, start.portId, target.nodeId, target.id, state.activeArrowType || 'elbow');
+                            selectConnection(newConn.id, false);
+                            statusHintText.textContent = 'Panah konektor antar objek berhasil disambungkan!';
+                        } else if (dragDist > 12) {
+                            // Drawn across canvas (shape-to-canvas, canvas-to-shape, or standalone)
+                            const newConn = createConnection(
+                                start.nodeId,
+                                start.portId,
+                                target.nodeId,
+                                target.id,
+                                state.activeArrowType || 'elbow',
+                                state.activeLineStyle || 'solid',
+                                start.nodeId ? null : snap(startX),
+                                start.nodeId ? null : snap(startY),
+                                target.nodeId ? null : snap(targetX),
+                                target.nodeId ? null : snap(targetY)
+                            );
+                            selectConnection(newConn.id, false);
+                            statusHintText.textContent = 'Panah konektor berhasil dibuat!';
+                        } else if (state.mode === 'arrow-drag') {
+                            // Single click without drag: place an arrow right at click point!
+                            let fromX = snap(startX - 50);
+                            let toX = snap(startX + 50);
+                            let fromY = snap(startY);
+                            let toY = snap(startY);
+                            if (start.nodeId) {
+                                toX = snap(startX + 100);
+                            }
+                            const newConn = createConnection(
+                                start.nodeId,
+                                start.portId,
+                                null,
+                                null,
+                                state.activeArrowType || 'elbow',
+                                state.activeLineStyle || 'solid',
+                                start.nodeId ? null : fromX,
+                                start.nodeId ? null : fromY,
+                                toX,
+                                toY
+                            );
+                            selectConnection(newConn.id, false);
+                            statusHintText.textContent = 'Panah baru berhasil diletakkan di kanvas!';
                         }
                     }
 
@@ -13113,12 +13338,47 @@
                 }
 
                 if (state.isReconnectingEndpoint) {
+                    if (state.reconnectingConnId) {
+                        const conn = state.connections.find(c => c.id === state.reconnectingConnId);
+                        if (conn) {
+                            const target = state.currentSnapTarget;
+                            if (state.reconnectingEndType === 'start') {
+                                if (target && target.nodeId) {
+                                    conn.fromNodeId = target.nodeId;
+                                    conn.fromPort = target.id;
+                                    conn.fromX = null;
+                                    conn.fromY = null;
+                                } else {
+                                    conn.fromNodeId = null;
+                                    conn.fromPort = null;
+                                    conn.fromX = snap(canvasCoords.x);
+                                    conn.fromY = snap(canvasCoords.y);
+                                }
+                            } else {
+                                if (target && target.nodeId) {
+                                    conn.toNodeId = target.nodeId;
+                                    conn.toPort = target.id;
+                                    conn.toX = null;
+                                    conn.toY = null;
+                                } else {
+                                    conn.toNodeId = null;
+                                    conn.toPort = null;
+                                    conn.toX = snap(canvasCoords.x);
+                                    conn.toY = snap(canvasCoords.y);
+                                }
+                            }
+                            delete conn.customSegments;
+                            saveSnapshot('Hubungkan Ulang Panah');
+                            renderConnections();
+                            selectConnection(conn.id, false);
+                        }
+                    }
                     state.isReconnectingEndpoint = false;
                     state.reconnectingConnId = null;
                     state.reconnectingEndType = null;
+                    layerLivePreview.innerHTML = '';
                     viewport.classList.remove('reconnecting-endpoint');
                     statusHintText.textContent = 'Titik koneksi panah berhasil dihubungkan ulang.';
-                    renderConnections();
                 }
 
                 if (state.isAdjustingWaypoint) {
@@ -13127,7 +13387,15 @@
                     state.adjustingSegmentIdx = null;
                     state.adjustingDir = null;
                     viewport.classList.remove('adjusting-ns', 'adjusting-ew');
+                    saveSnapshot('Geser Garis Konektor');
                     statusHintText.textContent = 'Posisi garis konektor berhasil disesuaikan.';
+                }
+
+                if (state.isDraggingConnection) {
+                    state.isDraggingConnection = false;
+                    state.dragConnId = null;
+                    state.dragConnInitial = null;
+                    saveSnapshot('Geser Posisi Panah');
                 }
 
                 if (state.isResizingTableCol || state.isResizingTableRow || state.isResizingTableHeader || state.isResizingSwimlaneLane) {
@@ -13172,7 +13440,37 @@
                ====================================================================== */
             document.querySelectorAll('[data-arrow-tool]').forEach(tile => {
                 const arrowType = tile.getAttribute('data-arrow-tool');
+
+                tile.setAttribute('draggable', 'true');
+                tile.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('application/diag-arrow', arrowType);
+                    e.dataTransfer.setData('text/plain', arrowType);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+
                 tile.addEventListener('click', () => {
+                    // 1. If 2 or more nodes are selected, connect the first two!
+                    if (state.selectedNodeIds && state.selectedNodeIds.length >= 2) {
+                        const n1 = state.selectedNodeIds[0];
+                        const n2 = state.selectedNodeIds[1];
+                        const newConn = createConnection(n1, 'right', n2, 'left', arrowType);
+                        selectConnection(newConn.id, false);
+                        statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil menghubungkan 2 objek terpilih!`;
+                        return;
+                    }
+
+                    // 2. If 1 node is selected, create an arrow extending from it!
+                    if (state.selectedNodeId) {
+                        const n = state.nodes.find(node => node.id === state.selectedNodeId);
+                        if (n) {
+                            const newConn = createConnection(n.id, 'right', null, null, arrowType, 'solid', null, null, snap(n.x + n.width + 100), snap(n.y + n.height / 2));
+                            selectConnection(newConn.id, false);
+                            statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil dibuat dari objek!`;
+                            return;
+                        }
+                    }
+
+                    // 3. Otherwise activate arrow-drag mode with helpful hint
                     setMode('arrow-drag', arrowType);
                 });
             });
@@ -13443,6 +13741,20 @@
 
             viewport.addEventListener('drop', (e) => {
                 e.preventDefault();
+                const arrowType = e.dataTransfer.getData('application/diag-arrow');
+                if (arrowType) {
+                    const coords = screenToCanvasCoords(e.clientX, e.clientY);
+                    const nearest = findNearestAnchor(coords.x, coords.y);
+                    if (nearest && nearest.nodeId) {
+                        const newConn = createConnection(nearest.nodeId, nearest.id, null, null, arrowType, 'solid', null, null, snap(coords.x + 100), snap(coords.y));
+                        selectConnection(newConn.id, false);
+                    } else {
+                        const newConn = createConnection(null, null, null, null, arrowType, 'solid', snap(coords.x - 50), snap(coords.y), snap(coords.x + 50), snap(coords.y));
+                        selectConnection(newConn.id, false);
+                    }
+                    statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil diletakkan di kanvas!`;
+                    return;
+                }
                 const shapeType = e.dataTransfer.getData('application/diag-shape') || e.dataTransfer.getData('text/plain');
                 if (shapeType) {
                     const coords = screenToCanvasCoords(e.clientX, e.clientY);
