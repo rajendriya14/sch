@@ -1807,10 +1807,23 @@
             cursor: crosshair;
         }
 
-        .diagram-node:hover .shadow-anchor-port,
-        .canvas-viewport.connecting .shadow-anchor-port,
-        .canvas-viewport.drawing-arrow .shadow-anchor-port {
+        .diagram-node:hover .shadow-anchor-port {
             opacity: 0.9;
+        }
+
+        /* When shape is selected, keep ports hidden & disabled so they never interfere with resize handles */
+        .diagram-node.selected .shadow-anchor-port {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        .diagram-node.selected .shadow-anchor-hitzone {
+            pointer-events: none !important;
+        }
+
+        /* When connecting or drawing an arrow, ports can receive pointer events */
+        .canvas-viewport.connecting .diagram-node .shadow-anchor-hitzone,
+        .canvas-viewport.drawing-arrow .diagram-node .shadow-anchor-hitzone {
+            pointer-events: all !important;
         }
 
         .shadow-anchor-port:hover,
@@ -12376,44 +12389,6 @@
                         rect.setAttribute('data-handle', hnd.type);
                         layerSelection.appendChild(rect);
                     });
-
-                    // Magnetic Ports rendered directly on selected shape (on top of edge resize handles!)
-                    // so users can ALWAYS drag an arrow from any port of a selected shape without getting blocked!
-                    const selPorts = [
-                        { id: 'top',    cx: node.x + node.width / 2, cy: node.y },
-                        { id: 'right',  cx: node.x + node.width,     cy: node.y + node.height / 2 },
-                        { id: 'bottom', cx: node.x + node.width / 2, cy: node.y + node.height },
-                        { id: 'left',   cx: node.x,                  cy: node.y + node.height / 2 }
-                    ];
-
-                    selPorts.forEach(p => {
-                        const hitzone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                        hitzone.setAttribute('class', 'shadow-anchor-hitzone');
-                        hitzone.setAttribute('cx', p.cx);
-                        hitzone.setAttribute('cy', p.cy);
-                        hitzone.setAttribute('r', '15');
-                        hitzone.setAttribute('style', 'cursor: crosshair; pointer-events: all;');
-
-                        const portCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                        portCircle.setAttribute('class', 'shadow-anchor-port snap-active');
-                        portCircle.setAttribute('data-port-id', p.id);
-                        portCircle.setAttribute('cx', p.cx);
-                        portCircle.setAttribute('cy', p.cy);
-                        portCircle.setAttribute('r', '6');
-                        portCircle.setAttribute('style', 'cursor: crosshair; opacity: 1; pointer-events: all;');
-
-                        const onPortDown = (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            startDraggingArrowFromPort(node.id, p.id, p.cx, p.cy);
-                        };
-
-                        hitzone.addEventListener('mousedown', onPortDown);
-                        portCircle.addEventListener('mousedown', onPortDown);
-
-                        layerSelection.appendChild(hitzone);
-                        layerSelection.appendChild(portCircle);
-                    });
                 } else {
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
@@ -12483,9 +12458,29 @@
                     targetX = nearest.x;
                     targetY = nearest.y;
 
+                    // Display all 4 anchor ports on the candidate target shape ("shape yg akan dihubungkan")
+                    const targetNode = (nearest && nearest.nodeId) ? state.nodes.find(n => n.id === nearest.nodeId) : null;
+                    if (targetNode) {
+                        const allTargetPorts = getNodeAnchorPoints(targetNode);
+                        allTargetPorts.forEach(tp => {
+                            const isNearest = (tp.id === nearest.id);
+                            const pDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            pDot.setAttribute('cx', tp.x);
+                            pDot.setAttribute('cy', tp.y);
+                            pDot.setAttribute('r', isNearest ? '6.5' : '4.5');
+                            pDot.setAttribute('fill', isNearest ? '#2563eb' : '#ffffff');
+                            pDot.setAttribute('stroke', '#2563eb');
+                            pDot.setAttribute('stroke-width', isNearest ? '2.5' : '1.8');
+                            if (isNearest) {
+                                pDot.setAttribute('filter', 'drop-shadow(0 0 5px rgba(37, 99, 235, 0.75))');
+                            }
+                            layerLivePreview.appendChild(pDot);
+                        });
+                    }
+
                     const guide = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     guide.setAttribute('cx', nearest.x); guide.setAttribute('cy', nearest.y);
-                    guide.setAttribute('r', '8'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.2)');
+                    guide.setAttribute('r', '10'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.18)');
                     guide.setAttribute('stroke', '#2563eb'); guide.setAttribute('stroke-width', '2');
                     layerLivePreview.appendChild(guide);
                 }
@@ -12558,10 +12553,29 @@
                 let targetX = snapPort ? snapPort.x : canvasX;
                 let targetY = snapPort ? snapPort.y : canvasY;
 
-                if (snapPort) {
+                if (snapPort && snapPort.nodeId) {
+                    const targetNode = state.nodes.find(n => n.id === snapPort.nodeId);
+                    if (targetNode) {
+                        const allTargetPorts = getNodeAnchorPoints(targetNode);
+                        allTargetPorts.forEach(tp => {
+                            const isNearest = (tp.id === snapPort.id);
+                            const pDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            pDot.setAttribute('cx', tp.x);
+                            pDot.setAttribute('cy', tp.y);
+                            pDot.setAttribute('r', isNearest ? '6.5' : '4.5');
+                            pDot.setAttribute('fill', isNearest ? '#2563eb' : '#ffffff');
+                            pDot.setAttribute('stroke', '#2563eb');
+                            pDot.setAttribute('stroke-width', isNearest ? '2.5' : '1.8');
+                            if (isNearest) {
+                                pDot.setAttribute('filter', 'drop-shadow(0 0 5px rgba(37, 99, 235, 0.75))');
+                            }
+                            layerLivePreview.appendChild(pDot);
+                        });
+                    }
+
                     const guide = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     guide.setAttribute('cx', snapPort.x); guide.setAttribute('cy', snapPort.y);
-                    guide.setAttribute('r', '8'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.2)');
+                    guide.setAttribute('r', '10'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.18)');
                     guide.setAttribute('stroke', '#2563eb'); guide.setAttribute('stroke-width', '2');
                     layerLivePreview.appendChild(guide);
                 }
