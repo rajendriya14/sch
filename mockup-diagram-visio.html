@@ -7865,17 +7865,117 @@
             /* ======================================================================
                8. SHADOW CONNECTOR MAGNET PORTS & SNAPPING
                ====================================================================== */
-            function getNodeAnchorPoints(node) {
-                const x = node.x;
-                const y = node.y;
+            function getNodeRelativePorts(node) {
                 const w = node.width;
                 const h = node.height;
+                const type = node.type;
+
+                if (type === 'triangle' || type === 'triangle-up') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w * 0.75,      cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
+                        { id: 'left',   cx: w * 0.25,      cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'inverted-triangle') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w * 0.75,      cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
+                        { id: 'left',   cx: w * 0.25,      cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'parallelogram' || type === 'data' || type === 'parallelogram-flow') {
+                    return [
+                        { id: 'top',    cx: w * 0.59,      cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w * 0.41,      cy: h,     dir: 'down' },
+                        { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'trapezoid' || type === 'trapezoid-flow') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
+                        { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'manual-operation') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
+                        { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'pentagon') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,        dir: 'up' },
+                        { id: 'right',  cx: w,             cy: h * 0.38, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: h * 0.38, dir: 'left' }
+                    ];
+                }
+                if (type === 'pentagon-down' || type === 'offpage-ref') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,        dir: 'up' },
+                        { id: 'right',  cx: w,             cy: h * 0.31, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: h * 0.31, dir: 'left' }
+                    ];
+                }
+                if (type === 'document' || type === 'multidocument' || type === 'document-alt' || type === 'note-alt') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: 0,            dir: 'up' },
+                        { id: 'right',  cx: w,             cy: (h - 12) / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h - 12,       dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: (h - 12) / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'manual-input') {
+                    return [
+                        { id: 'top',    cx: w / 2,         cy: h * 0.11, dir: 'up' },
+                        { id: 'right',  cx: w,             cy: h / 2,    dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: h * 0.61, dir: 'left' }
+                    ];
+                }
+                if (type === 'display') {
+                    return [
+                        { id: 'top',    cx: w * 0.465,     cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w * 0.465,     cy: h,     dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
+                    ];
+                }
+                if (type === 'delay') {
+                    return [
+                        { id: 'top',    cx: w * 0.325,     cy: 0,     dir: 'up' },
+                        { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
+                        { id: 'bottom', cx: w * 0.325,     cy: h,     dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
+                    ];
+                }
+
                 return [
-                    { id: 'top',    x: x + w / 2, y: y,         nodeId: node.id, dir: 'up' },
-                    { id: 'right',  x: x + w,     y: y + h / 2, nodeId: node.id, dir: 'right' },
-                    { id: 'bottom', x: x + w / 2, y: y + h,     nodeId: node.id, dir: 'down' },
-                    { id: 'left',   x: x,         y: y + h / 2, nodeId: node.id, dir: 'left' }
+                    { id: 'top',    cx: w / 2, cy: 0,     dir: 'up' },
+                    { id: 'right',  cx: w,     cy: h / 2, dir: 'right' },
+                    { id: 'bottom', cx: w / 2, cy: h,     dir: 'down' },
+                    { id: 'left',   cx: 0,     cy: h / 2, dir: 'left' }
                 ];
+            }
+
+            function getNodeAnchorPoints(node) {
+                const ports = getNodeRelativePorts(node);
+                return ports.map(p => ({
+                    id: p.id,
+                    x: node.x + p.cx,
+                    y: node.y + p.cy,
+                    nodeId: node.id,
+                    dir: p.dir
+                }));
             }
 
             function findNearestAnchor(canvasX, canvasY, ignoreNodeId) {
@@ -12314,12 +12414,7 @@
                     }
 
                     // Shadow Connector Magnetic Ports with Enhanced Clickable Zone (Zero Shaking/Jitter)
-                    const ports = [
-                        { id: 'top',    cx: w / 2, cy: 0 },
-                        { id: 'right',  cx: w,     cy: h / 2 },
-                        { id: 'bottom', cx: w / 2, cy: h },
-                        { id: 'left',   cx: 0,     cy: h / 2 }
-                    ];
+                    const ports = getNodeRelativePorts(node);
 
                     ports.forEach(p => {
                         const hitzone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -12338,7 +12433,8 @@
                         const onPortDown = (e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            startDraggingArrowFromPort(node.id, p.id, node.x + p.cx, node.y + p.cy);
+                            const curCoords = screenToCanvasCoords(e.clientX, e.clientY);
+                            startDraggingArrowFromPort(node.id, p.id, node.x + p.cx, node.y + p.cy, curCoords.x, curCoords.y);
                         };
 
                         hitzone.addEventListener('mousedown', onPortDown);
@@ -12451,10 +12547,11 @@
             /* ======================================================================
                16. LIVE DRAG-TO-CONNECT ARROW (With Instant Live Visible Preview)
                ====================================================================== */
-            function startDraggingArrowFromPort(nodeId, portId, startX, startY) {
+            function startDraggingArrowFromPort(nodeId, portId, startX, startY, mouseX, mouseY) {
                 state.isDrawingConnection = true;
                 state.currentSnapTarget = null;
                 state.connectStartAnchor = { nodeId, portId, x: startX, y: startY };
+                state.connectStartMousePos = { x: (mouseX !== undefined ? mouseX : startX), y: (mouseY !== undefined ? mouseY : startY) };
                 viewport.classList.add('connecting');
                 statusHintText.textContent = 'Menghubungkan panah... Arahkan dan lepaskan mouse pada titik shadow bentuk tujuan.';
                 updateLivePreviewArrow(startX + 1, startY + 1); // Point 2: Immediately draw visible line
@@ -12851,11 +12948,12 @@
                 if (state.mode === 'arrow-drag') {
                     const nearest = findNearestAnchor(canvasCoords.x, canvasCoords.y);
                     if (nearest) {
-                        startDraggingArrowFromPort(nearest.nodeId, nearest.id, nearest.x, nearest.y);
+                        startDraggingArrowFromPort(nearest.nodeId, nearest.id, nearest.x, nearest.y, canvasCoords.x, canvasCoords.y);
                     } else {
                         state.isDrawingConnection = true;
                         state.currentSnapTarget = null;
                         state.connectStartAnchor = { nodeId: null, portId: null, x: canvasCoords.x, y: canvasCoords.y };
+                        state.connectStartMousePos = { x: canvasCoords.x, y: canvasCoords.y };
                         viewport.classList.add('connecting');
                         updateLivePreviewArrow(canvasCoords.x + 1, canvasCoords.y + 1);
                     }
@@ -13332,8 +13430,46 @@
                 }
 
                 if (state.isDrawingConnection) {
+                    const startMousePos = state.connectStartMousePos || (state.connectStartAnchor ? { x: state.connectStartAnchor.x, y: state.connectStartAnchor.y } : null);
+                    const mouseDragDist = startMousePos ? Math.hypot(canvasCoords.x - startMousePos.x, canvasCoords.y - startMousePos.y) : 0;
+
+                    // If user only clicked without dragging (drag distance < 15px), abort immediately!
+                    if (mouseDragDist < 15) {
+                        state.isDrawingConnection = false;
+                        state.connectStartAnchor = null;
+                        state.connectStartMousePos = null;
+                        state.currentSnapTarget = null;
+                        layerLivePreview.innerHTML = '';
+                        viewport.classList.remove('connecting', 'drawing-arrow');
+                        if (state.mode === 'arrow-drag') {
+                            setMode('select');
+                        }
+                        return;
+                    }
+
                     if (state.connectStartAnchor) {
                         const start = state.connectStartAnchor;
+
+                        // Check if mouse was released inside starting node
+                        const startNode = start.nodeId ? state.nodes.find(n => n.id === start.nodeId) : null;
+                        const isInsideStartNode = startNode && (
+                            canvasCoords.x >= startNode.x && canvasCoords.x <= startNode.x + startNode.width &&
+                            canvasCoords.y >= startNode.y && canvasCoords.y <= startNode.y + startNode.height
+                        );
+
+                        if (isInsideStartNode) {
+                            state.isDrawingConnection = false;
+                            state.connectStartAnchor = null;
+                            state.connectStartMousePos = null;
+                            state.currentSnapTarget = null;
+                            layerLivePreview.innerHTML = '';
+                            viewport.classList.remove('connecting', 'drawing-arrow');
+                            if (state.mode === 'arrow-drag') {
+                                setMode('select');
+                            }
+                            return;
+                        }
+
                         let target = state.currentSnapTarget;
                         if (!target || !target.nodeId) {
                             const nearest = findNearestAnchor(canvasCoords.x, canvasCoords.y, start.nodeId);
@@ -13347,7 +13483,6 @@
                         const startY = start.y;
                         const targetX = target.x !== undefined ? target.x : canvasCoords.x;
                         const targetY = target.y !== undefined ? target.y : canvasCoords.y;
-                        const dragDist = Math.hypot(targetX - startX, targetY - startY);
 
                         if (start.nodeId && target.nodeId && start.nodeId !== target.nodeId) {
                             // Two connected shapes
@@ -13356,7 +13491,7 @@
                             const newConn = createConnection(start.nodeId, startPort, target.nodeId, targetPort, state.activeArrowType || 'elbow');
                             selectConnection(newConn.id, false);
                             statusHintText.textContent = 'Panah konektor antar objek berhasil disambungkan!';
-                        } else if (dragDist > 12) {
+                        } else {
                             // Drawn across canvas (shape-to-canvas, canvas-to-shape, or standalone)
                             const startPort = start.nodeId ? (start.portId || start.id || 'right') : null;
                             const targetPort = target.nodeId ? (target.id || target.portId || 'left') : null;
@@ -13379,9 +13514,10 @@
 
                     state.isDrawingConnection = false;
                     state.connectStartAnchor = null;
+                    state.connectStartMousePos = null;
                     state.currentSnapTarget = null;
                     layerLivePreview.innerHTML = '';
-                    viewport.classList.remove('connecting');
+                    viewport.classList.remove('connecting', 'drawing-arrow');
 
                     if (state.mode === 'arrow-drag') {
                         setMode('select');
