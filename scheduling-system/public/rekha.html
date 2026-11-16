@@ -8482,8 +8482,6 @@
                 fpBtnBold.classList.toggle('active', !!node.isBold);
                 if (fpRotateBtnLabel) {
                     let curRot = 0;
-                    
-
                     if (node.isTable) {
                         if (state.activeHeaderNodeId === node.id) {
                             curRot = node.headerTextRotation || 0;
@@ -8493,6 +8491,12 @@
                             curRot = (node.cellRotations[key] !== undefined) ? node.cellRotations[key] : (node.textRotation || 0);
                         } else {
                             curRot = node.textRotation || 0;
+                        }
+                    } else if (node.isSwimlane) {
+                        if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null && node.laneRotations) {
+                            curRot = (node.laneRotations[node.selectedLaneIdx] !== undefined) ? node.laneRotations[node.selectedLaneIdx] : (node.textRotation || 0);
+                        } else {
+                            curRot = (node.headerTextRotation !== undefined) ? node.headerTextRotation : (node.textRotation || 0);
                         }
                     } else {
                         curRot = node.textRotation || 0;
@@ -9249,7 +9253,7 @@
                 let curAngle = 0;
                 
 
-                    if (node.isTable) {
+                if (node.isTable) {
                     if (state.activeHeaderNodeId === node.id) {
                         curAngle = node.headerTextRotation || 0;
                     } else if (node.selectedCells && node.cellRotations) {
@@ -9258,6 +9262,12 @@
                         curAngle = (node.cellRotations[key] !== undefined) ? node.cellRotations[key] : (node.textRotation || 0);
                     } else {
                         curAngle = node.textRotation || 0;
+                    }
+                } else if (node.isSwimlane) {
+                    if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null && node.laneRotations) {
+                        curAngle = (node.laneRotations[node.selectedLaneIdx] !== undefined) ? node.laneRotations[node.selectedLaneIdx] : (node.textRotation || 0);
+                    } else {
+                        curAngle = (node.headerTextRotation !== undefined) ? node.headerTextRotation : (node.textRotation || 0);
                     }
                 } else {
                     curAngle = node.textRotation || 0;
@@ -9296,9 +9306,7 @@
                 const node = state.nodes.find(n => n.id === activeId);
                 if (!node) return;
 
-                
-
-                    if (node.isTable) {
+                if (node.isTable) {
                     // Point 1 (Prompt #104): Rotate ONLY the selected text (specific cell or header only)
                     if (state.activeHeaderNodeId === node.id) {
                         node.headerTextRotation = angle;
@@ -9319,7 +9327,24 @@
                                 node.cellRotations[ri + '_' + ci] = angle;
                             });
                         });
+                        node.headerTextRotation = angle;
                         node.textRotation = angle;
+                    }
+                } else if (node.isSwimlane) {
+                    if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null) {
+                        node.laneRotations = node.laneRotations || {};
+                        node.laneRotations[node.selectedLaneIdx] = angle;
+                        if (node.lanes && node.lanes[node.selectedLaneIdx]) {
+                            node.lanes[node.selectedLaneIdx].rotation = angle;
+                        }
+                    } else {
+                        node.headerTextRotation = angle;
+                        node.textRotation = angle;
+                        node.laneRotations = node.laneRotations || {};
+                        (node.lanes || []).forEach((lane, idx) => {
+                            node.laneRotations[idx] = angle;
+                            lane.rotation = angle;
+                        });
                     }
                 } else {
                     node.textRotation = angle;
@@ -11364,6 +11389,8 @@
 
                         const onPoolHeaderClick = (e) => {
                             selectNode(node.id, false);
+                            state.activeHeaderNodeId = node.id;
+                            node.selectedLaneIdx = null;
                             updateFloatingAndPlusBars();
                             statusHintText.textContent = 'Swimlane Terpilih. Tarik header untuk memindahkan seluruh rumah.';
                         };
@@ -11385,6 +11412,10 @@
                         poolTitle.setAttribute('data-node-id', node.id);
                         poolTitle.style.cursor = 'pointer';
                         poolTitle.textContent = (node.text !== undefined && node.text !== null) ? node.text : '';
+                        const pRot = (node.headerTextRotation !== undefined) ? node.headerTextRotation : (node.textRotation || 0);
+                        if (pRot) {
+                            poolTitle.setAttribute('transform', `rotate(${pRot}, ${w / 2}, ${poolHeaderH / 2})`);
+                        }
                         poolTitle.addEventListener('dblclick', (e) => {
                             e.stopPropagation();
                             openDirectInShapeEditor(node, poolHeaderRect);
@@ -11487,6 +11518,8 @@
                                 laneHRect.style.cursor = 'pointer';
                                 laneHRect.addEventListener('click', () => {
                                     node.selectedLaneIdx = lIdx;
+                                    state.activeHeaderNodeId = null;
+                                    updateFloatingAndPlusBars();
                                 });
                                 laneHRect.addEventListener('dblclick', (e) => {
                                     e.stopPropagation();
@@ -11495,7 +11528,9 @@
                                 shapeEl.appendChild(laneHRect);
 
                                 const laneTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                                laneTitle.setAttribute('x', lhW / 2); laneTitle.setAttribute('y', curY + (laneH / 2));
+                                const lX = lhW / 2;
+                                const lY = curY + (laneH / 2);
+                                laneTitle.setAttribute('x', lX); laneTitle.setAttribute('y', lY);
                                 laneTitle.setAttribute('dominant-baseline', 'central');
                                 laneTitle.setAttribute('text-anchor', 'middle');
                                 laneTitle.setAttribute('fill', textColor); laneTitle.setAttribute('font-weight', '600');
@@ -11505,6 +11540,16 @@
                                 laneTitle.setAttribute('data-lane-idx', lIdx);
                                 laneTitle.style.cursor = 'pointer';
                                 laneTitle.textContent = lane.title || (`Data ${lIdx + 1}`);
+
+                                const lRot = (lane.rotation !== undefined)
+                                    ? lane.rotation
+                                    : ((node.laneRotations && node.laneRotations[lIdx] !== undefined)
+                                        ? node.laneRotations[lIdx]
+                                        : (node.textRotation || 0));
+                                if (lRot) {
+                                    laneTitle.setAttribute('transform', `rotate(${lRot}, ${lX}, ${lY})`);
+                                }
+
                                 laneTitle.addEventListener('dblclick', (e) => {
                                     e.stopPropagation();
                                     openDirectInShapeEditor(node, laneHRect);
@@ -11598,6 +11643,8 @@
                                 laneHRect.style.cursor = 'pointer';
                                 laneHRect.addEventListener('click', () => {
                                     node.selectedLaneIdx = lIdx;
+                                    state.activeHeaderNodeId = null;
+                                    updateFloatingAndPlusBars();
                                 });
                                 laneHRect.addEventListener('dblclick', (e) => {
                                     e.stopPropagation();
@@ -11606,7 +11653,9 @@
                                 shapeEl.appendChild(laneHRect);
 
                                 const laneTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                                laneTitle.setAttribute('x', curX + (laneW / 2)); laneTitle.setAttribute('y', poolHeaderH + (lhH / 2));
+                                const lX = curX + (laneW / 2);
+                                const lY = poolHeaderH + (lhH / 2);
+                                laneTitle.setAttribute('x', lX); laneTitle.setAttribute('y', lY);
                                 laneTitle.setAttribute('dominant-baseline', 'central');
                                 laneTitle.setAttribute('text-anchor', 'middle');
                                 laneTitle.setAttribute('fill', textColor); laneTitle.setAttribute('font-weight', '600');
@@ -11615,6 +11664,16 @@
                                 laneTitle.setAttribute('data-edit-target', 'swimlane-lane-title');
                                 laneTitle.setAttribute('data-lane-idx', lIdx);
                                 laneTitle.textContent = lane.title || (`Data ${lIdx + 1}`);
+
+                                const lRot = (lane.rotation !== undefined)
+                                    ? lane.rotation
+                                    : ((node.laneRotations && node.laneRotations[lIdx] !== undefined)
+                                        ? node.laneRotations[lIdx]
+                                        : (node.textRotation || 0));
+                                if (lRot) {
+                                    laneTitle.setAttribute('transform', `rotate(${lRot}, ${lX}, ${lY})`);
+                                }
+
                                 shapeEl.appendChild(laneTitle);
 
                                 curX += laneW;
@@ -11646,6 +11705,10 @@
                         head.setAttribute('class', 'node-editable-text');
                         head.setAttribute('data-edit-target', 'entity-title');
                         head.textContent = node.text || 'Entitas';
+                        const eRot = node.headerTextRotation || node.textRotation || 0;
+                        if (eRot) {
+                            head.setAttribute('transform', `rotate(${eRot}, ${w / 2}, 17)`);
+                        }
                         shapeEl.appendChild(head);
 
                         (node.fields || []).forEach((f, idx) => {
@@ -12118,6 +12181,12 @@
                             textEl.appendChild(tspan);
                         });
 
+                        const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        const tRot = node.textRotation || 0;
+                        if (tRot) {
+                            textGroup.setAttribute('transform', `rotate(${tRot}, ${w / 2}, ${h / 2})`);
+                        }
+
                         // Text Highlight Background (Warna Latar / Sorot Teks)
                         if (node.highlightColor && node.highlightColor !== 'transparent') {
                             const maxLineLen = lines.reduce((max, l) => Math.max(max, l.length), 0);
@@ -12139,10 +12208,11 @@
                             hlRect.setAttribute('rx', '4');
                             hlRect.setAttribute('fill', node.highlightColor);
                             hlRect.setAttribute('pointer-events', 'none');
-                            g.appendChild(hlRect);
+                            textGroup.appendChild(hlRect);
                         }
 
-                        g.appendChild(textEl);
+                        textGroup.appendChild(textEl);
+                        g.appendChild(textGroup);
                     }
 
                     // Shadow Connector Magnetic Ports with Enhanced Clickable Zone (Zero Shaking/Jitter)
@@ -12675,10 +12745,24 @@
                     const nodeId = nodeGroup.getAttribute('data-id');
                     targetNode = state.nodes.find(n => n.id === nodeId);
                     if (targetNode) {
-                        const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
-                        if (swimlaneLaneHitzone) {
-                            const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
-                            if (!isNaN(lIdx)) targetNode.selectedLaneIdx = lIdx;
+                        const tableHeaderHitzone = e.target.closest('.terminal-header-hitzone') || e.target.closest('[data-edit-target="table-title"]');
+                        if (tableHeaderHitzone) {
+                            state.activeHeaderNodeId = targetNode.id;
+                            targetNode.selectedCells = null;
+                        }
+                        const swimlaneHeaderHitzone = e.target.closest('.swimlane-header-hitzone') || e.target.closest('[data-edit-target="swimlane-title"]');
+                        if (swimlaneHeaderHitzone) {
+                            state.activeHeaderNodeId = targetNode.id;
+                            targetNode.selectedLaneIdx = null;
+                        } else {
+                            const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
+                            if (swimlaneLaneHitzone) {
+                                const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
+                                if (!isNaN(lIdx)) {
+                                    targetNode.selectedLaneIdx = lIdx;
+                                    state.activeHeaderNodeId = null;
+                                }
+                            }
                         }
                         if (!state.selectedNodeIds.includes(nodeId)) {
                             selectNode(nodeId, false);
