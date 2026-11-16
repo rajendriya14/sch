@@ -10924,11 +10924,11 @@
                 const selIds = state.selectedNodeIds || (state.selectedNodeId ? [state.selectedNodeId] : []);
 
                 // Container shapes (tables and swimlanes) are rendered first at the back,
-                // so any shapes created on top of a terminal/swimlane are rendered on top!
+                // so any shapes created on top of a terminal/swimlane are rendered ON TOP!
                 const sortedNodes = [...state.nodes].sort((a, b) => {
                     const aIsContainer = (a.isTable || a.isSwimlane) ? 1 : 0;
                     const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
-                    if (aIsContainer !== bIsContainer) return aIsContainer - bIsContainer;
+                    if (aIsContainer !== bIsContainer) return bIsContainer - aIsContainer;
                     return 0;
                 });
 
