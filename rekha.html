@@ -2617,12 +2617,13 @@
             transform: scale(1.2);
         }
 
-        /* Dynamic Alignment Snap Guidelines */
+        /* Dynamic Alignment Snap Guidelines (Penyeimbang Shape) */
         .alignment-guideline {
-            stroke: var(--guideline-color);
-            stroke-width: 1.2;
+            stroke: #ef4444;
+            stroke-width: 1.8px;
             stroke-dasharray: 4 3;
             pointer-events: none;
+            filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.65));
         }
 
         .live-preview-arrow {
@@ -4124,12 +4125,12 @@
                 <rect width="100%" height="100%" fill="url(#gridPattern)" id="canvasBackground" style="pointer-events: all;"/>
 
                 <g id="workspaceRoot" transform="translate(0, 0) scale(1)">
-                    <g id="layerGuidelines"></g>
                     <g id="layerConnectors"></g>
                     <g id="layerNodes"></g>
                     <g id="layerDrawings"></g>
                     <g id="layerLiveDrawings"></g>
                     <g id="layerSelection"></g>
+                    <g id="layerGuidelines"></g>
                     <g id="layerLivePreview"></g>
                 </g>
             </svg>
@@ -12597,59 +12598,86 @@
                ====================================================================== */
             function calculateMagneticAlignment(node) {
                 layerGuidelines.innerHTML = '';
-                const snapThreshold = 10;
+                const snapThreshold = 12;
 
+                const nodeLeft = node.x;
                 const nodeCenterX = node.x + node.width / 2;
-                const nodeCenterY = node.y + node.height / 2;
                 const nodeRight = node.x + node.width;
+                const nodeTop = node.y;
+                const nodeCenterY = node.y + node.height / 2;
                 const nodeBottom = node.y + node.height;
 
-                function drawGuideline(x1, y1, x2, y2) {
+                function drawVGuideline(x, y1, y2) {
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('class', 'alignment-guideline');
-                    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-                    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+                    line.setAttribute('x1', x);
+                    line.setAttribute('y1', Math.min(y1, y2) - 40);
+                    line.setAttribute('x2', x);
+                    line.setAttribute('y2', Math.max(y1, y2) + 40);
+                    layerGuidelines.appendChild(line);
+                }
+
+                function drawHGuideline(y, x1, x2) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('class', 'alignment-guideline');
+                    line.setAttribute('x1', Math.min(x1, x2) - 40);
+                    line.setAttribute('y1', y);
+                    line.setAttribute('x2', Math.max(x1, x2) + 40);
+                    line.setAttribute('y2', y);
                     layerGuidelines.appendChild(line);
                 }
 
                 state.nodes.forEach(other => {
                     if (other.id === node.id) return;
 
+                    const otherLeft = other.x;
                     const otherCenterX = other.x + other.width / 2;
-                    const otherCenterY = other.y + other.height / 2;
                     const otherRight = other.x + other.width;
+                    const otherTop = other.y;
+                    const otherCenterY = other.y + other.height / 2;
                     const otherBottom = other.y + other.height;
 
                     // 1. Center-X alignment (vertical line)
                     if (Math.abs(nodeCenterX - otherCenterX) < snapThreshold) {
-                        node.x = otherCenterX - node.width / 2;
-                        drawGuideline(otherCenterX, Math.min(node.y, other.y) - 60, otherCenterX, Math.max(nodeBottom, otherBottom) + 60);
+                        if (!state.isResizing) node.x = otherCenterX - node.width / 2;
+                        drawVGuideline(otherCenterX, node.y, otherBottom);
                     }
                     // 2. Left edge alignment
-                    else if (Math.abs(node.x - other.x) < snapThreshold) {
-                        node.x = other.x;
-                        drawGuideline(other.x, Math.min(node.y, other.y) - 60, other.x, Math.max(nodeBottom, otherBottom) + 60);
+                    else if (Math.abs(nodeLeft - otherLeft) < snapThreshold) {
+                        if (!state.isResizing) node.x = otherLeft;
+                        drawVGuideline(otherLeft, node.y, otherBottom);
                     }
                     // 3. Right edge alignment
                     else if (Math.abs(nodeRight - otherRight) < snapThreshold) {
-                        node.x = otherRight - node.width;
-                        drawGuideline(otherRight, Math.min(node.y, other.y) - 60, otherRight, Math.max(nodeBottom, otherBottom) + 60);
+                        if (!state.isResizing) node.x = otherRight - node.width;
+                        drawVGuideline(otherRight, node.y, otherBottom);
                     }
 
                     // 4. Center-Y alignment (horizontal line)
                     if (Math.abs(nodeCenterY - otherCenterY) < snapThreshold) {
-                        node.y = otherCenterY - node.height / 2;
-                        drawGuideline(Math.min(node.x, other.x) - 60, otherCenterY, Math.max(nodeRight, otherRight) + 60, otherCenterY);
+                        if (!state.isResizing) node.y = otherCenterY - node.height / 2;
+                        drawHGuideline(otherCenterY, node.x, otherRight);
                     }
                     // 5. Top edge alignment
-                    else if (Math.abs(node.y - other.y) < snapThreshold) {
-                        node.y = other.y;
-                        drawGuideline(Math.min(node.x, other.x) - 60, other.y, Math.max(nodeRight, otherRight) + 60, other.y);
+                    else if (Math.abs(nodeTop - otherTop) < snapThreshold) {
+                        if (!state.isResizing) node.y = otherTop;
+                        drawHGuideline(otherTop, node.x, otherRight);
                     }
                     // 6. Bottom edge alignment
                     else if (Math.abs(nodeBottom - otherBottom) < snapThreshold) {
-                        node.y = otherBottom - node.height;
-                        drawGuideline(Math.min(node.x, other.x) - 60, otherBottom, Math.max(nodeRight, otherRight) + 60, otherBottom);
+                        if (!state.isResizing) node.y = otherBottom - node.height;
+                        drawHGuideline(otherBottom, node.x, otherRight);
+                    }
+
+                    // 7. Width equal balance indicator (when resizing / adjusting)
+                    if (state.isResizing && Math.abs(node.width - other.width) < snapThreshold) {
+                        drawHGuideline(node.y - 12, node.x, node.x + node.width);
+                        drawHGuideline(other.y - 12, other.x, other.x + other.width);
+                    }
+                    // 8. Height equal balance indicator (when resizing / adjusting)
+                    if (state.isResizing && Math.abs(node.height - other.height) < snapThreshold) {
+                        drawVGuideline(node.x - 12, node.y, node.y + node.height);
+                        drawVGuideline(other.x - 12, other.y, other.y + other.height);
                     }
                 });
             }
@@ -13041,6 +13069,7 @@
                             node.y = snap(state.resizeInitialRect.y + (state.resizeInitialRect.height - newH));
                             node.height = snap(newH);
                         }
+                        calculateMagneticAlignment(node);
                         renderNodes();
                         renderConnections();
                         renderSelection();
@@ -13211,7 +13240,7 @@
                         }
                     });
 
-                    if (state.dragNodesInitial.length === 1) {
+                    if (state.dragNodesInitial.length >= 1) {
                         const singleNode = state.nodes.find(node => node.id === state.dragNodesInitial[0].id);
                         if (singleNode) calculateMagneticAlignment(singleNode);
                     }
@@ -13223,7 +13252,10 @@
                 }
             });
 
-            window.addEventListener('mouseup', () => {
+            window.addEventListener('mouseup', (e) => {
+                const canvasCoords = (e && e.clientX !== undefined)
+                    ? screenToCanvasCoords(e.clientX, e.clientY)
+                    : { x: 0, y: 0 };
                 layerGuidelines.innerHTML = '';
 
                 // Finish Freehand Stroke
@@ -13271,7 +13303,14 @@
                 if (state.isDrawingConnection) {
                     if (state.connectStartAnchor) {
                         const start = state.connectStartAnchor;
-                        const target = state.currentSnapTarget || { nodeId: null, id: null, x: canvasCoords.x, y: canvasCoords.y };
+                        let target = state.currentSnapTarget;
+                        if (!target || !target.nodeId) {
+                            const nearest = findNearestAnchor(canvasCoords.x, canvasCoords.y, start.nodeId);
+                            if (nearest) target = nearest;
+                        }
+                        if (!target) {
+                            target = { nodeId: null, id: null, x: canvasCoords.x, y: canvasCoords.y };
+                        }
 
                         const startX = start.x;
                         const startY = start.y;
@@ -13281,16 +13320,20 @@
 
                         if (start.nodeId && target.nodeId && start.nodeId !== target.nodeId) {
                             // Two connected shapes
-                            const newConn = createConnection(start.nodeId, start.portId, target.nodeId, target.id, state.activeArrowType || 'elbow');
+                            const startPort = start.portId || start.id || 'right';
+                            const targetPort = target.id || target.portId || 'left';
+                            const newConn = createConnection(start.nodeId, startPort, target.nodeId, targetPort, state.activeArrowType || 'elbow');
                             selectConnection(newConn.id, false);
                             statusHintText.textContent = 'Panah konektor antar objek berhasil disambungkan!';
                         } else if (dragDist > 12) {
                             // Drawn across canvas (shape-to-canvas, canvas-to-shape, or standalone)
+                            const startPort = start.nodeId ? (start.portId || start.id || 'right') : null;
+                            const targetPort = target.nodeId ? (target.id || target.portId || 'left') : null;
                             const newConn = createConnection(
                                 start.nodeId,
-                                start.portId,
+                                startPort,
                                 target.nodeId,
-                                target.id,
+                                targetPort,
                                 state.activeArrowType || 'elbow',
                                 state.activeLineStyle || 'solid',
                                 start.nodeId ? null : snap(startX),
@@ -13311,7 +13354,7 @@
                             }
                             const newConn = createConnection(
                                 start.nodeId,
-                                start.portId,
+                                start.portId || 'right',
                                 null,
                                 null,
                                 state.activeArrowType || 'elbow',
@@ -13341,11 +13384,15 @@
                     if (state.reconnectingConnId) {
                         const conn = state.connections.find(c => c.id === state.reconnectingConnId);
                         if (conn) {
-                            const target = state.currentSnapTarget;
+                            let target = state.currentSnapTarget;
+                            if (!target || !target.nodeId) {
+                                const nearest = findNearestAnchor(canvasCoords.x, canvasCoords.y, (state.reconnectingEndType === 'start' ? conn.toNodeId : conn.fromNodeId));
+                                if (nearest) target = nearest;
+                            }
                             if (state.reconnectingEndType === 'start') {
                                 if (target && target.nodeId) {
                                     conn.fromNodeId = target.nodeId;
-                                    conn.fromPort = target.id;
+                                    conn.fromPort = target.id || target.portId || 'right';
                                     conn.fromX = null;
                                     conn.fromY = null;
                                 } else {
@@ -13357,7 +13404,7 @@
                             } else {
                                 if (target && target.nodeId) {
                                     conn.toNodeId = target.nodeId;
-                                    conn.toPort = target.id;
+                                    conn.toPort = target.id || target.portId || 'left';
                                     conn.toX = null;
                                     conn.toY = null;
                                 } else {
