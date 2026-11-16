@@ -7979,15 +7979,15 @@
             }
 
             function findNearestAnchor(canvasX, canvasY, ignoreNodeId) {
-                // Hysteresis sticky snapping: don't jitter between anchors!
+                // If currently snapped target is still within tight threshold (16px), keep it to avoid jitter
                 if (state.currentSnapTarget && state.currentSnapTarget.nodeId !== ignoreNodeId) {
                     const currDist = Math.hypot(state.currentSnapTarget.x - canvasX, state.currentSnapTarget.y - canvasY);
-                    if (currDist < 36) {
-                        return state.currentSnapTarget; // Sticky lock!
+                    if (currDist < 16) {
+                        return state.currentSnapTarget;
                     }
                 }
 
-                const snapThreshold = 36;
+                const snapThreshold = 16;
                 let nearest = null;
                 let minDist = Infinity;
 
@@ -7999,7 +7999,7 @@
                     return (a.width * a.height) - (b.width * b.height);
                 });
 
-                // 1. Direct proximity snap to any anchor port within threshold
+                // ONLY snap if mouse cursor is within 16px directly over a connector point!
                 sortedNodes.forEach(node => {
                     if (node.id === ignoreNodeId) return;
 
@@ -8012,25 +8012,6 @@
                         }
                     });
                 });
-
-                // 2. Shape body snap: if cursor is inside or near any node, snap to its closest port!
-                if (!nearest) {
-                    sortedNodes.forEach(node => {
-                        if (node.id === ignoreNodeId) return;
-                        const pad = 24;
-                        if (canvasX >= node.x - pad && canvasX <= node.x + node.width + pad &&
-                            canvasY >= node.y - pad && canvasY <= node.y + node.height + pad) {
-                            const anchors = getNodeAnchorPoints(node);
-                            anchors.forEach(a => {
-                                const dist = Math.hypot(a.x - canvasX, a.y - canvasY);
-                                if (dist < minDist) {
-                                    minDist = dist;
-                                    nearest = a;
-                                }
-                            });
-                        }
-                    });
-                }
 
                 return nearest;
             }
@@ -12597,6 +12578,27 @@
                     guide.setAttribute('r', '10'); guide.setAttribute('fill', 'rgba(37, 99, 235, 0.18)');
                     guide.setAttribute('stroke', '#2563eb'); guide.setAttribute('stroke-width', '2');
                     layerLivePreview.appendChild(guide);
+                } else {
+                    // Hovering near a node without snapping: show target candidate ports to guide user, but keep arrow tip strictly on cursor!
+                    const hoverNode = state.nodes.find(node => {
+                        if (node.id === start.nodeId) return false;
+                        const pad = 12;
+                        return curX >= node.x - pad && curX <= node.x + node.width + pad &&
+                               curY >= node.y - pad && curY <= node.y + node.height + pad;
+                    });
+                    if (hoverNode && !hoverNode.isSwimlane && !hoverNode.isTable) {
+                        const allTargetPorts = getNodeAnchorPoints(hoverNode);
+                        allTargetPorts.forEach(tp => {
+                            const pDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            pDot.setAttribute('cx', tp.x);
+                            pDot.setAttribute('cy', tp.y);
+                            pDot.setAttribute('r', '4.5');
+                            pDot.setAttribute('fill', '#ffffff');
+                            pDot.setAttribute('stroke', '#2563eb');
+                            pDot.setAttribute('stroke-width', '1.8');
+                            layerLivePreview.appendChild(pDot);
+                        });
+                    }
                 }
 
                 // Point 2: Clear, bright visible preview arrow path
@@ -13475,16 +13477,11 @@
                             const nearest = findNearestAnchor(canvasCoords.x, canvasCoords.y, start.nodeId);
                             if (nearest) target = nearest;
                         }
-                        if (!target) {
-                            target = { nodeId: null, id: null, x: canvasCoords.x, y: canvasCoords.y };
-                        }
 
-                        const startX = start.x;
-                        const startY = start.y;
-                        const targetX = target.x !== undefined ? target.x : canvasCoords.x;
-                        const targetY = target.y !== undefined ? target.y : canvasCoords.y;
+                        // Strictly require release position to be genuinely on/close (<= 18px) to the target connector point
+                        const isNearTargetPort = target && target.nodeId && (Math.hypot(canvasCoords.x - target.x, canvasCoords.y - target.y) <= 18);
 
-                        if (start.nodeId && target.nodeId && start.nodeId !== target.nodeId) {
+                        if (start.nodeId && target && target.nodeId && start.nodeId !== target.nodeId && isNearTargetPort) {
                             // Two connected shapes
                             const startPort = start.portId || start.id || 'right';
                             const targetPort = target.id || target.portId || 'left';
@@ -13493,19 +13490,22 @@
                             statusHintText.textContent = 'Panah konektor antar objek berhasil disambungkan!';
                         } else {
                             // Drawn across canvas (shape-to-canvas, canvas-to-shape, or standalone)
+                            const startX = start.x;
+                            const startY = start.y;
+                            const targetX = canvasCoords.x;
+                            const targetY = canvasCoords.y;
                             const startPort = start.nodeId ? (start.portId || start.id || 'right') : null;
-                            const targetPort = target.nodeId ? (target.id || target.portId || 'left') : null;
                             const newConn = createConnection(
                                 start.nodeId,
                                 startPort,
-                                target.nodeId,
-                                targetPort,
+                                null,
+                                null,
                                 state.activeArrowType || 'elbow',
                                 state.activeLineStyle || 'solid',
                                 start.nodeId ? null : snap(startX),
                                 start.nodeId ? null : snap(startY),
-                                target.nodeId ? null : snap(targetX),
-                                target.nodeId ? null : snap(targetY)
+                                snap(targetX),
+                                snap(targetY)
                             );
                             selectConnection(newConn.id, false);
                             statusHintText.textContent = 'Panah konektor berhasil dibuat!';
