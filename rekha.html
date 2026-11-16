@@ -13374,29 +13374,6 @@
                             );
                             selectConnection(newConn.id, false);
                             statusHintText.textContent = 'Panah konektor berhasil dibuat!';
-                        } else if (state.mode === 'arrow-drag') {
-                            // Single click without drag: place an arrow right at click point!
-                            let fromX = snap(startX - 50);
-                            let toX = snap(startX + 50);
-                            let fromY = snap(startY);
-                            let toY = snap(startY);
-                            if (start.nodeId) {
-                                toX = snap(startX + 100);
-                            }
-                            const newConn = createConnection(
-                                start.nodeId,
-                                start.portId || 'right',
-                                null,
-                                null,
-                                state.activeArrowType || 'elbow',
-                                state.activeLineStyle || 'solid',
-                                start.nodeId ? null : fromX,
-                                start.nodeId ? null : fromY,
-                                toX,
-                                toY
-                            );
-                            selectConnection(newConn.id, false);
-                            statusHintText.textContent = 'Panah baru berhasil diletakkan di kanvas!';
                         }
                     }
 
@@ -13527,28 +13504,7 @@
                 });
 
                 tile.addEventListener('click', () => {
-                    // 1. If 2 or more nodes are selected, connect the first two!
-                    if (state.selectedNodeIds && state.selectedNodeIds.length >= 2) {
-                        const n1 = state.selectedNodeIds[0];
-                        const n2 = state.selectedNodeIds[1];
-                        const newConn = createConnection(n1, 'right', n2, 'left', arrowType);
-                        selectConnection(newConn.id, false);
-                        statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil menghubungkan 2 objek terpilih!`;
-                        return;
-                    }
-
-                    // 2. If 1 node is selected, create an arrow extending from it!
-                    if (state.selectedNodeId) {
-                        const n = state.nodes.find(node => node.id === state.selectedNodeId);
-                        if (n) {
-                            const newConn = createConnection(n.id, 'right', null, null, arrowType, 'solid', null, null, snap(n.x + n.width + 100), snap(n.y + n.height / 2));
-                            selectConnection(newConn.id, false);
-                            statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil dibuat dari objek!`;
-                            return;
-                        }
-                    }
-
-                    // 3. Otherwise activate arrow-drag mode with helpful hint
+                    // Activate arrow-drag mode with chosen arrow type without automatically spawning an arrow
                     setMode('arrow-drag', arrowType);
                 });
             });
