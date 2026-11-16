@@ -4138,8 +4138,8 @@
                 <rect width="100%" height="100%" fill="url(#gridPattern)" id="canvasBackground" style="pointer-events: all;"/>
 
                 <g id="workspaceRoot" transform="translate(0, 0) scale(1)">
-                    <g id="layerConnectors"></g>
                     <g id="layerNodes"></g>
+                    <g id="layerConnectors"></g>
                     <g id="layerDrawings"></g>
                     <g id="layerLiveDrawings"></g>
                     <g id="layerSelection"></g>
@@ -6778,8 +6778,8 @@
         </style>
     </defs>
     ${bgRect}
-    <g id="exportConnectors">${connHtml}</g>
     <g id="exportNodes">${nodesHtml}</g>
+    <g id="exportConnectors">${connHtml}</g>
     <g id="exportDrawings">${drawHtml}</g>
 </svg>`;
             }
@@ -7891,8 +7891,16 @@
                 let nearest = null;
                 let minDist = Infinity;
 
+                // Prioritize smaller child shapes on top of terminals/swimlanes first
+                const sortedNodes = [...state.nodes].sort((a, b) => {
+                    const aIsContainer = (a.isTable || a.isSwimlane) ? 1 : 0;
+                    const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
+                    if (aIsContainer !== bIsContainer) return aIsContainer - bIsContainer;
+                    return (a.width * a.height) - (b.width * b.height);
+                });
+
                 // 1. Direct proximity snap to any anchor port within threshold
-                state.nodes.forEach(node => {
+                sortedNodes.forEach(node => {
                     if (node.id === ignoreNodeId) return;
 
                     const anchors = getNodeAnchorPoints(node);
@@ -7907,7 +7915,7 @@
 
                 // 2. Shape body snap: if cursor is inside or near any node, snap to its closest port!
                 if (!nearest) {
-                    state.nodes.forEach(node => {
+                    sortedNodes.forEach(node => {
                         if (node.id === ignoreNodeId) return;
                         const pad = 24;
                         if (canvasX >= node.x - pad && canvasX <= node.x + node.width + pad &&
@@ -10915,7 +10923,16 @@
 
                 const selIds = state.selectedNodeIds || (state.selectedNodeId ? [state.selectedNodeId] : []);
 
-                state.nodes.forEach(node => {
+                // Container shapes (tables and swimlanes) are rendered first at the back,
+                // so any shapes created on top of a terminal/swimlane are rendered on top!
+                const sortedNodes = [...state.nodes].sort((a, b) => {
+                    const aIsContainer = (a.isTable || a.isSwimlane) ? 1 : 0;
+                    const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
+                    if (aIsContainer !== bIsContainer) return aIsContainer - bIsContainer;
+                    return 0;
+                });
+
+                sortedNodes.forEach(node => {
                     const strokeColor = node.customStroke || 'var(--shape-stroke)';
                     const fillColor = node.customFill || 'var(--shape-fill)';
                     const textColor = node.customTextColor || 'var(--shape-text)';
