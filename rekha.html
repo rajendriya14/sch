@@ -7437,21 +7437,15 @@
 
                     let copied = false;
 
-                    // Method 1: Modern Async Clipboard API
-                    if (navigator.clipboard && navigator.clipboard.write) {
+                    // Method 1: Modern Async Clipboard API (image/png + text/html <img> works cleanly in Word, Excel, PowerPoint, & Paint)
+                    if (navigator.clipboard && navigator.clipboard.write && pngBlob) {
                         try {
-                            const clipMap = {};
-                            if (pngBlob) {
-                                clipMap['image/png'] = pngBlob;
-                            }
+                            const clipMap = {
+                                'image/png': pngBlob
+                            };
                             if (htmlImgStr) {
                                 clipMap['text/html'] = new Blob([htmlImgStr], { type: 'text/html' });
                             }
-                            try {
-                                clipMap['image/svg+xml'] = new Blob([svgStr], { type: 'image/svg+xml' });
-                            } catch (eSvg) {}
-                            clipMap['text/plain'] = new Blob([svgStr], { type: 'text/plain' });
-
                             const item = new ClipboardItem(clipMap);
                             await navigator.clipboard.write([item]);
                             copied = true;
@@ -7480,8 +7474,8 @@
 
                             const onCopy = (e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 if (htmlImgStr) e.clipboardData.setData('text/html', htmlImgStr);
-                                e.clipboardData.setData('text/plain', svgStr);
                                 if (e.clipboardData.items && pngBlob) {
                                     try { e.clipboardData.items.add(pngBlob); } catch (ep) {}
                                 }
@@ -10280,7 +10274,8 @@
                 const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
                     ? state.selectedNodeIds
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
-                const unlockedSel = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
+                // Grouped objects (node.groupId) are protected from Align so their grouped layout is never affected
+                const unlockedSel = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked && !n.groupId);
                 let hasContainerRef = false;
                 if (unlockedSel.length === 1) {
                     const n = unlockedSel[0];
@@ -10306,8 +10301,12 @@
                 const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
                     ? state.selectedNodeIds
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
-                const selNodes = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
-                if (selNodes.length === 0) return;
+                // Grouped objects (node.groupId) are unaffected by Align
+                const selNodes = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked && !n.groupId);
+                if (selNodes.length === 0) {
+                    statusHintText.textContent = 'Objek yang sudah di-grouping tidak terpengaruh oleh Align.';
+                    return;
+                }
 
                 if (mode === 'distribute-h') {
                     if (selNodes.length < 3) return;
@@ -11356,6 +11355,11 @@
                     connections: JSON.parse(JSON.stringify(connsToCopy))
                 };
 
+                // Also copy crisp image/HTML representation to system clipboard for Word, Excel, PowerPoint, etc.
+                if (typeof copyDiagramVectorToClipboard === 'function') {
+                    copyDiagramVectorToClipboard();
+                }
+
                 statusHintText.textContent = `${nodesToCopy.length} bentuk disalin (${connsToCopy.length} koneksi disertakan). Tekan Ctrl+V untuk menempel.`;
             }
 
@@ -11503,7 +11507,7 @@
                 );
                 if (isTextEditing) return;
 
-                // Point 3: Pressing ESC removes cell selection block in terminal
+                // Pressing ESC releases any selected shape/terminal/arrow & closes popovers (just like clicking empty canvas)
                 if (e.key === 'Escape') {
                     let hadCellSelection = false;
                     state.nodes.forEach(node => {
@@ -11516,12 +11520,34 @@
                     closeColorPopover();
                     closeAlignPopover();
                     closeTableContextMenu();
+                    closeCanvasContextMenu();
+                    closeRotatePopover();
                     closeSaveFormatModal();
-                    if (hadCellSelection) {
-                        renderNodes();
-                        statusHintText.textContent = 'Seleksi blok sel terminal dibatalkan (ESC).';
-                        return;
+                    if (objectAlignDropdown) objectAlignDropdown.classList.remove('open');
+                    if (btnObjectAlign) btnObjectAlign.classList.remove('open');
+
+                    if (state.isDrawingConnection) {
+                        state.isDrawingConnection = false;
+                        state.currentSnapTarget = null;
+                        state.connectStartAnchor = null;
+                        if (typeof layerLivePreview !== 'undefined' && layerLivePreview) layerLivePreview.innerHTML = '';
+                        viewport.classList.remove('connecting');
                     }
+
+                    const hadNodeOrConnSelection = !!(
+                        state.selectedNodeId ||
+                        (state.selectedNodeIds && state.selectedNodeIds.length > 0) ||
+                        state.selectedConnectionId ||
+                        (state.selectedConnectionIds && state.selectedConnectionIds.length > 0)
+                    );
+                    if (hadNodeOrConnSelection || hadCellSelection) {
+                        clearSelection();
+                    }
+                    if (state.mode !== 'select') {
+                        setMode('select');
+                    }
+                    statusHintText.textContent = 'Seleksi dilepaskan (ESC).';
+                    return;
                 }
 
                 // Shortcut '+' / '=' to add column/lane in terminal table or swimlane
@@ -11680,7 +11706,11 @@
                 const keyLower = (e.key || '').toLowerCase();
                 if ((e.ctrlKey || e.metaKey) && !e.altKey && (keyLower === 'c' || e.code === 'KeyC')) {
                     e.preventDefault();
-                    copySelectedNode();
+                    if ((state.selectedNodeIds && state.selectedNodeIds.length > 0) || state.selectedNodeId) {
+                        copySelectedNode();
+                    } else if (typeof copyDiagramVectorToClipboard === 'function') {
+                        copyDiagramVectorToClipboard();
+                    }
                 } else if ((e.ctrlKey || e.metaKey) && !e.altKey && (keyLower === 'v' || e.code === 'KeyV')) {
                     if (state.clipboard && state.clipboard.nodes && state.clipboard.nodes.length > 0) {
                         e.preventDefault();
