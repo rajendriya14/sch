@@ -7704,12 +7704,13 @@
             /* ======================================================================
                5. LINE STYLE CONTROLS
                ====================================================================== */
-            function setLineStyle(style) {
+            function setLineStyle(style, skipRender = false) {
                 state.activeLineStyle = style;
                 btnLineSolid.classList.toggle('active', style === 'solid');
                 btnLineDashed.classList.toggle('active', style === 'dashed');
                 btnLineDotted.classList.toggle('active', style === 'dotted');
                 statLineStyle.textContent = `Garis: ${style.charAt(0).toUpperCase() + style.slice(1)}`;
+                if (skipRender) return;
 
                 if (state.selectedConnectionId) {
                     const conn = state.connections.find(c => c.id === state.selectedConnectionId);
@@ -11210,7 +11211,7 @@
                 if (state.selectedNodeId) {
                     const node = state.nodes.find(n => n.id === state.selectedNodeId);
                     if (node && node.lineStyle) {
-                        setLineStyle(node.lineStyle);
+                        setLineStyle(node.lineStyle, true);
                     }
                 }
 
@@ -11953,6 +11954,7 @@
 
                                 hitRect.addEventListener('mousedown', (e) => {
                                     if (e.button !== 0) return;
+                state.hasDraggedBeyondThreshold = false;
                                     e.stopPropagation();
                                     state.activeHeaderNodeId = null;
                                     selectNode(node.id, false);
@@ -13744,6 +13746,7 @@
                 }
 
                 if (e.button !== 0) return;
+                state.hasDraggedBeyondThreshold = false;
 
                 const canvasCoords = screenToCanvasCoords(e.clientX, e.clientY);
 
@@ -14372,6 +14375,11 @@
                     const dx = canvasCoords.x - state.dragMouseStartCanvas.x;
                     const dy = canvasCoords.y - state.dragMouseStartCanvas.y;
 
+                    if (!state.hasDraggedBeyondThreshold) {
+                        if (Math.hypot(dx, dy) < (3 / state.zoom)) return;
+                        state.hasDraggedBeyondThreshold = true;
+                    }
+
                     if (state.dragNodesInitial.length === 1) {
                         const item = state.dragNodesInitial[0];
                         const singleNode = state.nodes.find(node => node.id === item.id);
@@ -14625,9 +14633,10 @@
                     state.terminalCellAnchor = null;
                 }
 
-                if (state.isDraggingNode) {
+                if (state.isDraggingNode && state.hasDraggedBeyondThreshold) {
                     saveSnapshot('Pindah Bentuk');
                 }
+                state.hasDraggedBeyondThreshold = false;
                 if (state.isResizing || state.isResizingGroup) {
                     saveSnapshot(state.isResizingGroup ? 'Ubah Ukuran Grup' : 'Ubah Ukuran Bentuk');
                 }
