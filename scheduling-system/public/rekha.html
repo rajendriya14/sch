@@ -13973,22 +13973,30 @@
                     return;
                 }
 
-                // Group Node dragging (moves all selected nodes together with magnetic guidelines!)
+                // Group Node dragging (moves all selected nodes together preserving exact relative positions)
                 if (state.isDraggingNode && state.dragNodesInitial && state.dragMouseStartCanvas) {
                     const dx = canvasCoords.x - state.dragMouseStartCanvas.x;
                     const dy = canvasCoords.y - state.dragMouseStartCanvas.y;
 
-                    state.dragNodesInitial.forEach(item => {
-                        const n = state.nodes.find(node => node.id === item.id);
-                        if (n) {
-                            n.x = snap(item.startX + dx);
-                            n.y = snap(item.startY + dy);
+                    if (state.dragNodesInitial.length === 1) {
+                        const item = state.dragNodesInitial[0];
+                        const singleNode = state.nodes.find(node => node.id === item.id);
+                        if (singleNode) {
+                            singleNode.x = snap(item.startX + dx);
+                            singleNode.y = snap(item.startY + dy);
+                            calculateMagneticAlignment(singleNode);
                         }
-                    });
-
-                    if (state.dragNodesInitial.length >= 1) {
-                        const singleNode = state.nodes.find(node => node.id === state.dragNodesInitial[0].id);
-                        if (singleNode) calculateMagneticAlignment(singleNode);
+                    } else {
+                        layerGuidelines.innerHTML = '';
+                        const snappedDx = snap(dx);
+                        const snappedDy = snap(dy);
+                        state.dragNodesInitial.forEach(item => {
+                            const n = state.nodes.find(node => node.id === item.id);
+                            if (n) {
+                                n.x = item.startX + snappedDx;
+                                n.y = item.startY + snappedDy;
+                            }
+                        });
                     }
 
                     renderNodes();
