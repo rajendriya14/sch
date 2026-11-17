@@ -3712,6 +3712,86 @@
         .empty-btn-link:hover svg {
             transform: translate(1px, -1px);
         }
+
+        /* Excel-Style Object Align Dropdown */
+        .header-align-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .header-align-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 28px;
+            padding: 0 9px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.14s ease, border-color 0.14s ease;
+        }
+        .header-align-btn:hover,
+        .header-align-btn.open {
+            background: var(--bg-hover);
+            border-color: var(--border-color);
+        }
+        .header-align-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 205px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+            padding: 5px;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+        }
+        .header-align-menu.open {
+            display: flex;
+        }
+        .header-align-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            color: #0f172a;
+            font-size: 12.5px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.12s ease;
+            width: 100%;
+        }
+        .header-align-item:hover:not(:disabled) {
+            background: #f1f5f9;
+        }
+        .header-align-item:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+        }
+        .header-align-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 4px 6px;
+        }
+
+        /* Shape Rotation Handle */
+        .shape-rotate-handle {
+            cursor: grab;
+        }
+        .shape-rotate-handle:active {
+            cursor: grabbing;
+        }
     </style>
 </head>
 <body>
@@ -3789,6 +3869,59 @@
             <button class="tool-btn" id="btnDeleteSelected" title="Hapus Objek Terpilih (Delete / Backspace)">
                 <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
+
+            <div class="tool-divider"></div>
+
+            <!-- Excel-Style Object & Table Align Dropdown -->
+            <div class="header-align-wrap" id="headerAlignWrap">
+                <button type="button" class="header-align-btn" id="btnObjectAlign" title="Align &amp; Distribute Shapes / Tables">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="3" x2="4" y2="21"/>
+                        <rect x="7" y="5" width="9" height="4" rx="1"/>
+                        <rect x="7" y="12" width="13" height="4" rx="1"/>
+                    </svg>
+                    <span>Align</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+                <div class="header-align-menu" id="objectAlignDropdown">
+                    <button type="button" class="header-align-item" data-object-align="left">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="3" x2="4" y2="21"/><rect x="7" y="5" width="8" height="4"/><rect x="7" y="13" width="13" height="4"/></svg>
+                        <span>Align <u>L</u>eft</span>
+                    </button>
+                    <button type="button" class="header-align-item" data-object-align="center">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="3" x2="12" y2="21"/><rect x="7" y="5" width="10" height="4"/><rect x="4" y="13" width="16" height="4"/></svg>
+                        <span>Align <u>C</u>enter</span>
+                    </button>
+                    <button type="button" class="header-align-item" data-object-align="right">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="20" y1="3" x2="20" y2="21"/><rect x="9" y="5" width="8" height="4"/><rect x="4" y="13" width="13" height="4"/></svg>
+                        <span>Align <u>R</u>ight</span>
+                    </button>
+                    <div class="header-align-divider"></div>
+                    <button type="button" class="header-align-item" data-object-align="top">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="4" x2="21" y2="4"/><rect x="5" y="7" width="4" height="8"/><rect x="13" y="7" width="4" height="13"/></svg>
+                        <span>Align <u>T</u>op</span>
+                    </button>
+                    <button type="button" class="header-align-item" data-object-align="middle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="12" x2="21" y2="12"/><rect x="5" y="7" width="4" height="10"/><rect x="13" y="4" width="4" height="16"/></svg>
+                        <span>Align <u>M</u>iddle</span>
+                    </button>
+                    <button type="button" class="header-align-item" data-object-align="bottom">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="20" x2="21" y2="20"/><rect x="5" y="9" width="4" height="8"/><rect x="13" y="4" width="4" height="13"/></svg>
+                        <span>Align <u>B</u>ottom</span>
+                    </button>
+                    <div class="header-align-divider"></div>
+                    <button type="button" class="header-align-item" data-object-align="distribute-h">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="4" x2="4" y2="20"/><line x1="20" y1="4" x2="20" y2="20"/><rect x="9" y="7" width="6" height="10"/></svg>
+                        <span>Distribute <u>H</u>orizontally</span>
+                    </button>
+                    <button type="button" class="header-align-item" data-object-align="distribute-v">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="4" x2="20" y2="4"/><line x1="4" y1="20" x2="20" y2="20"/><rect x="7" y="9" width="10" height="6"/></svg>
+                        <span>Distribute <u>V</u>ertically</span>
+                    </button>
+                </div>
+            </div>
 
             <div class="tool-divider"></div>
 
@@ -8029,13 +8162,32 @@
 
             function getNodeAnchorPoints(node) {
                 const ports = getNodeRelativePorts(node);
-                return ports.map(p => ({
-                    id: p.id,
-                    x: node.x + p.cx,
-                    y: node.y + p.cy,
-                    nodeId: node.id,
-                    dir: p.dir
-                }));
+                const rot = (!node.isTable && !node.isSwimlane && node.rotation) ? node.rotation : 0;
+                if (!rot) {
+                    return ports.map(p => ({
+                        id: p.id,
+                        x: node.x + p.cx,
+                        y: node.y + p.cy,
+                        nodeId: node.id,
+                        dir: p.dir
+                    }));
+                }
+                const cx0 = node.width / 2;
+                const cy0 = node.height / 2;
+                const rad = (rot * Math.PI) / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+                return ports.map(p => {
+                    const dx = p.cx - cx0;
+                    const dy = p.cy - cy0;
+                    return {
+                        id: p.id,
+                        x: node.x + cx0 + (dx * cos - dy * sin),
+                        y: node.y + cy0 + (dx * sin + dy * cos),
+                        nodeId: node.id,
+                        dir: p.dir
+                    };
+                });
             }
 
             function findNearestAnchor(canvasX, canvasY, ignoreNodeId) {
@@ -8651,7 +8803,8 @@
                         btnPlusLeft.style.display = 'none';
                         btnPlusInside.style.display = 'none';
                     } else {
-                        btnPlusTop.style.left = `${screenX + screenW / 2 - 11}px`;
+                        const topPlusOffsetX = (!node.isTable && !node.isSwimlane) ? 20 : -11;
+                        btnPlusTop.style.left = `${screenX + screenW / 2 + topPlusOffsetX}px`;
                         btnPlusTop.style.top = `${screenY - 26}px`;
                         btnPlusTop.style.display = 'flex';
 
@@ -10083,6 +10236,140 @@
                 });
             }
 
+            // Excel-Style Object & Table Align Dropdown Logic
+            const btnObjectAlign = document.getElementById('btnObjectAlign');
+            const objectAlignDropdown = document.getElementById('objectAlignDropdown');
+
+            function updateObjectAlignMenuStates() {
+                if (!objectAlignDropdown) return;
+                const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                const unlockedSel = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
+                let hasContainerRef = false;
+                if (unlockedSel.length === 1) {
+                    const n = unlockedSel[0];
+                    if (!n.isTable && !n.isSwimlane) {
+                        const cx = n.x + n.width / 2;
+                        const cy = n.y + n.height / 2;
+                        hasContainerRef = state.nodes.some(c => (c.isTable || c.isSwimlane) && c.id !== n.id && cx >= c.x && cx <= c.x + c.width && cy >= c.y && cy <= c.y + c.height);
+                    }
+                }
+                const canAlign = unlockedSel.length >= 2 || hasContainerRef;
+                const canDistribute = unlockedSel.length >= 3;
+                objectAlignDropdown.querySelectorAll('.header-align-item').forEach(btn => {
+                    const mode = btn.getAttribute('data-object-align');
+                    if (mode === 'distribute-h' || mode === 'distribute-v') {
+                        btn.disabled = !canDistribute;
+                    } else {
+                        btn.disabled = !canAlign;
+                    }
+                });
+            }
+
+            function alignSelectedObjects(mode) {
+                const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                const selNodes = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
+                if (selNodes.length === 0) return;
+
+                if (mode === 'distribute-h') {
+                    if (selNodes.length < 3) return;
+                    const sorted = [...selNodes].sort((a, b) => a.x - b.x);
+                    const firstLeft = sorted[0].x;
+                    const lastRight = sorted[sorted.length - 1].x + sorted[sorted.length - 1].width;
+                    const totalW = sorted.reduce((acc, n) => acc + n.width, 0);
+                    const gap = (lastRight - firstLeft - totalW) / (sorted.length - 1);
+                    let curX = firstLeft + sorted[0].width + gap;
+                    for (let i = 1; i < sorted.length - 1; i++) {
+                        sorted[i].x = snap(curX);
+                        curX += sorted[i].width + gap;
+                    }
+                } else if (mode === 'distribute-v') {
+                    if (selNodes.length < 3) return;
+                    const sorted = [...selNodes].sort((a, b) => a.y - b.y);
+                    const firstTop = sorted[0].y;
+                    const lastBottom = sorted[sorted.length - 1].y + sorted[sorted.length - 1].height;
+                    const totalH = sorted.reduce((acc, n) => acc + n.height, 0);
+                    const gap = (lastBottom - firstTop - totalH) / (sorted.length - 1);
+                    let curY = firstTop + sorted[0].height + gap;
+                    for (let i = 1; i < sorted.length - 1; i++) {
+                        sorted[i].y = snap(curY);
+                        curY += sorted[i].height + gap;
+                    }
+                } else {
+                    let refMinX, refMaxX, refMinY, refMaxY;
+                    if (selNodes.length >= 2) {
+                        refMinX = Math.min(...selNodes.map(n => n.x));
+                        refMaxX = Math.max(...selNodes.map(n => n.x + n.width));
+                        refMinY = Math.min(...selNodes.map(n => n.y));
+                        refMaxY = Math.max(...selNodes.map(n => n.y + n.height));
+                    } else {
+                        const n = selNodes[0];
+                        const cx = n.x + n.width / 2;
+                        const cy = n.y + n.height / 2;
+                        const parent = state.nodes.find(c => (c.isTable || c.isSwimlane) && c.id !== n.id && cx >= c.x && cx <= c.x + c.width && cy >= c.y && cy <= c.y + c.height);
+                        if (!parent) return;
+                        refMinX = parent.x + 8;
+                        refMaxX = parent.x + parent.width - 8;
+                        refMinY = parent.y + 8;
+                        refMaxY = parent.y + parent.height - 8;
+                    }
+                    const refCenterX = (refMinX + refMaxX) / 2;
+                    const refMiddleY = (refMinY + refMaxY) / 2;
+
+                    selNodes.forEach(n => {
+                        if (mode === 'left') n.x = snap(refMinX);
+                        else if (mode === 'center') n.x = snap(refCenterX - n.width / 2);
+                        else if (mode === 'right') n.x = snap(refMaxX - n.width);
+                        else if (mode === 'top') n.y = snap(refMinY);
+                        else if (mode === 'middle') n.y = snap(refMiddleY - n.height / 2);
+                        else if (mode === 'bottom') n.y = snap(refMaxY - n.height);
+                    });
+                }
+
+                saveSnapshot('Align Objek (' + mode + ')');
+                renderNodes();
+                renderConnections();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `Objek berhasil disejajarkan (${mode}).`;
+            }
+
+            if (btnObjectAlign && objectAlignDropdown) {
+                btnObjectAlign.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = objectAlignDropdown.classList.contains('open');
+                    if (isOpen) {
+                        objectAlignDropdown.classList.remove('open');
+                        btnObjectAlign.classList.remove('open');
+                    } else {
+                        updateObjectAlignMenuStates();
+                        objectAlignDropdown.classList.add('open');
+                        btnObjectAlign.classList.add('open');
+                    }
+                });
+
+                objectAlignDropdown.querySelectorAll('.header-align-item').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (btn.disabled) return;
+                        const mode = btn.getAttribute('data-object-align');
+                        alignSelectedObjects(mode);
+                        objectAlignDropdown.classList.remove('open');
+                        btnObjectAlign.classList.remove('open');
+                    });
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#headerAlignWrap')) {
+                        objectAlignDropdown.classList.remove('open');
+                        btnObjectAlign.classList.remove('open');
+                    }
+                });
+            }
+
             // Right-Click Context Menu Listeners (Point 2)
             if (tableContextMenu) {
                 tableContextMenu.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -11405,11 +11692,14 @@
                     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                     g.setAttribute('class', `diagram-node ${selIds.includes(node.id) ? 'selected' : ''}`);
                     g.setAttribute('data-id', node.id);
-                    g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
-
                     const strokeDash = getStrokeDashArray(node.lineStyle || 'solid');
                     const w = node.width;
                     const h = node.height;
+                    const shapeRot = (!node.isTable && !node.isSwimlane && node.rotation) ? node.rotation : 0;
+                    g.setAttribute('transform', shapeRot
+                        ? `translate(${node.x}, ${node.y}) rotate(${shapeRot}, ${w / 2}, ${h / 2})`
+                        : `translate(${node.x}, ${node.y})`
+                    );
 
                     let shapeEl;
 
@@ -12844,6 +13134,12 @@
                     const h = node.height + (pad * 2);
 
                     const isSmall = (node.width < 75 || node.height < 75);
+                    const shapeRot = (!node.isTable && !node.isSwimlane && node.rotation) ? node.rotation : 0;
+                    const selGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    if (shapeRot) {
+                        selGroup.setAttribute('transform', `rotate(${shapeRot}, ${node.x + node.width / 2}, ${node.y + node.height / 2})`);
+                    }
+                    layerSelection.appendChild(selGroup);
 
                     // 1. Transparent Drag Hitplate: Only for non-container shapes so containers (tables/swimlanes) never block child shapes inside them!
                     if (!node.isTable && !node.isSwimlane) {
@@ -12856,7 +13152,7 @@
                         dragPlate.setAttribute('fill', 'rgba(0, 0, 0, 0.001)');
                         dragPlate.setAttribute('data-id', node.id);
                         dragPlate.style.cursor = 'move';
-                        layerSelection.appendChild(dragPlate);
+                        selGroup.appendChild(dragPlate);
                     }
 
                     // 2. Selection Box Outline
@@ -12866,7 +13162,7 @@
                     box.setAttribute('fill', 'none'); box.setAttribute('stroke', 'var(--selection-border)');
                     box.setAttribute('stroke-width', '1.5'); box.setAttribute('stroke-dasharray', '3 3');
                     box.setAttribute('pointer-events', 'none');
-                    layerSelection.appendChild(box);
+                    selGroup.appendChild(box);
 
                     // 3. Resize Handles: For small shapes, only 4 corner handles (size 6) so middle remains open for dragging!
                     const handleSize = isSmall ? 6 : 8;
@@ -12897,8 +13193,46 @@
                         rect.setAttribute('height', handleSize);
                         rect.setAttribute('rx', 1.5);
                         rect.setAttribute('data-handle', hnd.type);
-                        layerSelection.appendChild(rect);
+                        selGroup.appendChild(rect);
                     });
+
+                    // 4. Shape Rotation Handle (only for shapes, NOT terminals)
+                    if (!node.isTable && !node.isSwimlane && !node.isLocked) {
+                        const rotY = y - 22;
+                        const rotX = x + w / 2;
+
+                        const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        stem.setAttribute('x1', rotX); stem.setAttribute('y1', y);
+                        stem.setAttribute('x2', rotX); stem.setAttribute('y2', rotY + 9);
+                        stem.setAttribute('stroke', '#64748b');
+                        stem.setAttribute('stroke-width', '1.2');
+                        stem.setAttribute('pointer-events', 'none');
+                        selGroup.appendChild(stem);
+
+                        const rotHandleG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        rotHandleG.setAttribute('class', 'shape-rotate-handle');
+                        rotHandleG.setAttribute('data-node-id', node.id);
+
+                        const hitC = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        hitC.setAttribute('cx', rotX); hitC.setAttribute('cy', rotY);
+                        hitC.setAttribute('r', '11');
+                        hitC.setAttribute('fill', '#ffffff');
+                        hitC.setAttribute('stroke', '#64748b');
+                        hitC.setAttribute('stroke-width', '1.4');
+                        rotHandleG.appendChild(hitC);
+
+                        const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        iconPath.setAttribute('d', `M${rotX + 3.5},${rotY - 2} A4.5,4.5 0 1,0 ${rotX + 4.2},${rotY + 1.5} M${rotX + 1.5},${rotY - 2} L${rotX + 4.5},${rotY - 2} L${rotX + 4.5},${rotY - 5}`);
+                        iconPath.setAttribute('fill', 'none');
+                        iconPath.setAttribute('stroke', '#334155');
+                        iconPath.setAttribute('stroke-width', '1.5');
+                        iconPath.setAttribute('stroke-linecap', 'round');
+                        iconPath.setAttribute('stroke-linejoin', 'round');
+                        iconPath.setAttribute('pointer-events', 'none');
+                        rotHandleG.appendChild(iconPath);
+
+                        selGroup.appendChild(rotHandleG);
+                    }
                 } else {
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
@@ -13423,6 +13757,18 @@
                     return;
                 }
 
+                const rotateTarget = e.target.closest('.shape-rotate-handle');
+                if (rotateTarget) {
+                    const rNodeId = rotateTarget.getAttribute('data-node-id') || state.selectedNodeId;
+                    const rNode = state.nodes.find(n => n.id === rNodeId);
+                    if (rNode && !rNode.isTable && !rNode.isSwimlane && !rNode.isLocked) {
+                        state.isRotatingNode = true;
+                        state.rotateNodeId = rNode.id;
+                        document.body.style.cursor = 'grabbing';
+                        return;
+                    }
+                }
+
                 const handleTarget = e.target.closest('.resize-handle');
                 if (handleTarget) {
                     const isGroupResize = handleTarget.getAttribute('data-group-resize') === 'true' || (state.selectedNodeIds && state.selectedNodeIds.length > 1);
@@ -13763,6 +14109,34 @@
                             updateTableSelectionOverlay(node);
                             updateFloatingAndPlusBars();
                         }
+                    }
+                    return;
+                }
+
+                if (state.isRotatingNode && state.rotateNodeId) {
+                    const node = state.nodes.find(n => n.id === state.rotateNodeId);
+                    if (node && !node.isLocked) {
+                        const cx = node.x + node.width / 2;
+                        const cy = node.y + node.height / 2;
+                        let angle = Math.atan2(canvasCoords.y - cy, canvasCoords.x - cx) * (180 / Math.PI) + 90;
+                        angle = ((angle % 360) + 360) % 360;
+
+                        if (e.shiftKey) {
+                            angle = Math.round(angle / 15) * 15;
+                        } else {
+                            // Gentle magnetic snap to 0, 90, 180, 270 within 3 degrees
+                            const nearest90 = Math.round(angle / 90) * 90;
+                            if (Math.abs(angle - nearest90) <= 3) {
+                                angle = nearest90 % 360;
+                            }
+                        }
+
+                        node.rotation = Math.round(angle) % 360;
+                        renderNodes();
+                        renderConnections();
+                        renderSelection();
+                        updateFloatingAndPlusBars();
+                        statusHintText.textContent = `Rotasi Shape: ${node.rotation}° (Tahan Shift untuk snap 15°)`;
                     }
                     return;
                 }
@@ -14252,6 +14626,10 @@
                 if (state.isResizing || state.isResizingGroup) {
                     saveSnapshot(state.isResizingGroup ? 'Ubah Ukuran Grup' : 'Ubah Ukuran Bentuk');
                 }
+                if (state.isRotatingNode) {
+                    saveSnapshot('Putar Shape');
+                    document.body.style.cursor = '';
+                }
 
                 state.isPanning = false;
                 state.isDraggingNode = false;
@@ -14260,6 +14638,8 @@
                 state.dragMouseStartCanvas = null;
                 state.isResizing = false;
                 state.isResizingGroup = false;
+                state.isRotatingNode = false;
+                state.rotateNodeId = null;
                 state.resizeHandle = null;
                 state.resizeInitialRect = null;
                 state.groupResizeInitial = null;
