@@ -8773,26 +8773,16 @@
                 let screenX, screenY, screenW, screenH;
 
                 if (state.selectedNodeIds && state.selectedNodeIds.length > 1) {
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    state.selectedNodeIds.forEach(id => {
-                        const n = state.nodes.find(item => item.id === id);
-                        if (n) {
-                            minX = Math.min(minX, n.x);
-                            minY = Math.min(minY, n.y);
-                            maxX = Math.max(maxX, n.x + n.width);
-                            maxY = Math.max(maxY, n.y + n.height);
-                        }
-                    });
-                    screenX = (minX * state.zoom) + state.panX;
-                    screenY = (minY * state.zoom) + state.panY;
-                    screenW = (maxX - minX) * state.zoom;
-                    screenH = (maxY - minY) * state.zoom;
-
+                    floatingPropBar.style.display = 'none';
+                    closeColorPopover();
+                    closeAlignPopover();
+                    closeMorePopover();
                     btnPlusTop.style.display = 'none';
                     btnPlusRight.style.display = 'none';
                     btnPlusBottom.style.display = 'none';
                     btnPlusLeft.style.display = 'none';
                     btnPlusInside.style.display = 'none';
+                    return;
                 } else {
                     screenX = (node.x * state.zoom) + state.panX;
                     screenY = (node.y * state.zoom) + state.panY;
@@ -8871,9 +8861,14 @@
                 let barLeft = screenX + (screenW / 2) - (barWidth / 2);
                 barLeft = Math.max(12, Math.min(barLeft, viewportRect.width - barWidth - 12));
 
-                floatingPropBar.style.top = `${barTop}px`;
-                floatingPropBar.style.left = `${barLeft}px`;
-                floatingPropBar.style.display = 'flex';
+                const alignDropEl = document.getElementById('objectAlignDropdown');
+                if (alignDropEl && alignDropEl.classList.contains('open')) {
+                    floatingPropBar.style.display = 'none';
+                } else {
+                    floatingPropBar.style.top = `${barTop}px`;
+                    floatingPropBar.style.left = `${barLeft}px`;
+                    floatingPropBar.style.display = 'flex';
+                }
 
                 fpFontFamily.value = node.fontFamily || 'Noto Sans';
                 fpFontSizeDisplay.textContent = node.fontSize || 14;
@@ -10269,24 +10264,66 @@
             const btnObjectAlign = document.getElementById('btnObjectAlign');
             const objectAlignDropdown = document.getElementById('objectAlignDropdown');
 
+            function getAlignmentUnits(nodes) {
+                const units = [];
+                const groupMap = {};
+                nodes.forEach(n => {
+                    if (n.groupId) {
+                        if (!groupMap[n.groupId]) {
+                            groupMap[n.groupId] = [];
+                        }
+                        groupMap[n.groupId].push(n);
+                    } else {
+                        units.push({
+                            isGroup: false,
+                            nodes: [n],
+                            x: n.x,
+                            y: n.y,
+                            width: n.width,
+                            height: n.height
+                        });
+                    }
+                });
+                Object.keys(groupMap).forEach(gid => {
+                    const gNodes = groupMap[gid];
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    gNodes.forEach(n => {
+                        minX = Math.min(minX, n.x);
+                        minY = Math.min(minY, n.y);
+                        maxX = Math.max(maxX, n.x + n.width);
+                        maxY = Math.max(maxY, n.y + n.height);
+                    });
+                    units.push({
+                        isGroup: true,
+                        nodes: gNodes,
+                        x: minX,
+                        y: minY,
+                        width: maxX - minX,
+                        height: maxY - minY
+                    });
+                });
+                return units;
+            }
+
             function updateObjectAlignMenuStates() {
                 if (!objectAlignDropdown) return;
                 const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
                     ? state.selectedNodeIds
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
-                // Grouped objects (node.groupId) are protected from Align so their grouped layout is never affected
-                const unlockedSel = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked && !n.groupId);
+                const unlockedSel = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
+                const units = getAlignmentUnits(unlockedSel);
+
                 let hasContainerRef = false;
-                if (unlockedSel.length === 1) {
-                    const n = unlockedSel[0];
+                if (units.length === 1 && !units[0].isGroup) {
+                    const n = units[0].nodes[0];
                     if (!n.isTable && !n.isSwimlane) {
                         const cx = n.x + n.width / 2;
                         const cy = n.y + n.height / 2;
                         hasContainerRef = state.nodes.some(c => (c.isTable || c.isSwimlane) && c.id !== n.id && cx >= c.x && cx <= c.x + c.width && cy >= c.y && cy <= c.y + c.height);
                     }
                 }
-                const canAlign = unlockedSel.length >= 2 || hasContainerRef;
-                const canDistribute = unlockedSel.length >= 3;
+                const canAlign = units.length >= 2 || hasContainerRef;
+                const canDistribute = units.length >= 3;
                 objectAlignDropdown.querySelectorAll('.header-align-item').forEach(btn => {
                     const mode = btn.getAttribute('data-object-align');
                     if (mode === 'distribute-h' || mode === 'distribute-v') {
@@ -10301,46 +10338,52 @@
                 const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
                     ? state.selectedNodeIds
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
-                // Grouped objects (node.groupId) are unaffected by Align
-                const selNodes = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked && !n.groupId);
-                if (selNodes.length === 0) {
-                    statusHintText.textContent = 'Objek yang sudah di-grouping tidak terpengaruh oleh Align.';
+                const selNodes = state.nodes.filter(n => selIds.includes(n.id) && !n.isLocked);
+                if (selNodes.length === 0) return;
+
+                const units = getAlignmentUnits(selNodes);
+                if (units.length === 0) return;
+                // A single group by itself should never have its internal members scrambled by Align
+                if (units.length === 1 && units[0].isGroup) {
+                    statusHintText.textContent = 'Pilih minimal 2 grup/objek untuk mensejajarkan tanpa mengubah isi grup.';
                     return;
                 }
 
                 if (mode === 'distribute-h') {
-                    if (selNodes.length < 3) return;
-                    const sorted = [...selNodes].sort((a, b) => a.x - b.x);
+                    if (units.length < 3) return;
+                    const sorted = [...units].sort((a, b) => a.x - b.x);
                     const firstLeft = sorted[0].x;
                     const lastRight = sorted[sorted.length - 1].x + sorted[sorted.length - 1].width;
-                    const totalW = sorted.reduce((acc, n) => acc + n.width, 0);
+                    const totalW = sorted.reduce((acc, u) => acc + u.width, 0);
                     const gap = (lastRight - firstLeft - totalW) / (sorted.length - 1);
                     let curX = firstLeft + sorted[0].width + gap;
                     for (let i = 1; i < sorted.length - 1; i++) {
-                        sorted[i].x = snap(curX);
+                        const dx = snap(curX) - sorted[i].x;
+                        sorted[i].nodes.forEach(n => { n.x += dx; });
                         curX += sorted[i].width + gap;
                     }
                 } else if (mode === 'distribute-v') {
-                    if (selNodes.length < 3) return;
-                    const sorted = [...selNodes].sort((a, b) => a.y - b.y);
+                    if (units.length < 3) return;
+                    const sorted = [...units].sort((a, b) => a.y - b.y);
                     const firstTop = sorted[0].y;
                     const lastBottom = sorted[sorted.length - 1].y + sorted[sorted.length - 1].height;
-                    const totalH = sorted.reduce((acc, n) => acc + n.height, 0);
+                    const totalH = sorted.reduce((acc, u) => acc + u.height, 0);
                     const gap = (lastBottom - firstTop - totalH) / (sorted.length - 1);
                     let curY = firstTop + sorted[0].height + gap;
                     for (let i = 1; i < sorted.length - 1; i++) {
-                        sorted[i].y = snap(curY);
+                        const dy = snap(curY) - sorted[i].y;
+                        sorted[i].nodes.forEach(n => { n.y += dy; });
                         curY += sorted[i].height + gap;
                     }
                 } else {
                     let refMinX, refMaxX, refMinY, refMaxY;
-                    if (selNodes.length >= 2) {
-                        refMinX = Math.min(...selNodes.map(n => n.x));
-                        refMaxX = Math.max(...selNodes.map(n => n.x + n.width));
-                        refMinY = Math.min(...selNodes.map(n => n.y));
-                        refMaxY = Math.max(...selNodes.map(n => n.y + n.height));
+                    if (units.length >= 2) {
+                        refMinX = Math.min(...units.map(u => u.x));
+                        refMaxX = Math.max(...units.map(u => u.x + u.width));
+                        refMinY = Math.min(...units.map(u => u.y));
+                        refMaxY = Math.max(...units.map(u => u.y + u.height));
                     } else {
-                        const n = selNodes[0];
+                        const n = units[0].nodes[0];
                         const cx = n.x + n.width / 2;
                         const cy = n.y + n.height / 2;
                         const parent = state.nodes.find(c => (c.isTable || c.isSwimlane) && c.id !== n.id && cx >= c.x && cx <= c.x + c.width && cy >= c.y && cy <= c.y + c.height);
@@ -10353,13 +10396,21 @@
                     const refCenterX = (refMinX + refMaxX) / 2;
                     const refMiddleY = (refMinY + refMaxY) / 2;
 
-                    selNodes.forEach(n => {
-                        if (mode === 'left') n.x = snap(refMinX);
-                        else if (mode === 'center') n.x = snap(refCenterX - n.width / 2);
-                        else if (mode === 'right') n.x = snap(refMaxX - n.width);
-                        else if (mode === 'top') n.y = snap(refMinY);
-                        else if (mode === 'middle') n.y = snap(refMiddleY - n.height / 2);
-                        else if (mode === 'bottom') n.y = snap(refMaxY - n.height);
+                    units.forEach(u => {
+                        let dx = 0;
+                        let dy = 0;
+                        if (mode === 'left') dx = snap(refMinX) - u.x;
+                        else if (mode === 'center') dx = snap(refCenterX - u.width / 2) - u.x;
+                        else if (mode === 'right') dx = snap(refMaxX - u.width) - u.x;
+                        else if (mode === 'top') dy = snap(refMinY) - u.y;
+                        else if (mode === 'middle') dy = snap(refMiddleY - u.height / 2) - u.y;
+                        else if (mode === 'bottom') dy = snap(refMaxY - u.height) - u.y;
+                        if (dx !== 0 || dy !== 0) {
+                            u.nodes.forEach(n => {
+                                n.x += dx;
+                                n.y += dy;
+                            });
+                        }
                     });
                 }
 
@@ -10371,9 +10422,26 @@
                 statusHintText.textContent = `Objek berhasil disejajarkan (${mode}).`;
             }
 
+            // Hide floating property bar whenever user interacts with top menu bar functions
+            const headerCenterTools = document.querySelector('.header-center-tools');
+            if (headerCenterTools) {
+                headerCenterTools.addEventListener('mousedown', () => {
+                    if (floatingPropBar) floatingPropBar.style.display = 'none';
+                    closeColorPopover();
+                    closeAlignPopover();
+                    closeMorePopover();
+                    closeRotatePopover();
+                });
+            }
+
             if (btnObjectAlign && objectAlignDropdown) {
                 btnObjectAlign.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (floatingPropBar) floatingPropBar.style.display = 'none';
+                    closeColorPopover();
+                    closeAlignPopover();
+                    closeMorePopover();
+                    closeRotatePopover();
                     const isOpen = objectAlignDropdown.classList.contains('open');
                     if (isOpen) {
                         objectAlignDropdown.classList.remove('open');
