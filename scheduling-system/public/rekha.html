@@ -7512,11 +7512,21 @@
 
             // Global Copy Listener: When user presses Ctrl+C directly on canvas
             window.addEventListener('copy', (e) => {
-                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                const activeEl = document.activeElement;
+                const isTextEditing = activeEl && activeEl.offsetParent !== null && (
+                    (activeEl.tagName === 'TEXTAREA' && getComputedStyle(activeEl).display !== 'none') ||
+                    (activeEl.tagName === 'INPUT' && !['range', 'checkbox', 'radio', 'button', 'submit', 'color', 'file'].includes((activeEl.type || 'text').toLowerCase())) ||
+                    activeEl.isContentEditable
+                );
+                if (isTextEditing) {
                     return; // Let user copy text normally inside input/textarea
                 }
                 e.preventDefault();
-                copyDiagramVectorToClipboard();
+                if ((state.selectedNodeIds && state.selectedNodeIds.length > 0) || state.selectedNodeId) {
+                    copySelectedNode();
+                } else {
+                    copyDiagramVectorToClipboard();
+                }
             });
 
             /* ======================================================================
@@ -11359,8 +11369,8 @@
                 const groupMap = {};
                 const newSelectedIds = [];
 
-                state.clipboard.nodes.forEach(oldNode => {
-                    const newId = 'node_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+                state.clipboard.nodes.forEach((oldNode, idx) => {
+                    const newId = 'node_' + Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 10000);
                     idMap[oldNode.id] = newId;
 
                     const newNode = JSON.parse(JSON.stringify(oldNode));
@@ -11484,9 +11494,9 @@
             /* ======================================================================
                13. KEYBOARD SHORTCUTS & ARROW KEYS NAVIGATION
                ====================================================================== */
-            window.addEventListener('keydown', (e) => {
+            document.addEventListener('keydown', (e) => {
                 const activeEl = document.activeElement;
-                const isTextEditing = activeEl && (
+                const isTextEditing = activeEl && activeEl.offsetParent !== null && (
                     (activeEl.tagName === 'TEXTAREA' && activeEl.style.display !== 'none' && getComputedStyle(activeEl).display !== 'none') ||
                     (activeEl.tagName === 'INPUT' && !['range', 'checkbox', 'radio', 'button', 'submit', 'color', 'file'].includes((activeEl.type || 'text').toLowerCase())) ||
                     activeEl.isContentEditable
@@ -11684,7 +11694,7 @@
                 } else if (keyLower === 'h' && !e.ctrlKey && !e.metaKey) {
                     setMode('hand');
                 }
-            });
+            }, true);
 
             /* ======================================================================
                14. NATIVE SVG RENDERING ENGINE
