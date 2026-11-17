@@ -12324,7 +12324,7 @@
 
                         if (isH) {
                             const availH = h - poolHeaderH;
-                            const lhW = Math.max(70, node.laneHeaderSize || 110);
+                            const lhW = Math.max(45, node.laneHeaderSize || 110);
                             node.laneHeaderSize = lhW;
 
                             // Normalize lane heights
@@ -12334,12 +12334,46 @@
                                 node.lanes.forEach(l => l.size = (l.size || 100) * f);
                             }
 
-                            // Vertical divider between lane headers and lane body
+                            // Vertical divider between lane headers and lane body (with draggable resizer!)
                             const vSep = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                             vSep.setAttribute('x1', lhW); vSep.setAttribute('y1', poolHeaderH);
                             vSep.setAttribute('x2', lhW); vSep.setAttribute('y2', h);
                             vSep.setAttribute('stroke', strokeColor); vSep.setAttribute('stroke-width', '1.5');
                             shapeEl.appendChild(vSep);
+
+                            const vSepVis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            vSepVis.setAttribute('x1', lhW); vSepVis.setAttribute('y1', poolHeaderH);
+                            vSepVis.setAttribute('x2', lhW); vSepVis.setAttribute('y2', h);
+                            vSepVis.setAttribute('stroke', '#2563eb'); vSepVis.setAttribute('stroke-width', '2.8');
+                            vSepVis.setAttribute('opacity', '0'); vSepVis.setAttribute('pointer-events', 'none');
+                            shapeEl.appendChild(vSepVis);
+
+                            const vSepHit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            vSepHit.setAttribute('x1', lhW); vSepHit.setAttribute('y1', poolHeaderH);
+                            vSepHit.setAttribute('x2', lhW); vSepHit.setAttribute('y2', h);
+                            vSepHit.setAttribute('stroke', 'rgba(0,0,0,0.001)'); vSepHit.setAttribute('stroke-width', '14');
+                            vSepHit.setAttribute('style', 'cursor: col-resize; pointer-events: stroke;');
+                            const vSepTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                            vSepTitle.textContent = 'Tarik ke kiri/kanan untuk mengatur lebar kolom Data';
+                            vSepHit.appendChild(vSepTitle);
+
+                            vSepHit.addEventListener('mouseenter', () => vSepVis.setAttribute('opacity', '1'));
+                            vSepHit.addEventListener('mouseleave', () => {
+                                if (!state.isResizingSwimlaneHeaderCol) vSepVis.setAttribute('opacity', '0');
+                            });
+                            vSepHit.addEventListener('mousedown', (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                selectNode(node.id, false);
+                                state.isResizingSwimlaneHeaderCol = true;
+                                state.resizingSwimlaneNodeId = node.id;
+                                state.swimlaneHeaderColInitial = lhW;
+                                state.swimlaneResizeMouseStartX = e.clientX;
+                                document.body.style.cursor = 'col-resize';
+                                viewport.classList.add('adjusting-ew');
+                                statusHintText.textContent = 'Tarik ke kiri/kanan untuk menyesuaikan lebar kolom label Data...';
+                            });
+                            shapeEl.appendChild(vSepHit);
 
                             // Lane headers background
                             const lhBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -13200,6 +13234,28 @@
                     box.setAttribute('pointer-events', 'none');
                     selGroup.appendChild(box);
 
+                    // 2b. Full-Edge Dashed Border Resize Hit-Lines (drag anywhere along dashed border to resize!)
+                    if (!isSmall || node.isTable || node.isSwimlane) {
+                        const edgeLines = [
+                            { type: 'n', x1: x + 6, y1: y,     x2: x + w - 6, y2: y,     cursor: 'ns-resize' },
+                            { type: 'e', x1: x + w, y1: y + 6, x2: x + w,     y2: y + h - 6, cursor: 'ew-resize' },
+                            { type: 's', x1: x + 6, y1: y + h, x2: x + w - 6, y2: y + h, cursor: 'ns-resize' },
+                            { type: 'w', x1: x,     y1: y + 6, x2: x,         y2: y + h - 6, cursor: 'ew-resize' }
+                        ];
+                        edgeLines.forEach(el => {
+                            const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            hitLine.setAttribute('class', `resize-handle handle-${el.type}`);
+                            hitLine.setAttribute('x1', el.x1); hitLine.setAttribute('y1', el.y1);
+                            hitLine.setAttribute('x2', el.x2); hitLine.setAttribute('y2', el.y2);
+                            hitLine.setAttribute('stroke', 'rgba(0,0,0,0.001)');
+                            hitLine.setAttribute('stroke-width', '12');
+                            hitLine.setAttribute('data-handle', el.type);
+                            hitLine.style.cursor = el.cursor;
+                            hitLine.style.pointerEvents = 'stroke';
+                            selGroup.appendChild(hitLine);
+                        });
+                    }
+
                     // 3. Resize Handles: For small shapes, only 4 corner handles (size 6) so middle remains open for dragging!
                     const handleSize = isSmall ? 6 : 8;
                     const handles = isSmall
@@ -13329,6 +13385,27 @@
                         groupBox.setAttribute('rx', '4');
                         groupBox.setAttribute('pointer-events', 'none');
                         layerSelection.appendChild(groupBox);
+
+                        // Full-Edge Dashed Border Resize Hit-Lines on Group Box
+                        const gEdgeLines = [
+                            { type: 'n', x1: gx + 6, y1: gy,      x2: gx + gw - 6, y2: gy,      cursor: 'ns-resize' },
+                            { type: 'e', x1: gx + gw, y1: gy + 6, x2: gx + gw,     y2: gy + gh - 6, cursor: 'ew-resize' },
+                            { type: 's', x1: gx + 6, y1: gy + gh, x2: gx + gw - 6, y2: gy + gh, cursor: 'ns-resize' },
+                            { type: 'w', x1: gx,     y1: gy + 6,  x2: gx,          y2: gy + gh - 6, cursor: 'ew-resize' }
+                        ];
+                        gEdgeLines.forEach(el => {
+                            const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            hitLine.setAttribute('class', `resize-handle handle-${el.type}`);
+                            hitLine.setAttribute('x1', el.x1); hitLine.setAttribute('y1', el.y1);
+                            hitLine.setAttribute('x2', el.x2); hitLine.setAttribute('y2', el.y2);
+                            hitLine.setAttribute('stroke', 'rgba(0,0,0,0.001)');
+                            hitLine.setAttribute('stroke-width', '12');
+                            hitLine.setAttribute('data-handle', el.type);
+                            hitLine.setAttribute('data-group-resize', 'true');
+                            hitLine.style.cursor = el.cursor;
+                            hitLine.style.pointerEvents = 'stroke';
+                            layerSelection.appendChild(hitLine);
+                        });
 
                         // 8 Resize Handles on Group / Multi-Selection Bounding Box
                         const gHandles = [
@@ -13642,6 +13719,87 @@
                         drawVGuideline(other.x - 12, other.y, other.y + other.height);
                     }
                 });
+            }
+
+            function calculateGroupMagneticAlignment(draggedIds) {
+                layerGuidelines.innerHTML = '';
+                const draggedNodes = state.nodes.filter(n => draggedIds.includes(n.id));
+                if (draggedNodes.length === 0) return;
+
+                let gLeft = Infinity, gTop = Infinity, gRight = -Infinity, gBottom = -Infinity;
+                draggedNodes.forEach(n => {
+                    gLeft = Math.min(gLeft, n.x);
+                    gTop = Math.min(gTop, n.y);
+                    gRight = Math.max(gRight, n.x + n.width);
+                    gBottom = Math.max(gBottom, n.y + n.height);
+                });
+                const gCenterX = (gLeft + gRight) / 2;
+                const gCenterY = (gTop + gBottom) / 2;
+                const snapThreshold = 12;
+
+                let snapDx = null;
+                let snapDy = null;
+                let vGuide = null;
+                let hGuide = null;
+
+                state.nodes.forEach(other => {
+                    if (draggedIds.includes(other.id)) return;
+
+                    const otherLeft = other.x;
+                    const otherCenterX = other.x + other.width / 2;
+                    const otherRight = other.x + other.width;
+                    const otherTop = other.y;
+                    const otherCenterY = other.y + other.height / 2;
+                    const otherBottom = other.y + other.height;
+
+                    if (snapDx === null) {
+                        if (Math.abs(gCenterX - otherCenterX) < snapThreshold) {
+                            snapDx = otherCenterX - gCenterX;
+                            vGuide = { x: otherCenterX, y1: Math.min(gTop, otherTop) - 40, y2: Math.max(gBottom, otherBottom) + 40 };
+                        } else if (Math.abs(gLeft - otherLeft) < snapThreshold) {
+                            snapDx = otherLeft - gLeft;
+                            vGuide = { x: otherLeft, y1: Math.min(gTop, otherTop) - 40, y2: Math.max(gBottom, otherBottom) + 40 };
+                        } else if (Math.abs(gRight - otherRight) < snapThreshold) {
+                            snapDx = otherRight - gRight;
+                            vGuide = { x: otherRight, y1: Math.min(gTop, otherTop) - 40, y2: Math.max(gBottom, otherBottom) + 40 };
+                        }
+                    }
+
+                    if (snapDy === null) {
+                        if (Math.abs(gCenterY - otherCenterY) < snapThreshold) {
+                            snapDy = otherCenterY - gCenterY;
+                            hGuide = { y: otherCenterY, x1: Math.min(gLeft, otherLeft) - 40, x2: Math.max(gRight, otherRight) + 40 };
+                        } else if (Math.abs(gTop - otherTop) < snapThreshold) {
+                            snapDy = otherTop - gTop;
+                            hGuide = { y: otherTop, x1: Math.min(gLeft, otherLeft) - 40, x2: Math.max(gRight, otherRight) + 40 };
+                        } else if (Math.abs(gBottom - otherBottom) < snapThreshold) {
+                            snapDy = otherBottom - gBottom;
+                            hGuide = { y: otherBottom, x1: Math.min(gLeft, otherLeft) - 40, x2: Math.max(gRight, otherRight) + 40 };
+                        }
+                    }
+                });
+
+                if (snapDx !== null || snapDy !== null) {
+                    draggedNodes.forEach(n => {
+                        if (snapDx !== null) n.x += snapDx;
+                        if (snapDy !== null) n.y += snapDy;
+                    });
+                }
+
+                if (vGuide) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('class', 'alignment-guideline');
+                    line.setAttribute('x1', vGuide.x); line.setAttribute('y1', vGuide.y1);
+                    line.setAttribute('x2', vGuide.x); line.setAttribute('y2', vGuide.y2);
+                    layerGuidelines.appendChild(line);
+                }
+                if (hGuide) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('class', 'alignment-guideline');
+                    line.setAttribute('x1', hGuide.x1); line.setAttribute('y1', hGuide.y);
+                    line.setAttribute('x2', hGuide.x2); line.setAttribute('y2', hGuide.y);
+                    layerGuidelines.appendChild(line);
+                }
             }
 
             /* ======================================================================
@@ -14343,6 +14501,19 @@
                     return;
                 }
 
+                if (state.isResizingSwimlaneHeaderCol && state.resizingSwimlaneNodeId) {
+                    const node = state.nodes.find(n => n.id === state.resizingSwimlaneNodeId);
+                    if (node) {
+                        const dx = (e.clientX - state.swimlaneResizeMouseStartX) / state.zoom;
+                        const maxColW = Math.max(80, node.width - 80);
+                        node.laneHeaderSize = Math.max(45, Math.min(maxColW, (state.swimlaneHeaderColInitial || 110) + dx));
+                        renderNodes();
+                        renderSelection();
+                        updateFloatingAndPlusBars();
+                    }
+                    return;
+                }
+
                 if (state.isResizingSwimlaneLane && state.resizingSwimlaneNodeId) {
                     const node = state.nodes.find(n => n.id === state.resizingSwimlaneNodeId);
                     if (node && node.lanes && state.swimlaneLaneInitialSizes) {
@@ -14453,16 +14624,18 @@
                             calculateMagneticAlignment(singleNode);
                         }
                     } else {
-                        layerGuidelines.innerHTML = '';
                         const snappedDx = snap(dx);
                         const snappedDy = snap(dy);
+                        const draggedIds = [];
                         state.dragNodesInitial.forEach(item => {
                             const n = state.nodes.find(node => node.id === item.id);
                             if (n) {
                                 n.x = item.startX + snappedDx;
                                 n.y = item.startY + snappedDy;
+                                draggedIds.push(n.id);
                             }
                         });
+                        calculateGroupMagneticAlignment(draggedIds);
                     }
 
                     renderNodes();
@@ -14678,9 +14851,10 @@
                     saveSnapshot('Geser Posisi Panah');
                 }
 
-                if (state.isResizingTableCol || state.isResizingTableRow || state.isResizingTableHeader || state.isResizingSwimlaneLane) {
+                if (state.isResizingTableCol || state.isResizingTableRow || state.isResizingTableHeader || state.isResizingSwimlaneLane || state.isResizingSwimlaneHeaderCol) {
                     saveSnapshot('Geser Garis Matriks / Swimlane');
                     state.isResizingSwimlaneLane = false;
+                    state.isResizingSwimlaneHeaderCol = false;
                     state.resizingSwimlaneNodeId = null;
                     saveSnapshot('Geser Garis Matriks');
                     state.isResizingTableCol = false;
