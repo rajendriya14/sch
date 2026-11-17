@@ -10982,30 +10982,6 @@
                 statusHintText.textContent = `${newSelectedIds.length} bentuk berhasil ditempel!`;
             }
 
-                (state.clipboard.connections || []).forEach(oldConn => {
-                    if (idMap[oldConn.fromNodeId] && idMap[oldConn.toNodeId]) {
-                        createConnection(
-                            idMap[oldConn.fromNodeId],
-                            oldConn.fromPort,
-                            idMap[oldConn.toNodeId],
-                            oldConn.toPort,
-                            oldConn.type,
-                            oldConn.lineStyle
-                        );
-                    }
-                });
-
-                saveSnapshot('Tempel Objek');
-                renderNodes();
-                renderConnections();
-                state.selectedNodeIds = newSelectedIds;
-                state.selectedNodeId = newSelectedIds[0] || null;
-                renderSelection();
-                updateFloatingAndPlusBars();
-                updateStats();
-                statusHintText.textContent = `${newSelectedIds.length} bentuk berhasil ditempel!`;
-            }
-
             function duplicateSelectedNode() {
                 copySelectedNode();
                 pasteCopiedNode();
