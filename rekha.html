@@ -5455,10 +5455,9 @@
             if (ctxRotateText) {
                 ctxRotateText.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const lastX = tableContextMenu ? parseFloat(tableContextMenu.style.left) : e.clientX;
-                    const lastY = tableContextMenu ? parseFloat(tableContextMenu.style.top) : e.clientY;
-                    closeTableContextMenu();
-                    openRotatePopover(lastX, lastY);
+                    if (typeof rotateActiveTextClockwise90 === 'function') {
+                        rotateActiveTextClockwise90();
+                    }
                 });
             }
             const ctxUnmerge = document.getElementById('ctxUnmerge');
@@ -9740,6 +9739,42 @@
                 fpRotatePopover.style.display = 'flex';
             }
 
+            function rotateActiveTextClockwise90() {
+                const activeId = state.selectedNodeId || (state.selectedNodeIds && state.selectedNodeIds[0]);
+                const node = state.nodes.find(n => n.id === activeId);
+                if (!node) return;
+
+                let curAngle = 0;
+                if (node.isTable) {
+                    if (state.activeHeaderNodeId === node.id) {
+                        curAngle = node.headerTextRotation || 0;
+                    } else if (node.selectedCells && node.cellRotations) {
+                        const sc = node.selectedCells;
+                        const key = sc.minR + '_' + sc.minC;
+                        curAngle = (node.cellRotations[key] !== undefined) ? node.cellRotations[key] : (node.textRotation || 0);
+                    } else {
+                        curAngle = node.headerTextRotation || node.textRotation || 0;
+                    }
+                } else if (node.isSwimlane) {
+                    if (state.activeHeaderNodeId === node.id) {
+                        curAngle = (node.headerTextRotation !== undefined) ? node.headerTextRotation : 0;
+                    } else if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null) {
+                        const laneObj = (node.lanes && node.lanes[node.selectedLaneIdx]) ? node.lanes[node.selectedLaneIdx] : null;
+                        curAngle = (laneObj && laneObj.rotation !== undefined)
+                            ? laneObj.rotation
+                            : ((node.laneRotations && node.laneRotations[node.selectedLaneIdx] !== undefined) ? node.laneRotations[node.selectedLaneIdx] : 0);
+                    } else {
+                        curAngle = (node.headerTextRotation !== undefined) ? node.headerTextRotation : 0;
+                    }
+                } else {
+                    curAngle = node.textRotation || 0;
+                }
+
+                const norm = ((Math.round(curAngle) % 360) + 360) % 360;
+                const nextAngle = (Math.floor(norm / 90) * 90 + 90) % 360;
+                applyTextRotation(nextAngle);
+            }
+
             function applyTextRotation(angle) {
                 angle = Math.round(angle) % 360;
                 if (angle < 0) angle += 360;
@@ -9761,19 +9796,13 @@
                             }
                         }
                     } else {
-                        // If no specific selection, rotate ALL cells in the table!
-                        node.cellRotations = node.cellRotations || {};
-                        const rows = node.rows || [];
-                        rows.forEach((row, ri) => {
-                            row.forEach((_, ci) => {
-                                node.cellRotations[ri + '_' + ci] = angle;
-                            });
-                        });
+                        // If no specific selection, rotate ONLY the header by default instead of scrambling all cells
                         node.headerTextRotation = angle;
-                        node.textRotation = angle;
                     }
                 } else if (node.isSwimlane) {
-                    if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null) {
+                    if (state.activeHeaderNodeId === node.id) {
+                        node.headerTextRotation = angle;
+                    } else if (node.selectedLaneIdx !== undefined && node.selectedLaneIdx !== null) {
                         node.laneRotations = node.laneRotations || {};
                         node.laneRotations[node.selectedLaneIdx] = angle;
                         if (node.lanes && node.lanes[node.selectedLaneIdx]) {
@@ -9781,12 +9810,6 @@
                         }
                     } else {
                         node.headerTextRotation = angle;
-                        node.textRotation = angle;
-                        node.laneRotations = node.laneRotations || {};
-                        (node.lanes || []).forEach((lane, idx) => {
-                            node.laneRotations[idx] = angle;
-                            lane.rotation = angle;
-                        });
                     }
                 } else {
                     node.textRotation = angle;
@@ -14011,16 +14034,47 @@
                         targetNode.selectedCells = null;
                     }
                     const swimlaneHeaderHitzone = e.target.closest('.swimlane-header-hitzone') || e.target.closest('[data-edit-target="swimlane-title"]');
-                    if (swimlaneHeaderHitzone) {
+                    if (swimlaneHeaderHitzone || (targetNode.isSwimlane && cCoords.y <= targetNode.y + 28)) {
                         state.activeHeaderNodeId = targetNode.id;
                         targetNode.selectedLaneIdx = null;
-                    } else {
+                    } else if (targetNode.isSwimlane) {
                         const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
                         if (swimlaneLaneHitzone) {
                             const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
                             if (!isNaN(lIdx)) {
                                 targetNode.selectedLaneIdx = lIdx;
                                 state.activeHeaderNodeId = null;
+                            }
+                        } else if (targetNode.lanes && targetNode.lanes.length > 0) {
+                            // Coordinate fallback: determine which lane row/column was right-clicked
+                            const isH = targetNode.orientation !== 'vertical';
+                            const poolHeaderH = 28;
+                            if (isH) {
+                                let curY = targetNode.y + poolHeaderH;
+                                const totalDeclared = targetNode.lanes.reduce((a, l) => a + (l.size || 100), 0);
+                                const scaleY = (targetNode.height - poolHeaderH) / Math.max(1, totalDeclared);
+                                for (let i = 0; i < targetNode.lanes.length; i++) {
+                                    const lh = (targetNode.lanes[i].size || 100) * scaleY;
+                                    if (cCoords.y >= curY && cCoords.y <= curY + lh) {
+                                        targetNode.selectedLaneIdx = i;
+                                        state.activeHeaderNodeId = null;
+                                        break;
+                                    }
+                                    curY += lh;
+                                }
+                            } else {
+                                let curX = targetNode.x;
+                                const totalDeclared = targetNode.lanes.reduce((a, l) => a + (l.size || 160), 0);
+                                const scaleX = targetNode.width / Math.max(1, totalDeclared);
+                                for (let i = 0; i < targetNode.lanes.length; i++) {
+                                    const lw = (targetNode.lanes[i].size || 160) * scaleX;
+                                    if (cCoords.x >= curX && cCoords.x <= curX + lw) {
+                                        targetNode.selectedLaneIdx = i;
+                                        state.activeHeaderNodeId = null;
+                                        break;
+                                    }
+                                    curX += lw;
+                                }
                             }
                         }
                     }
