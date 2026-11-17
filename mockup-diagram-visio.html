@@ -10758,6 +10758,9 @@
                 inShapeDirectEditor.placeholder = '';
                 inShapeDirectEditor.style.border = 'none';
                 inShapeDirectEditor.style.boxShadow = 'none';
+                if (document.activeElement === inShapeDirectEditor) {
+                    inShapeDirectEditor.blur();
+                }
                 state.editingNodeId = null;
                 activeEditContext = null;
                 renderNodes();
@@ -11170,7 +11173,13 @@
                13. KEYBOARD SHORTCUTS & ARROW KEYS NAVIGATION
                ====================================================================== */
             window.addEventListener('keydown', (e) => {
-                if (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT') return;
+                const activeEl = document.activeElement;
+                const isTextEditing = activeEl && (
+                    (activeEl.tagName === 'TEXTAREA' && activeEl.style.display !== 'none' && getComputedStyle(activeEl).display !== 'none') ||
+                    (activeEl.tagName === 'INPUT' && !['range', 'checkbox', 'radio', 'button', 'submit', 'color', 'file'].includes((activeEl.type || 'text').toLowerCase())) ||
+                    activeEl.isContentEditable
+                );
+                if (isTextEditing) return;
 
                 // Point 3: Pressing ESC removes cell selection block in terminal
                 if (e.key === 'Escape') {
@@ -11346,18 +11355,21 @@
                     }
                     return;
                 }
-                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+                const keyLower = (e.key || '').toLowerCase();
+                if ((e.ctrlKey || e.metaKey) && !e.altKey && (keyLower === 'c' || e.code === 'KeyC')) {
                     e.preventDefault();
                     copySelectedNode();
-                } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                    e.preventDefault();
-                    pasteCopiedNode();
-                } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+                } else if ((e.ctrlKey || e.metaKey) && !e.altKey && (keyLower === 'v' || e.code === 'KeyV')) {
+                    if (state.clipboard && state.clipboard.nodes && state.clipboard.nodes.length > 0) {
+                        e.preventDefault();
+                        pasteCopiedNode();
+                    }
+                } else if ((e.ctrlKey || e.metaKey) && !e.altKey && (keyLower === 'd' || e.code === 'KeyD')) {
                     e.preventDefault();
                     duplicateSelectedNode();
-                } else if (e.key.toLowerCase() === 'v') {
+                } else if (keyLower === 'v' && !e.ctrlKey && !e.metaKey) {
                     setMode('select');
-                } else if (e.key.toLowerCase() === 'h') {
+                } else if (keyLower === 'h' && !e.ctrlKey && !e.metaKey) {
                     setMode('hand');
                 }
             });
@@ -13359,6 +13371,9 @@
 
                 if (state.editingNodeId) {
                     closeDirectInShapeEditor(true);
+                }
+                if (document.activeElement && document.activeElement !== document.body && document.activeElement !== inShapeDirectEditor && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
                 }
 
                 // Point 4: Clear terminal cell drag-selection when clicking outside cell hitzones (sembarang)
