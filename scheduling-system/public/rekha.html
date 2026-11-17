@@ -13155,6 +13155,46 @@
                     }
                     g.appendChild(shapeEl);
 
+                    // Direct Outer Border Resize Hit-Zones on Terminals (no need to click terminal first!)
+                    if ((node.isTable || node.isSwimlane) && !node.isLocked) {
+                        const termEdges = [
+                            { type: 'n', x1: 8, y1: 0, x2: Math.max(8, w - 8), y2: 0, cursor: 'ns-resize' },
+                            { type: 'e', x1: w, y1: 8, x2: w, y2: Math.max(8, h - 8), cursor: 'ew-resize' },
+                            { type: 's', x1: 8, y1: h, x2: Math.max(8, w - 8), y2: h, cursor: 'ns-resize' },
+                            { type: 'w', x1: 0, y1: 8, x2: 0, y2: Math.max(8, h - 8), cursor: 'ew-resize' }
+                        ];
+                        termEdges.forEach(edge => {
+                            const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            hit.setAttribute('class', `resize-handle terminal-border-resize handle-${edge.type}`);
+                            hit.setAttribute('x1', edge.x1); hit.setAttribute('y1', edge.y1);
+                            hit.setAttribute('x2', edge.x2); hit.setAttribute('y2', edge.y2);
+                            hit.setAttribute('stroke', 'rgba(0,0,0,0.001)');
+                            hit.setAttribute('stroke-width', '12');
+                            hit.setAttribute('data-handle', edge.type);
+                            hit.setAttribute('data-node-id', node.id);
+                            hit.style.cursor = edge.cursor;
+                            hit.style.pointerEvents = 'stroke';
+                            g.appendChild(hit);
+                        });
+                        const termCorners = [
+                            { type: 'nw', x: -6, y: -6, cursor: 'nwse-resize' },
+                            { type: 'ne', x: w - 6, y: -6, cursor: 'nesw-resize' },
+                            { type: 'se', x: w - 6, y: h - 6, cursor: 'nwse-resize' },
+                            { type: 'sw', x: -6, y: h - 6, cursor: 'nesw-resize' }
+                        ];
+                        termCorners.forEach(c => {
+                            const hitC = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            hitC.setAttribute('class', `resize-handle terminal-border-resize handle-${c.type}`);
+                            hitC.setAttribute('x', c.x); hitC.setAttribute('y', c.y);
+                            hitC.setAttribute('width', '12'); hitC.setAttribute('height', '12');
+                            hitC.setAttribute('fill', 'rgba(0,0,0,0.001)');
+                            hitC.setAttribute('data-handle', c.type);
+                            hitC.setAttribute('data-node-id', node.id);
+                            hitC.style.cursor = c.cursor;
+                            g.appendChild(hitC);
+                        });
+                    }
+
                     // Multi-line Auto-Wrapped Text Rendering with custom Font, Size, Bold & Alignment
                     if (node.text && !node.isTable && !node.isEntity && !node.isSwimlane) {
                         const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -14101,7 +14141,8 @@
 
                 const handleTarget = e.target.closest('.resize-handle');
                 if (handleTarget) {
-                    const isGroupResize = handleTarget.getAttribute('data-group-resize') === 'true' || (state.selectedNodeIds && state.selectedNodeIds.length > 1);
+                    const directNodeId = handleTarget.getAttribute('data-node-id');
+                    const isGroupResize = handleTarget.getAttribute('data-group-resize') === 'true' || (!directNodeId && state.selectedNodeIds && state.selectedNodeIds.length > 1);
                     if (isGroupResize && state.selectedNodeIds && state.selectedNodeIds.length > 1) {
                         const unlockedNodes = state.nodes.filter(n => state.selectedNodeIds.includes(n.id) && !n.isLocked);
                         if (unlockedNodes.length > 0) {
@@ -14131,16 +14172,22 @@
                             };
                             return;
                         }
-                    } else if (state.selectedNodeId) {
-                        const node = state.nodes.find(n => n.id === state.selectedNodeId);
-                        if (node && !node.isLocked) {
-                            state.isResizing = true;
-                            state.resizeHandle = handleTarget.getAttribute('data-handle');
-                            state.resizeInitialRect = {
-                                x: node.x, y: node.y, width: node.width, height: node.height,
-                                mouseX: e.clientX, mouseY: e.clientY
-                            };
-                            return;
+                    } else {
+                        const targetResizeId = directNodeId || state.selectedNodeId;
+                        if (targetResizeId) {
+                            if (directNodeId && !state.selectedNodeIds.includes(directNodeId)) {
+                                selectNode(directNodeId, false);
+                            }
+                            const node = state.nodes.find(n => n.id === targetResizeId);
+                            if (node && !node.isLocked) {
+                                state.isResizing = true;
+                                state.resizeHandle = handleTarget.getAttribute('data-handle');
+                                state.resizeInitialRect = {
+                                    x: node.x, y: node.y, width: node.width, height: node.height,
+                                    mouseX: e.clientX, mouseY: e.clientY
+                                };
+                                return;
+                            }
                         }
                     }
                 }
