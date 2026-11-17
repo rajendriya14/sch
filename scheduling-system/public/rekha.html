@@ -1786,6 +1786,13 @@
         .handle-n, .handle-s { cursor: ns-resize; }
         .handle-w, .handle-e { cursor: ew-resize; }
 
+        /* Dedicated Selection Drag Plate (Makes small shapes extremely easy to grab and move) */
+        .selection-drag-plate {
+            cursor: move !important;
+            fill: rgba(0, 0, 0, 0.001);
+            pointer-events: all !important;
+        }
+
         /* Connections */
         .diagram-connection {
             cursor: pointer;
@@ -1811,18 +1818,20 @@
             opacity: 0.9;
         }
 
-        /* When shape is selected, keep ports hidden & disabled so they never interfere with resize handles */
-        .diagram-node.selected .shadow-anchor-port {
+        /* When shape is selected, keep ports completely hidden & disabled so they never interfere with moving or resize handles */
+        .diagram-node.selected .shadow-anchor-port,
+        .diagram-node.selected .shadow-anchor-port:hover,
+        .diagram-node.selected .shadow-anchor-hitzone,
+        .diagram-node.selected .shadow-anchor-hitzone:hover {
             opacity: 0 !important;
-            pointer-events: none !important;
-        }
-        .diagram-node.selected .shadow-anchor-hitzone {
+            display: none !important;
             pointer-events: none !important;
         }
 
-        /* When connecting or drawing an arrow, ports can receive pointer events */
-        .canvas-viewport.connecting .diagram-node .shadow-anchor-hitzone,
-        .canvas-viewport.drawing-arrow .diagram-node .shadow-anchor-hitzone {
+        /* When connecting or drawing an arrow, unselected nodes receive pointer events */
+        .canvas-viewport.connecting .diagram-node:not(.selected) .shadow-anchor-hitzone,
+        .canvas-viewport.drawing-arrow .diagram-node:not(.selected) .shadow-anchor-hitzone {
+            display: block !important;
             pointer-events: all !important;
         }
 
@@ -3759,6 +3768,21 @@
             <button class="tool-btn" id="btnDuplicate" title="Duplikasi Cepat (Ctrl+D)">
                 <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2"/><rect x="9" y="9" width="12" height="12" rx="2"/></svg>
             </button>
+            <button class="tool-btn" id="btnGroup" title="Group Bentuk Terpilih (Ctrl+G)">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </button>
+            <button class="tool-btn" id="btnUngroup" title="Ungroup / Bubarkan Grup (Ctrl+Shift+G)">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="6" height="6" stroke-dasharray="2 2"></rect>
+                    <rect x="15" y="15" width="6" height="6" stroke-dasharray="2 2"></rect>
+                    <path d="M14 4h6v6M10 20H4v-6"></path>
+                </svg>
+            </button>
             <button class="tool-btn" id="btnDeleteSelected" title="Hapus Objek Terpilih (Delete / Backspace)">
                 <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
@@ -4317,6 +4341,23 @@
                     </svg>
                 </button>
 
+                <!-- Group / Ungroup in Floating Property Bar -->
+                <button class="fp-btn" id="fpBtnGroup" title="Group Bentuk (Ctrl+G)" style="display:none;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+                <button class="fp-btn" id="fpBtnUngroup" title="Ungroup / Bubarkan Grup (Ctrl+Shift+G)" style="display:none;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="6" height="6" stroke-dasharray="2 2"></rect>
+                        <rect x="15" y="15" width="6" height="6" stroke-dasharray="2 2"></rect>
+                        <path d="M14 4h6v6M10 20H4v-6"></path>
+                    </svg>
+                </button>
+
                 <!-- 14. Delete Button (Miro Style Trash Can) -->
                 <button class="fp-btn" id="fpBtnDelete" title="Hapus Objek (Delete)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -4345,6 +4386,14 @@
                     <span class="fp-more-label">Duplicate</span>
                     <span class="fp-more-shortcut">Ctrl + D</span>
                 </div>
+                <div class="fp-more-item" id="fpMoreGroup" style="display:none;">
+                    <span class="fp-more-label" style="font-weight: 600; color: #2563eb;">Group</span>
+                    <span class="fp-more-shortcut">Ctrl + G</span>
+                </div>
+                <div class="fp-more-item" id="fpMoreUngroup" style="display:none;">
+                    <span class="fp-more-label" style="font-weight: 600; color: #ea580c;">Ungroup</span>
+                    <span class="fp-more-shortcut">Ctrl + Shift + G</span>
+                </div>
                 <div class="fp-more-item" id="fpMoreDelete">
                     <span class="fp-more-label">Delete</span>
                     <span class="fp-more-shortcut">Delete</span>
@@ -4364,6 +4413,14 @@
                 <div class="fp-more-item" id="ctxDuplicate">
                     <span class="fp-more-label">Duplicate</span>
                     <span class="fp-more-shortcut">Ctrl + D</span>
+                </div>
+                <div class="fp-more-item" id="ctxGroup" style="display:none;">
+                    <span class="fp-more-label" style="font-weight: 600; color: #2563eb;">Group</span>
+                    <span class="fp-more-shortcut">Ctrl + G</span>
+                </div>
+                <div class="fp-more-item" id="ctxUngroup" style="display:none;">
+                    <span class="fp-more-label" style="font-weight: 600; color: #ea580c;">Ungroup</span>
+                    <span class="fp-more-shortcut">Ctrl + Shift + G</span>
                 </div>
                 <div class="fp-more-item" id="ctxRename">
                     <span class="fp-more-label">Rename (Ubah Teks)</span>
@@ -8582,21 +8639,31 @@
                     screenW = node.width * state.zoom;
                     screenH = node.height * state.zoom;
 
-                    btnPlusTop.style.left = `${screenX + screenW / 2 - 11}px`;
-                    btnPlusTop.style.top = `${screenY - 26}px`;
-                    btnPlusTop.style.display = 'flex';
+                    const isSmallShape = (node.width < 65 || node.height < 60);
 
-                    btnPlusRight.style.left = `${screenX + screenW + 4}px`;
-                    btnPlusRight.style.top = `${screenY + screenH / 2 - 11}px`;
-                    btnPlusRight.style.display = 'flex';
+                    if (isSmallShape) {
+                        btnPlusTop.style.display = 'none';
+                        btnPlusRight.style.display = 'none';
+                        btnPlusBottom.style.display = 'none';
+                        btnPlusLeft.style.display = 'none';
+                        btnPlusInside.style.display = 'none';
+                    } else {
+                        btnPlusTop.style.left = `${screenX + screenW / 2 - 11}px`;
+                        btnPlusTop.style.top = `${screenY - 26}px`;
+                        btnPlusTop.style.display = 'flex';
 
-                    btnPlusBottom.style.left = `${screenX + screenW / 2 - 11}px`;
-                    btnPlusBottom.style.top = `${screenY + screenH + 4}px`;
-                    btnPlusBottom.style.display = 'flex';
+                        btnPlusRight.style.left = `${screenX + screenW + 4}px`;
+                        btnPlusRight.style.top = `${screenY + screenH / 2 - 11}px`;
+                        btnPlusRight.style.display = 'flex';
 
-                    btnPlusLeft.style.left = `${screenX - 26}px`;
-                    btnPlusLeft.style.top = `${screenY + screenH / 2 - 11}px`;
-                    btnPlusLeft.style.display = 'flex';
+                        btnPlusBottom.style.left = `${screenX + screenW / 2 - 11}px`;
+                        btnPlusBottom.style.top = `${screenY + screenH + 4}px`;
+                        btnPlusBottom.style.display = 'flex';
+
+                        btnPlusLeft.style.left = `${screenX - 26}px`;
+                        btnPlusLeft.style.top = `${screenY + screenH / 2 - 11}px`;
+                        btnPlusLeft.style.display = 'flex';
+                    }
 
                     if (node.isTable) {
                         btnPlusInside.style.display = 'none';
@@ -8737,6 +8804,26 @@
                     const hlLine = fpBtnHighlight.querySelector('line');
                     if (hlLine) hlLine.setAttribute('stroke', node.highlightColor || '#f59e0b');
                 }
+
+                // Group & Ungroup Visibility
+                const curSelIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                const canGroup = curSelIds.length >= 2;
+                const canUngroup = curSelIds.some(id => {
+                    const n = state.nodes.find(item => item.id === id);
+                    return n && n.groupId;
+                });
+
+                const fpBtnGroup = document.getElementById('fpBtnGroup');
+                const fpBtnUngroup = document.getElementById('fpBtnUngroup');
+                if (fpBtnGroup) fpBtnGroup.style.display = canGroup ? 'flex' : 'none';
+                if (fpBtnUngroup) fpBtnUngroup.style.display = canUngroup ? 'flex' : 'none';
+
+                const btnGroup = document.getElementById('btnGroup');
+                const btnUngroup = document.getElementById('btnUngroup');
+                if (btnGroup) btnGroup.style.display = canGroup ? 'inline-flex' : 'none';
+                if (btnUngroup) btnUngroup.style.display = canUngroup ? 'inline-flex' : 'none';
             }
 
             function closeMorePopover() {
@@ -8748,6 +8835,20 @@
                 closeColorPopover();
                 closeAlignPopover();
                 closeTableContextMenu();
+
+                const curSelIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                const canGroup = curSelIds.length >= 2;
+                const canUngroup = curSelIds.some(id => {
+                    const n = state.nodes.find(item => item.id === id);
+                    return n && n.groupId;
+                });
+                const fpMoreGroup = document.getElementById('fpMoreGroup');
+                const fpMoreUngroup = document.getElementById('fpMoreUngroup');
+                if (fpMoreGroup) fpMoreGroup.style.display = canGroup ? 'flex' : 'none';
+                if (fpMoreUngroup) fpMoreUngroup.style.display = canUngroup ? 'flex' : 'none';
+
                 const rect = fpBtnMore.getBoundingClientRect();
                 const parentRect = viewport.getBoundingClientRect();
                 let popLeft = (rect.right - parentRect.left) - 175;
@@ -8888,6 +8989,19 @@
                 if (ctxDeleteCells) {
                     ctxDeleteCells.style.display = (isTableSelection || isTableOrSwimlane) ? 'flex' : 'none';
                 }
+
+                const curSelIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                const canGroup = curSelIds.length >= 2;
+                const canUngroup = curSelIds.some(id => {
+                    const n = state.nodes.find(item => item.id === id);
+                    return n && n.groupId;
+                });
+                const ctxGroup = document.getElementById('ctxGroup');
+                const ctxUngroup = document.getElementById('ctxUngroup');
+                if (ctxGroup) ctxGroup.style.display = canGroup ? 'flex' : 'none';
+                if (ctxUngroup) ctxUngroup.style.display = canUngroup ? 'flex' : 'none';
 
                 tableContextMenu.style.display = 'flex';
                 const menuW = tableContextMenu.offsetWidth || 195;
@@ -9910,11 +10024,59 @@
                     duplicateSelectedNode();
                 });
             }
+            const fpMoreGroup = document.getElementById('fpMoreGroup');
+            if (fpMoreGroup) {
+                fpMoreGroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeMorePopover();
+                    groupSelectedNodes();
+                });
+            }
+            const fpMoreUngroup = document.getElementById('fpMoreUngroup');
+            if (fpMoreUngroup) {
+                fpMoreUngroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeMorePopover();
+                    ungroupSelectedNodes();
+                });
+            }
             if (fpMoreDelete) {
                 fpMoreDelete.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeMorePopover();
                     deleteSelected();
+                });
+            }
+
+            // Group / Ungroup in Floating Property Bar
+            const fpBtnGroup = document.getElementById('fpBtnGroup');
+            if (fpBtnGroup) {
+                fpBtnGroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    groupSelectedNodes();
+                });
+            }
+            const fpBtnUngroup = document.getElementById('fpBtnUngroup');
+            if (fpBtnUngroup) {
+                fpBtnUngroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    ungroupSelectedNodes();
+                });
+            }
+
+            // Group / Ungroup in Main Toolbar
+            const btnGroup = document.getElementById('btnGroup');
+            if (btnGroup) {
+                btnGroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    groupSelectedNodes();
+                });
+            }
+            const btnUngroup = document.getElementById('btnUngroup');
+            if (btnUngroup) {
+                btnUngroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    ungroupSelectedNodes();
                 });
             }
 
@@ -9941,6 +10103,22 @@
                     e.stopPropagation();
                     closeTableContextMenu();
                     duplicateSelectedNode();
+                });
+            }
+            const ctxGroup = document.getElementById('ctxGroup');
+            if (ctxGroup) {
+                ctxGroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeTableContextMenu();
+                    groupSelectedNodes();
+                });
+            }
+            const ctxUngroup = document.getElementById('ctxUngroup');
+            if (ctxUngroup) {
+                ctxUngroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeTableContextMenu();
+                    ungroupSelectedNodes();
                 });
             }
             if (ctxDelete) {
@@ -10608,15 +10786,22 @@
                 if (!state.selectedNodeIds) state.selectedNodeIds = [];
                 if (!state.selectedConnectionIds) state.selectedConnectionIds = [];
 
+                const targetNode = state.nodes.find(n => n.id === id);
+                const groupMembers = (targetNode && targetNode.groupId)
+                    ? state.nodes.filter(n => n.groupId === targetNode.groupId).map(n => n.id)
+                    : [id];
+
                 if (isToggle) {
-                    if (state.selectedNodeIds.includes(id)) {
-                        state.selectedNodeIds = state.selectedNodeIds.filter(nid => nid !== id);
+                    const anySelected = groupMembers.some(gid => state.selectedNodeIds.includes(gid));
+                    if (anySelected) {
+                        state.selectedNodeIds = state.selectedNodeIds.filter(nid => !groupMembers.includes(nid));
                     } else {
-                        state.selectedNodeIds.push(id);
+                        groupMembers.forEach(gid => {
+                            if (!state.selectedNodeIds.includes(gid)) state.selectedNodeIds.push(gid);
+                        });
                     }
-                    // KEEP state.selectedConnectionIds intact when CTRL multi-selection active (Point 3)!
                 } else {
-                    state.selectedNodeIds = [id];
+                    state.selectedNodeIds = [...groupMembers];
                     state.selectedConnectionIds = [];
                     state.selectedConnectionId = null;
                 }
@@ -10638,6 +10823,62 @@
                 renderConnections();
                 renderSelection();
                 updateFloatingAndPlusBars();
+            }
+
+            function groupSelectedNodes() {
+                const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                if (selIds.length < 2) {
+                    statusHintText.textContent = 'Pilih minimal 2 bentuk untuk membuat grup.';
+                    return;
+                }
+                const newGroupId = 'grp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                selIds.forEach(id => {
+                    const node = state.nodes.find(n => n.id === id);
+                    if (node) {
+                        node.groupId = newGroupId;
+                    }
+                });
+                saveSnapshot('Group Bentuk');
+                renderNodes();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `⚡ Berhasil membuat grup dari ${selIds.length} bentuk (Ctrl+G).`;
+            }
+
+            function ungroupSelectedNodes() {
+                const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                    ? state.selectedNodeIds
+                    : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                if (selIds.length === 0) return;
+
+                const groupIdsToClear = new Set();
+                selIds.forEach(id => {
+                    const node = state.nodes.find(n => n.id === id);
+                    if (node && node.groupId) {
+                        groupIdsToClear.add(node.groupId);
+                    }
+                });
+
+                if (groupIdsToClear.size === 0) {
+                    statusHintText.textContent = 'Bentuk yang dipilih bukan bagian dari grup.';
+                    return;
+                }
+
+                let ungroupedCount = 0;
+                state.nodes.forEach(node => {
+                    if (node.groupId && groupIdsToClear.has(node.groupId)) {
+                        node.groupId = null;
+                        ungroupedCount++;
+                    }
+                });
+
+                saveSnapshot('Ungroup Bentuk');
+                renderNodes();
+                renderSelection();
+                updateFloatingAndPlusBars();
+                statusHintText.textContent = `⚡ Grup berhasil dibubarkan (Ungroup).`;
             }
 
             function clearSelection() {
@@ -10692,6 +10933,7 @@
                 }
 
                 const idMap = {};
+                const groupMap = {};
                 const newSelectedIds = [];
 
                 state.clipboard.nodes.forEach(oldNode => {
@@ -10705,9 +10947,40 @@
                     oldNode.x += 30;
                     oldNode.y += 30;
 
+                    if (oldNode.groupId) {
+                        if (!groupMap[oldNode.groupId]) {
+                            groupMap[oldNode.groupId] = 'grp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                        }
+                        newNode.groupId = groupMap[oldNode.groupId];
+                    }
+
                     state.nodes.push(newNode);
                     newSelectedIds.push(newId);
                 });
+
+                (state.clipboard.connections || []).forEach(oldConn => {
+                    if (idMap[oldConn.fromNodeId] && idMap[oldConn.toNodeId]) {
+                        createConnection(
+                            idMap[oldConn.fromNodeId],
+                            oldConn.fromPort,
+                            idMap[oldConn.toNodeId],
+                            oldConn.toPort,
+                            oldConn.type,
+                            oldConn.lineStyle
+                        );
+                    }
+                });
+
+                saveSnapshot('Tempel Objek');
+                renderNodes();
+                renderConnections();
+                state.selectedNodeIds = newSelectedIds;
+                state.selectedNodeId = newSelectedIds[0] || null;
+                renderSelection();
+                updateFloatingAndPlusBars();
+                updateStats();
+                statusHintText.textContent = `${newSelectedIds.length} bentuk berhasil ditempel!`;
+            }
 
                 (state.clipboard.connections || []).forEach(oldConn => {
                     if (idMap[oldConn.fromNodeId] && idMap[oldConn.toNodeId]) {
@@ -10980,6 +11253,15 @@
                     redo();
                     return;
                 }
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        ungroupSelectedNodes();
+                    } else {
+                        groupSelectedNodes();
+                    }
+                    return;
+                }
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
                     e.preventDefault();
                     copySelectedNode();
@@ -11006,11 +11288,17 @@
 
                 // Container shapes (tables and swimlanes) are rendered first at the back,
                 // so any shapes created on top of a terminal/swimlane are rendered ON TOP!
+                // For non-containers, smaller shapes (like circle badges, step numbers, icons) render ON TOP of larger shapes!
                 const sortedNodes = [...state.nodes].sort((a, b) => {
                     const aIsContainer = (a.isTable || a.isSwimlane) ? 1 : 0;
                     const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
                     if (aIsContainer !== bIsContainer) return bIsContainer - aIsContainer;
-                    return 0;
+
+                    const aSel = selIds.includes(a.id) ? 1 : 0;
+                    const bSel = selIds.includes(b.id) ? 1 : 0;
+                    if (aSel !== bSel) return aSel - bSel;
+
+                    return (b.width * b.height) - (a.width * a.height);
                 });
 
                 sortedNodes.forEach(node => {
@@ -12396,20 +12684,23 @@
 
                     // Shadow Connector Magnetic Ports with Enhanced Clickable Zone (Zero Shaking/Jitter)
                     const ports = getNodeRelativePorts(node);
+                    const isSmall = (w < 70 || h < 70);
+                    const hitzoneR = isSmall ? Math.min(6, Math.max(3, Math.min(w, h) * 0.15)) : 14;
+                    const portR = isSmall ? Math.min(3.5, Math.max(2, Math.min(w, h) * 0.1)) : 5.5;
 
                     ports.forEach(p => {
                         const hitzone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                         hitzone.setAttribute('class', 'shadow-anchor-hitzone');
                         hitzone.setAttribute('cx', p.cx);
                         hitzone.setAttribute('cy', p.cy);
-                        hitzone.setAttribute('r', '14');
+                        hitzone.setAttribute('r', hitzoneR);
 
                         const portCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                         portCircle.setAttribute('class', 'shadow-anchor-port');
                         portCircle.setAttribute('data-port-id', p.id);
                         portCircle.setAttribute('cx', p.cx);
                         portCircle.setAttribute('cy', p.cy);
-                        portCircle.setAttribute('r', '5.5');
+                        portCircle.setAttribute('r', portR);
 
                         const onPortDown = (e) => {
                             e.stopPropagation();
@@ -12452,6 +12743,21 @@
                     const w = node.width + (pad * 2);
                     const h = node.height + (pad * 2);
 
+                    const isSmall = (node.width < 75 || node.height < 75);
+
+                    // 1. Transparent Drag Hitplate: Makes clicking and moving small shapes 100% reliable!
+                    const dragPlate = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    dragPlate.setAttribute('class', 'selection-drag-plate');
+                    dragPlate.setAttribute('x', x);
+                    dragPlate.setAttribute('y', y);
+                    dragPlate.setAttribute('width', w);
+                    dragPlate.setAttribute('height', h);
+                    dragPlate.setAttribute('fill', 'rgba(0, 0, 0, 0.001)');
+                    dragPlate.setAttribute('data-id', node.id);
+                    dragPlate.style.cursor = 'move';
+                    layerSelection.appendChild(dragPlate);
+
+                    // 2. Selection Box Outline
                     const box = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                     box.setAttribute('x', x); box.setAttribute('y', y);
                     box.setAttribute('width', w); box.setAttribute('height', h);
@@ -12460,17 +12766,25 @@
                     box.setAttribute('pointer-events', 'none');
                     layerSelection.appendChild(box);
 
-                    const handleSize = 8;
-                    const handles = [
-                        { type: 'nw', cx: x, cy: y },
-                        { type: 'n',  cx: x + w / 2, cy: y },
-                        { type: 'ne', cx: x + w, cy: y },
-                        { type: 'e',  cx: x + w, cy: y + h / 2 },
-                        { type: 'se', cx: x + w, cy: y + h },
-                        { type: 's',  cx: x + w / 2, cy: y + h },
-                        { type: 'sw', cx: x, cy: y + h },
-                        { type: 'w',  cx: x, cy: y + h / 2 }
-                    ];
+                    // 3. Resize Handles: For small shapes, only 4 corner handles (size 6) so middle remains open for dragging!
+                    const handleSize = isSmall ? 6 : 8;
+                    const handles = isSmall
+                        ? [
+                            { type: 'nw', cx: x, cy: y },
+                            { type: 'ne', cx: x + w, cy: y },
+                            { type: 'se', cx: x + w, cy: y + h },
+                            { type: 'sw', cx: x, cy: y + h }
+                        ]
+                        : [
+                            { type: 'nw', cx: x, cy: y },
+                            { type: 'n',  cx: x + w / 2, cy: y },
+                            { type: 'ne', cx: x + w, cy: y },
+                            { type: 'e',  cx: x + w, cy: y + h / 2 },
+                            { type: 'se', cx: x + w, cy: y + h },
+                            { type: 's',  cx: x + w / 2, cy: y + h },
+                            { type: 'sw', cx: x, cy: y + h },
+                            { type: 'w',  cx: x, cy: y + h / 2 }
+                        ];
 
                     handles.forEach(hnd => {
                         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -12505,21 +12819,39 @@
                         itemBox.setAttribute('width', w); itemBox.setAttribute('height', h);
                         itemBox.setAttribute('fill', 'none'); itemBox.setAttribute('stroke', '#3b82f6');
                         itemBox.setAttribute('stroke-width', '1.2'); itemBox.setAttribute('stroke-dasharray', '3 2');
+                        itemBox.setAttribute('pointer-events', 'none');
                         layerSelection.appendChild(itemBox);
                     });
 
                     if (minX !== Infinity) {
                         const groupPad = 6;
+                        const gx = minX - groupPad;
+                        const gy = minY - groupPad;
+                        const gw = (maxX - minX) + (groupPad * 2);
+                        const gh = (maxY - minY) + (groupPad * 2);
+
+                        // Unified group drag plate
+                        const groupDragPlate = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        groupDragPlate.setAttribute('class', 'selection-drag-plate group-drag-plate');
+                        groupDragPlate.setAttribute('x', gx);
+                        groupDragPlate.setAttribute('y', gy);
+                        groupDragPlate.setAttribute('width', gw);
+                        groupDragPlate.setAttribute('height', gh);
+                        groupDragPlate.setAttribute('fill', 'rgba(0, 0, 0, 0.001)');
+                        groupDragPlate.style.cursor = 'move';
+                        layerSelection.appendChild(groupDragPlate);
+
                         const groupBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                        groupBox.setAttribute('x', minX - groupPad);
-                        groupBox.setAttribute('y', minY - groupPad);
-                        groupBox.setAttribute('width', (maxX - minX) + (groupPad * 2));
-                        groupBox.setAttribute('height', (maxY - minY) + (groupPad * 2));
+                        groupBox.setAttribute('x', gx);
+                        groupBox.setAttribute('y', gy);
+                        groupBox.setAttribute('width', gw);
+                        groupBox.setAttribute('height', gh);
                         groupBox.setAttribute('fill', 'none');
                         groupBox.setAttribute('stroke', '#2563eb');
                         groupBox.setAttribute('stroke-width', '1.5');
                         groupBox.setAttribute('stroke-dasharray', '5 4');
                         groupBox.setAttribute('rx', '4');
+                        groupBox.setAttribute('pointer-events', 'none');
                         layerSelection.appendChild(groupBox);
                     }
                 }
@@ -12976,41 +13308,69 @@
                     }
                 }
 
+                // Check drag plate on selected shape or group (smooth, instant drag)
+                const dragPlate = e.target.closest('.selection-drag-plate');
+                if (dragPlate) {
+                    const curSelectedIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
+                        ? [...state.selectedNodeIds]
+                        : (state.selectedNodeId ? [state.selectedNodeId] : []);
+                    if (curSelectedIds.length > 0) {
+                        state.isDraggingNode = true;
+                        state.dragMouseStartCanvas = { x: canvasCoords.x, y: canvasCoords.y };
+                        state.dragNodesInitial = state.nodes
+                            .filter(n => curSelectedIds.includes(n.id) && !n.isLocked)
+                            .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                        return;
+                    }
+                }
+
+                let targetNode = null;
                 const nodeGroup = e.target.closest('.diagram-node');
                 if (nodeGroup) {
                     const nodeId = nodeGroup.getAttribute('data-id');
-                    const node = state.nodes.find(n => n.id === nodeId);
-                    if (node) {
-                        const isMultiKey = e.shiftKey || e.ctrlKey || e.metaKey;
+                    targetNode = state.nodes.find(n => n.id === nodeId);
+                }
 
-                        if (isMultiKey) {
-                            selectNode(nodeId, true);
-                        } else {
-                            if (!state.selectedNodeIds.includes(nodeId)) {
-                                selectNode(nodeId, false);
-                            }
-                        }
+                // Smart small shape hit-testing: if click touches or is within 8px of a small shape
+                // (e.g. circle badge "1", bullet, step number), prioritize it over large background shapes!
+                const smallCandidate = [...state.nodes]
+                    .filter(n => (n.width <= 75 || n.height <= 75) && !n.isTable && !n.isSwimlane)
+                    .sort((a, b) => (a.width * a.height) - (b.width * b.height))
+                    .find(n => {
+                        const pad = 8;
+                        return (
+                            canvasCoords.x >= n.x - pad &&
+                            canvasCoords.x <= n.x + n.width + pad &&
+                            canvasCoords.y >= n.y - pad &&
+                            canvasCoords.y <= n.y + n.height + pad
+                        );
+                    });
 
-                        if (!node.isLocked) {
-                            state.isDraggingNode = true;
-                            state.dragMouseStartCanvas = { x: canvasCoords.x, y: canvasCoords.y };
-                            let curSelectedIds = state.selectedNodeIds.length > 0 ? [...state.selectedNodeIds] : [nodeId];
-                            // Include child shapes of any grouped swimlane in the drag operation!
-                            curSelectedIds.forEach(selId => {
-                                const sn = state.nodes.find(n => n.id === selId);
-                                if (false && sn && sn.isSwimlane) {
-                                    const children = getSwimlaneChildren(sn);
-                                    children.forEach(cn => {
-                                        if (!curSelectedIds.includes(cn.id)) curSelectedIds.push(cn.id);
-                                    });
-                                }
-                            });
-                            state.dragNodesInitial = state.nodes
-                                .filter(n => curSelectedIds.includes(n.id) && !n.isLocked)
-                                .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                if (smallCandidate && (!targetNode || (targetNode.width * targetNode.height > smallCandidate.width * smallCandidate.height))) {
+                    targetNode = smallCandidate;
+                }
+
+                if (targetNode) {
+                    const nodeId = targetNode.id;
+                    const isMultiKey = e.shiftKey || e.ctrlKey || e.metaKey;
+
+                    if (isMultiKey) {
+                        selectNode(nodeId, true);
+                    } else {
+                        if (!state.selectedNodeIds.includes(nodeId)) {
+                            selectNode(nodeId, false);
                         }
-                        return;
                     }
+
+                    if (!targetNode.isLocked) {
+                        state.isDraggingNode = true;
+                        state.dragMouseStartCanvas = { x: canvasCoords.x, y: canvasCoords.y };
+                        let curSelectedIds = state.selectedNodeIds.length > 0 ? [...state.selectedNodeIds] : [nodeId];
+                        state.dragNodesInitial = state.nodes
+                            .filter(n => curSelectedIds.includes(n.id) && !n.isLocked)
+                            .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                    }
+                    return;
                 }
 
                 if (e.target.closest('.diagram-connection')) {
@@ -13034,6 +13394,32 @@
                 const cellHitzone = e.target.closest('.terminal-cell-hitzone');
                 const nodeGroup = e.target.closest('.diagram-node');
                 let targetNode = null;
+
+                // Smart small shape priority for context menu
+                const cCoords = screenToCanvasCoords(e.clientX, e.clientY);
+                const smallCtxCandidate = [...state.nodes]
+                    .filter(n => (n.width <= 75 || n.height <= 75) && !n.isTable && !n.isSwimlane)
+                    .sort((a, b) => (a.width * a.height) - (b.width * b.height))
+                    .find(n => {
+                        const pad = 8;
+                        return (
+                            cCoords.x >= n.x - pad &&
+                            cCoords.x <= n.x + n.width + pad &&
+                            cCoords.y >= n.y - pad &&
+                            cCoords.y <= n.y + n.height + pad
+                        );
+                    });
+
+                if (smallCtxCandidate) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeCanvasContextMenu();
+                    if (!state.selectedNodeIds.includes(smallCtxCandidate.id)) {
+                        selectNode(smallCtxCandidate.id, false);
+                    }
+                    openTableContextMenu(e.clientX, e.clientY, smallCtxCandidate);
+                    return;
+                }
 
                 if (cellHitzone) {
                     e.preventDefault();
