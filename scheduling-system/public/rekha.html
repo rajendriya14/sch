@@ -13986,6 +13986,29 @@
                 const targetEditable = headerHitzone || swimlaneHeaderHitzone || swimlaneLaneHitzone || cellHitzone || e.target.closest('.node-editable-text') || e.target.closest('[data-edit-target]');
                 const nodeGroup = e.target.closest('.diagram-node');
 
+                // Prioritize exact non-container shape under cursor (works even when covered by group-drag-plate!)
+                const dblCoords = screenToCanvasCoords(e.clientX, e.clientY);
+                const hitShapeUnderDbl = [...state.nodes]
+                    .filter(n => !n.isTable && !n.isSwimlane)
+                    .sort((a, b) => (a.width * a.height) - (b.width * b.height))
+                    .find(n => {
+                        const pad = (n.width <= 75 || n.height <= 75) ? 6 : 2;
+                        return (
+                            dblCoords.x >= n.x - pad &&
+                            dblCoords.x <= n.x + n.width + pad &&
+                            dblCoords.y >= n.y - pad &&
+                            dblCoords.y <= n.y + n.height + pad
+                        );
+                    });
+
+                if (hitShapeUnderDbl) {
+                    e.stopPropagation();
+                    const hitGroup = document.querySelector(`.diagram-node[data-id="${hitShapeUnderDbl.id}"]`);
+                    const labelTarget = hitGroup ? hitGroup.querySelector('.node-label-text') : null;
+                    openDirectInShapeEditor(hitShapeUnderDbl, labelTarget);
+                    return;
+                }
+
                 if (nodeGroup) {
                     const nodeId = nodeGroup.getAttribute('data-id');
                     const node = state.nodes.find(n => n.id === nodeId);
@@ -14211,6 +14234,21 @@
                         ));
 
                     if (!unselectedShapeUnderCursor && curSelectedIds.length > 0) {
+                        state.pendingGroupSubSelectId = null;
+                        if (curSelectedIds.length > 1) {
+                            const memberUnderCursor = [...state.nodes]
+                                .filter(n => curSelectedIds.includes(n.id) && !n.isTable && !n.isSwimlane)
+                                .sort((a, b) => (a.width * a.height) - (b.width * b.height))
+                                .find(n => (
+                                    canvasCoords.x >= n.x &&
+                                    canvasCoords.x <= n.x + n.width &&
+                                    canvasCoords.y >= n.y &&
+                                    canvasCoords.y <= n.y + n.height
+                                ));
+                            if (memberUnderCursor) {
+                                state.pendingGroupSubSelectId = memberUnderCursor.id;
+                            }
+                        }
                         state.isDraggingNode = true;
                         state.dragMouseStartCanvas = { x: canvasCoords.x, y: canvasCoords.y };
                         state.dragNodesInitial = state.nodes
@@ -15065,7 +15103,16 @@
                     renderSelection();
                     updateFloatingAndPlusBars();
                     saveSnapshot('Pindah Bentuk');
+                } else if (state.isDraggingNode && !state.hasDraggedBeyondThreshold && state.pendingGroupSubSelectId) {
+                    state.selectedNodeIds = [state.pendingGroupSubSelectId];
+                    state.selectedNodeId = state.pendingGroupSubSelectId;
+                    renderNodes();
+                    renderConnections();
+                    renderSelection();
+                    updateFloatingAndPlusBars();
+                    statusHintText.textContent = 'Mode Edit Anggota Grup: ubah warna/teks bentuk ini. Klik di luar untuk kembali ke grup.';
                 }
+                state.pendingGroupSubSelectId = null;
                 state.hasDraggedBeyondThreshold = false;
                 if (state.isResizing || state.isResizingGroup) {
                     saveSnapshot(state.isResizingGroup ? 'Ubah Ukuran Grup' : 'Ubah Ukuran Bentuk');
