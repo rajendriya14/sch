@@ -13737,11 +13737,44 @@
                 const gCenterY = (gTop + gBottom) / 2;
                 const snapThreshold = 12;
 
+                // Prioritize largest non-container shape in the group (e.g. main flowchart shape with badge)
+                const primaryMember = [...draggedNodes]
+                    .filter(n => !n.isTable && !n.isSwimlane)
+                    .sort((a, b) => (b.width * b.height) - (a.width * a.height))[0] || draggedNodes[0];
+
                 let snapDx = null;
                 let snapDy = null;
                 let vGuide = null;
                 let hGuide = null;
 
+                // Pass 1: Member-level center/port alignment (keeps arrows between grouped shapes & external shapes 100% straight!)
+                const nonContainerOthers = state.nodes.filter(o => !draggedIds.includes(o.id) && !o.isTable && !o.isSwimlane);
+                for (const other of nonContainerOthers) {
+                    const otherCenterX = other.x + other.width / 2;
+                    const otherCenterY = other.y + other.height / 2;
+                    const isConnected = state.connections.some(c =>
+                        (draggedIds.includes(c.fromNodeId) && c.toNodeId === other.id) ||
+                        (draggedIds.includes(c.toNodeId) && c.fromNodeId === other.id)
+                    );
+                    const memberToCheck = isConnected
+                        ? (draggedNodes.find(m => state.connections.some(c => (c.fromNodeId === m.id && c.toNodeId === other.id) || (c.toNodeId === m.id && c.fromNodeId === other.id))) || primaryMember)
+                        : primaryMember;
+
+                    if (!memberToCheck) continue;
+                    const mCenterX = memberToCheck.x + memberToCheck.width / 2;
+                    const mCenterY = memberToCheck.y + memberToCheck.height / 2;
+
+                    if (snapDx === null && Math.abs(mCenterX - otherCenterX) < snapThreshold) {
+                        snapDx = otherCenterX - mCenterX;
+                        vGuide = { x: otherCenterX, y1: Math.min(memberToCheck.y, other.y) - 40, y2: Math.max(memberToCheck.y + memberToCheck.height, other.y + other.height) + 40 };
+                    }
+                    if (snapDy === null && Math.abs(mCenterY - otherCenterY) < snapThreshold) {
+                        snapDy = otherCenterY - mCenterY;
+                        hGuide = { y: otherCenterY, x1: Math.min(memberToCheck.x, other.x) - 40, x2: Math.max(memberToCheck.x + memberToCheck.width, other.x + other.width) + 40 };
+                    }
+                }
+
+                // Pass 2: Fallback to outer group bounding box alignment against all other nodes
                 state.nodes.forEach(other => {
                     if (draggedIds.includes(other.id)) return;
 
