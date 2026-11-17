@@ -12943,6 +12943,30 @@
                         groupBox.setAttribute('rx', '4');
                         groupBox.setAttribute('pointer-events', 'none');
                         layerSelection.appendChild(groupBox);
+
+                        // 8 Resize Handles on Group / Multi-Selection Bounding Box
+                        const gHandles = [
+                            { type: 'nw', cx: gx, cy: gy },
+                            { type: 'n',  cx: gx + gw / 2, cy: gy },
+                            { type: 'ne', cx: gx + gw, cy: gy },
+                            { type: 'e',  cx: gx + gw, cy: gy + gh / 2 },
+                            { type: 'se', cx: gx + gw, cy: gy + gh },
+                            { type: 's',  cx: gx + gw / 2, cy: gy + gh },
+                            { type: 'sw', cx: gx, cy: gy + gh },
+                            { type: 'w',  cx: gx, cy: gy + gh / 2 }
+                        ];
+                        gHandles.forEach(hnd => {
+                            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            rect.setAttribute('class', `resize-handle handle-${hnd.type}`);
+                            rect.setAttribute('x', hnd.cx - 4);
+                            rect.setAttribute('y', hnd.cy - 4);
+                            rect.setAttribute('width', 8);
+                            rect.setAttribute('height', 8);
+                            rect.setAttribute('rx', 1.5);
+                            rect.setAttribute('data-handle', hnd.type);
+                            rect.setAttribute('data-group-resize', 'true');
+                            layerSelection.appendChild(rect);
+                        });
                     }
                 }
             }
@@ -13385,16 +13409,48 @@
                 }
 
                 const handleTarget = e.target.closest('.resize-handle');
-                if (handleTarget && state.selectedNodeId) {
-                    const node = state.nodes.find(n => n.id === state.selectedNodeId);
-                    if (node && !node.isLocked) {
-                        state.isResizing = true;
-                        state.resizeHandle = handleTarget.getAttribute('data-handle');
-                        state.resizeInitialRect = {
-                            x: node.x, y: node.y, width: node.width, height: node.height,
-                            mouseX: e.clientX, mouseY: e.clientY
-                        };
-                        return;
+                if (handleTarget) {
+                    const isGroupResize = handleTarget.getAttribute('data-group-resize') === 'true' || (state.selectedNodeIds && state.selectedNodeIds.length > 1);
+                    if (isGroupResize && state.selectedNodeIds && state.selectedNodeIds.length > 1) {
+                        const unlockedNodes = state.nodes.filter(n => state.selectedNodeIds.includes(n.id) && !n.isLocked);
+                        if (unlockedNodes.length > 0) {
+                            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                            unlockedNodes.forEach(n => {
+                                minX = Math.min(minX, n.x);
+                                minY = Math.min(minY, n.y);
+                                maxX = Math.max(maxX, n.x + n.width);
+                                maxY = Math.max(maxY, n.y + n.height);
+                            });
+                            state.isResizingGroup = true;
+                            state.resizeHandle = handleTarget.getAttribute('data-handle');
+                            state.groupResizeInitial = {
+                                x: minX,
+                                y: minY,
+                                width: Math.max(1, maxX - minX),
+                                height: Math.max(1, maxY - minY),
+                                mouseX: e.clientX,
+                                mouseY: e.clientY,
+                                nodes: unlockedNodes.map(n => ({
+                                    id: n.id,
+                                    x: n.x,
+                                    y: n.y,
+                                    width: n.width,
+                                    height: n.height
+                                }))
+                            };
+                            return;
+                        }
+                    } else if (state.selectedNodeId) {
+                        const node = state.nodes.find(n => n.id === state.selectedNodeId);
+                        if (node && !node.isLocked) {
+                            state.isResizing = true;
+                            state.resizeHandle = handleTarget.getAttribute('data-handle');
+                            state.resizeInitialRect = {
+                                x: node.x, y: node.y, width: node.width, height: node.height,
+                                mouseX: e.clientX, mouseY: e.clientY
+                            };
+                            return;
+                        }
                     }
                 }
 
@@ -13505,19 +13561,21 @@
                 }
             });
 
-            // Right-Click Context Menu Trigger for Terminal & Objects (Point 2)
+            // Right-Click Context Menu Trigger for Terminal & Objects (Accessible on selected, grouped, small, & nested shapes)
             viewport.addEventListener('contextmenu', (e) => {
                 const cellHitzone = e.target.closest('.terminal-cell-hitzone');
                 const nodeGroup = e.target.closest('.diagram-node');
+                const dragPlate = e.target.closest('.selection-drag-plate');
                 let targetNode = null;
 
-                // Smart small shape priority for context menu
                 const cCoords = screenToCanvasCoords(e.clientX, e.clientY);
-                const smallCtxCandidate = [...state.nodes]
-                    .filter(n => (n.width <= 75 || n.height <= 75) && !n.isTable && !n.isSwimlane)
+
+                // 1. Prioritize non-container shapes under cursor (works even when covered by selection-drag-plate or inside a terminal!)
+                const shapeCandidate = [...state.nodes]
+                    .filter(n => !n.isTable && !n.isSwimlane)
                     .sort((a, b) => (a.width * a.height) - (b.width * b.height))
                     .find(n => {
-                        const pad = 8;
+                        const pad = (n.width <= 75 || n.height <= 75) ? 8 : 4;
                         return (
                             cCoords.x >= n.x - pad &&
                             cCoords.x <= n.x + n.width + pad &&
@@ -13526,14 +13584,14 @@
                         );
                     });
 
-                if (smallCtxCandidate) {
+                if (shapeCandidate) {
                     e.preventDefault();
                     e.stopPropagation();
                     closeCanvasContextMenu();
-                    if (!state.selectedNodeIds.includes(smallCtxCandidate.id)) {
-                        selectNode(smallCtxCandidate.id, false);
+                    if (!state.selectedNodeIds.includes(shapeCandidate.id)) {
+                        selectNode(shapeCandidate.id, false);
                     }
-                    openTableContextMenu(e.clientX, e.clientY, smallCtxCandidate);
+                    openTableContextMenu(e.clientX, e.clientY, shapeCandidate);
                     return;
                 }
 
@@ -13558,37 +13616,49 @@
                     return;
                 }
 
+                // 2. Fallback: diagram-node DOM hit, dragPlate node, or container under cursor
                 if (nodeGroup) {
+                    const nodeId = nodeGroup.getAttribute('data-id');
+                    targetNode = state.nodes.find(n => n.id === nodeId);
+                } else if (dragPlate) {
+                    const plateId = dragPlate.getAttribute('data-id') || state.selectedNodeId || (state.selectedNodeIds && state.selectedNodeIds[0]);
+                    targetNode = state.nodes.find(n => n.id === plateId);
+                } else {
+                    targetNode = state.nodes.find(n => (
+                        cCoords.x >= n.x &&
+                        cCoords.x <= n.x + n.width &&
+                        cCoords.y >= n.y &&
+                        cCoords.y <= n.y + n.height
+                    ));
+                }
+
+                if (targetNode) {
                     e.preventDefault();
                     e.stopPropagation();
                     closeCanvasContextMenu();
-                    const nodeId = nodeGroup.getAttribute('data-id');
-                    targetNode = state.nodes.find(n => n.id === nodeId);
-                    if (targetNode) {
-                        const tableHeaderHitzone = e.target.closest('.terminal-header-hitzone') || e.target.closest('[data-edit-target="table-title"]');
-                        if (tableHeaderHitzone) {
-                            state.activeHeaderNodeId = targetNode.id;
-                            targetNode.selectedCells = null;
-                        }
-                        const swimlaneHeaderHitzone = e.target.closest('.swimlane-header-hitzone') || e.target.closest('[data-edit-target="swimlane-title"]');
-                        if (swimlaneHeaderHitzone) {
-                            state.activeHeaderNodeId = targetNode.id;
-                            targetNode.selectedLaneIdx = null;
-                        } else {
-                            const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
-                            if (swimlaneLaneHitzone) {
-                                const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
-                                if (!isNaN(lIdx)) {
-                                    targetNode.selectedLaneIdx = lIdx;
-                                    state.activeHeaderNodeId = null;
-                                }
+                    const tableHeaderHitzone = e.target.closest('.terminal-header-hitzone') || e.target.closest('[data-edit-target="table-title"]');
+                    if (tableHeaderHitzone) {
+                        state.activeHeaderNodeId = targetNode.id;
+                        targetNode.selectedCells = null;
+                    }
+                    const swimlaneHeaderHitzone = e.target.closest('.swimlane-header-hitzone') || e.target.closest('[data-edit-target="swimlane-title"]');
+                    if (swimlaneHeaderHitzone) {
+                        state.activeHeaderNodeId = targetNode.id;
+                        targetNode.selectedLaneIdx = null;
+                    } else {
+                        const swimlaneLaneHitzone = e.target.closest('.swimlane-lane-hitzone') || e.target.closest('[data-lane-idx]');
+                        if (swimlaneLaneHitzone) {
+                            const lIdx = parseInt(swimlaneLaneHitzone.getAttribute('data-lane-idx'), 10);
+                            if (!isNaN(lIdx)) {
+                                targetNode.selectedLaneIdx = lIdx;
+                                state.activeHeaderNodeId = null;
                             }
                         }
-                        if (!state.selectedNodeIds.includes(nodeId)) {
-                            selectNode(nodeId, false);
-                        }
-                        openTableContextMenu(e.clientX, e.clientY, targetNode);
                     }
+                    if (!state.selectedNodeIds.includes(targetNode.id)) {
+                        selectNode(targetNode.id, false);
+                    }
+                    openTableContextMenu(e.clientX, e.clientY, targetNode);
                     return;
                 }
 
@@ -13679,6 +13749,49 @@
                             updateFloatingAndPlusBars();
                         }
                     }
+                    return;
+                }
+
+                if (state.isResizingGroup && state.groupResizeInitial) {
+                    const init = state.groupResizeInitial;
+                    const dx = (e.clientX - init.mouseX) / state.zoom;
+                    const dy = (e.clientY - init.mouseY) / state.zoom;
+                    const hnd = state.resizeHandle || 'se';
+                    const minGW = 40;
+                    const minGH = 30;
+
+                    let newX = init.x;
+                    let newY = init.y;
+                    let newW = init.width;
+                    let newH = init.height;
+
+                    if (hnd.includes('e')) newW = Math.max(init.width + dx, minGW);
+                    if (hnd.includes('s')) newH = Math.max(init.height + dy, minGH);
+                    if (hnd.includes('w')) {
+                        newW = Math.max(init.width - dx, minGW);
+                        newX = init.x + (init.width - newW);
+                    }
+                    if (hnd.includes('n')) {
+                        newH = Math.max(init.height - dy, minGH);
+                        newY = init.y + (init.height - newH);
+                    }
+
+                    const scaleX = newW / init.width;
+                    const scaleY = newH / init.height;
+
+                    init.nodes.forEach(item => {
+                        const n = state.nodes.find(x => x.id === item.id);
+                        if (!n || n.isLocked) return;
+                        n.x = snap(newX + ((item.x - init.x) * scaleX));
+                        n.y = snap(newY + ((item.y - init.y) * scaleY));
+                        n.width = Math.max(20, snap(item.width * scaleX));
+                        n.height = Math.max(20, snap(item.height * scaleY));
+                    });
+
+                    renderNodes();
+                    renderConnections();
+                    renderSelection();
+                    updateFloatingAndPlusBars();
                     return;
                 }
 
@@ -14113,6 +14226,9 @@
                 if (state.isDraggingNode) {
                     saveSnapshot('Pindah Bentuk');
                 }
+                if (state.isResizing || state.isResizingGroup) {
+                    saveSnapshot(state.isResizingGroup ? 'Ubah Ukuran Grup' : 'Ubah Ukuran Bentuk');
+                }
 
                 state.isPanning = false;
                 state.isDraggingNode = false;
@@ -14120,8 +14236,10 @@
                 state.dragNodesInitial = null;
                 state.dragMouseStartCanvas = null;
                 state.isResizing = false;
+                state.isResizingGroup = false;
                 state.resizeHandle = null;
                 state.resizeInitialRect = null;
+                state.groupResizeInitial = null;
                 activeDragNode = null;
                 if (!isSpacePressed && state.mode !== 'hand') {
                     viewport.classList.remove('panning');
