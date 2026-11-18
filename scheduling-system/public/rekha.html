@@ -8086,9 +8086,9 @@
                 }
                 if (type === 'parallelogram' || type === 'data' || type === 'parallelogram-flow') {
                     return [
-                        { id: 'top',    cx: w * 0.59,      cy: 0,     dir: 'up' },
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
-                        { id: 'bottom', cx: w * 0.41,      cy: h,     dir: 'down' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
                     ];
                 }
@@ -8137,22 +8137,22 @@
                         { id: 'top',    cx: w / 2,         cy: h * 0.11, dir: 'up' },
                         { id: 'right',  cx: w,             cy: h / 2,    dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
-                        { id: 'left',   cx: 0,             cy: h * 0.61, dir: 'left' }
+                        { id: 'left',   cx: 0,             cy: h / 2,    dir: 'left' }
                     ];
                 }
                 if (type === 'display') {
                     return [
-                        { id: 'top',    cx: w * 0.465,     cy: 0,     dir: 'up' },
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
-                        { id: 'bottom', cx: w * 0.465,     cy: h,     dir: 'down' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
                     ];
                 }
                 if (type === 'delay') {
                     return [
-                        { id: 'top',    cx: w * 0.325,     cy: 0,     dir: 'up' },
+                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
-                        { id: 'bottom', cx: w * 0.325,     cy: h,     dir: 'down' },
+                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
                     ];
                 }
