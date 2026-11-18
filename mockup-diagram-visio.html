@@ -12170,7 +12170,7 @@
                     titleBox.setAttribute('stroke', isHeaderActive ? '#3b82f6' : 'transparent');
                     titleBox.setAttribute('stroke-width', '1');
                     titleBox.setAttribute('stroke-dasharray', '3,2');
-                    titleBox.style.cursor = isEditingThis ? 'text' : 'grab';
+                    titleBox.style.cursor = isEditingThis ? 'text' : 'pointer';
                     titleBox.style.pointerEvents = isEditingThis ? 'none' : 'auto';
                     const boxTip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
                     boxTip.textContent = 'Klik untuk munculkan kolom teks, seret kiri/kanan untuk geser posisi, Double-click untuk edit teks';
@@ -12219,7 +12219,7 @@
                     titleBox.addEventListener('mousedown', onStartDragText);
                     titleBox.addEventListener('dblclick', onDblEditText);
                     textEl.style.pointerEvents = isEditingThis ? 'none' : 'auto';
-                    textEl.style.cursor = isEditingThis ? 'text' : 'grab';
+                    textEl.style.cursor = isEditingThis ? 'text' : 'pointer';
                     textEl.addEventListener('mousedown', onStartDragText);
                     textEl.addEventListener('dblclick', onDblEditText);
 
@@ -13005,7 +13005,7 @@
                                 laneTitle.setAttribute('class', 'node-editable-text');
                                 laneTitle.setAttribute('data-edit-target', 'swimlane-lane-title');
                                 laneTitle.setAttribute('data-lane-idx', lIdx);
-                                laneTitle.style.cursor = 'grab';
+                                laneTitle.style.cursor = 'pointer';
                                 laneTitle.textContent = lane.title || (`Data ${lIdx + 1}`);
 
                                 const lRot = (lane.rotation !== undefined)
@@ -13037,7 +13037,7 @@
                                 laneTitleBox.setAttribute('stroke', isLaneTextActive ? '#3b82f6' : 'transparent');
                                 laneTitleBox.setAttribute('stroke-width', '1');
                                 laneTitleBox.setAttribute('stroke-dasharray', '3,2');
-                                laneTitleBox.style.cursor = 'grab';
+                                laneTitleBox.style.cursor = 'pointer';
                                 const lBoxTip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
                                 lBoxTip.textContent = 'Klik untuk munculkan kolom teks, seret untuk geser posisi, Double-click untuk edit teks';
                                 laneTitleBox.appendChild(lBoxTip);
