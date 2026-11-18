@@ -9034,16 +9034,28 @@
                 let screenX, screenY, screenW, screenH;
 
                 if (state.selectedNodeIds && state.selectedNodeIds.length > 1) {
-                    floatingPropBar.style.display = 'none';
-                    closeColorPopover();
-                    closeAlignPopover();
-                    closeMorePopover();
                     btnPlusTop.style.display = 'none';
                     btnPlusRight.style.display = 'none';
                     btnPlusBottom.style.display = 'none';
                     btnPlusLeft.style.display = 'none';
                     btnPlusInside.style.display = 'none';
-                    return;
+
+                    const selNodes = state.nodes.filter(n => state.selectedNodeIds.includes(n.id));
+                    if (selNodes.length === 0) {
+                        floatingPropBar.style.display = 'none';
+                        return;
+                    }
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    selNodes.forEach(sn => {
+                        minX = Math.min(minX, sn.x);
+                        minY = Math.min(minY, sn.y);
+                        maxX = Math.max(maxX, sn.x + sn.width);
+                        maxY = Math.max(maxY, sn.y + sn.height);
+                    });
+                    screenX = (minX * state.zoom) + state.panX;
+                    screenY = (minY * state.zoom) + state.panY;
+                    screenW = (maxX - minX) * state.zoom;
+                    screenH = (maxY - minY) * state.zoom;
                 } else {
                     screenX = (node.x * state.zoom) + state.panX;
                     screenY = (node.y * state.zoom) + state.panY;
@@ -10153,8 +10165,9 @@
                             node.textAlign = chosenAlign;
                             
 
-                    if (node.isTable) {
+                            if (node.isTable || node.isSwimlane) {
                                 node.headerTextAlign = chosenAlign;
+                                node.headerTextOffsetX = 0;
                             }
                         });
                         saveSnapshot('Ubah Perataan Teks');
@@ -11587,6 +11600,14 @@
                 updateFloatingAndPlusBars();
             }
 
+            function getNodeGroupStack(node) {
+                if (!node) return [];
+                if (Array.isArray(node.groupStack) && node.groupStack.length > 0) {
+                    return [...node.groupStack];
+                }
+                return node.groupId ? [node.groupId] : [];
+            }
+
             function groupSelectedNodes() {
                 const selIds = (state.selectedNodeIds && state.selectedNodeIds.length > 0)
                     ? state.selectedNodeIds
@@ -11599,6 +11620,9 @@
                 selIds.forEach(id => {
                     const node = state.nodes.find(n => n.id === id);
                     if (node) {
+                        const stack = getNodeGroupStack(node);
+                        stack.push(newGroupId);
+                        node.groupStack = stack;
                         node.groupId = newGroupId;
                     }
                 });
@@ -11615,23 +11639,28 @@
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
                 if (selIds.length === 0) return;
 
-                const groupIdsToClear = new Set();
+                const groupIdsToPop = new Set();
                 selIds.forEach(id => {
                     const node = state.nodes.find(n => n.id === id);
                     if (node && node.groupId) {
-                        groupIdsToClear.add(node.groupId);
+                        groupIdsToPop.add(node.groupId);
                     }
                 });
 
-                if (groupIdsToClear.size === 0) {
+                if (groupIdsToPop.size === 0) {
                     statusHintText.textContent = 'Bentuk yang dipilih bukan bagian dari grup.';
                     return;
                 }
 
                 let ungroupedCount = 0;
                 state.nodes.forEach(node => {
-                    if (node.groupId && groupIdsToClear.has(node.groupId)) {
-                        node.groupId = null;
+                    if (node.groupId && groupIdsToPop.has(node.groupId)) {
+                        const stack = getNodeGroupStack(node);
+                        if (stack.length > 0 && groupIdsToPop.has(stack[stack.length - 1])) {
+                            stack.pop();
+                        }
+                        node.groupStack = stack;
+                        node.groupId = stack.length > 0 ? stack[stack.length - 1] : null;
                         ungroupedCount++;
                     }
                 });
@@ -11640,7 +11669,7 @@
                 renderNodes();
                 renderSelection();
                 updateFloatingAndPlusBars();
-                statusHintText.textContent = `⚡ Grup berhasil dibubarkan (Ungroup).`;
+                statusHintText.textContent = `⚡ Grup tingkat atas berhasil di-ungroup (${ungroupedCount} bentuk).`;
             }
 
             function clearSelection() {
@@ -11715,11 +11744,16 @@
                     oldNode.x += 30;
                     oldNode.y += 30;
 
-                    if (oldNode.groupId) {
-                        if (!groupMap[oldNode.groupId]) {
-                            groupMap[oldNode.groupId] = 'grp_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6);
-                        }
-                        newNode.groupId = groupMap[oldNode.groupId];
+                    const oldStack = getNodeGroupStack(oldNode);
+                    if (oldStack.length > 0) {
+                        const newStack = oldStack.map((gid, gIdx) => {
+                            if (!groupMap[gid]) {
+                                groupMap[gid] = 'grp_' + Date.now() + '_' + idx + '_' + gIdx + '_' + Math.random().toString(36).substr(2, 6);
+                            }
+                            return groupMap[gid];
+                        });
+                        newNode.groupStack = newStack;
+                        newNode.groupId = newStack[newStack.length - 1];
                     }
 
                     state.nodes.push(newNode);
@@ -12176,6 +12210,7 @@
                             titleX = w - 14;
                             titleAnchor = 'end';
                         }
+                        titleX = Math.max(8, Math.min(w - 8, titleX + (node.headerTextOffsetX || 0)));
 
                         const titleFontSize = parseInt(node.fontSize ? (node.fontSize - 2) : 12, 10);
                         let titleY = headerH / 2;
@@ -12189,7 +12224,9 @@
                         titleText.setAttribute('y', titleY);
                         titleText.setAttribute('dominant-baseline', 'central');
                         titleText.setAttribute('text-anchor', titleAnchor);
-                        titleText.setAttribute('fill', textColor); titleText.setAttribute('font-weight', '700');
+                        titleText.setAttribute('fill', textColor);
+                        titleText.setAttribute('font-family', node.fontFamily || 'Noto Sans, sans-serif');
+                        titleText.setAttribute('font-weight', '700');
                         titleText.setAttribute('font-size', titleFontSize);
                         titleText.setAttribute('class', 'node-editable-text');
                         titleText.setAttribute('data-edit-target', 'table-title');
@@ -12198,7 +12235,23 @@
                         if (hRot) {
                             titleText.setAttribute('transform', `rotate(${hRot}, ${titleX}, ${titleY})`);
                         }
-                        titleText.style.pointerEvents = 'none';
+                        if (state.activeHeaderNodeId === node.id) {
+                            titleText.style.pointerEvents = 'auto';
+                            titleText.style.cursor = 'ew-resize';
+                            titleText.addEventListener('mousedown', (e) => {
+                                if (e.button !== 0) return;
+                                e.stopPropagation();
+                                e.preventDefault();
+                                const cc = screenToCanvasCoords(e.clientX, e.clientY);
+                                state.isDraggingHeaderText = {
+                                    nodeId: node.id,
+                                    startX: cc.x,
+                                    initialOffsetX: node.headerTextOffsetX || 0
+                                };
+                            });
+                        } else {
+                            titleText.style.pointerEvents = 'none';
+                        }
                         shapeEl.appendChild(titleText);
 
                         const cols = node.columns || ['Kolom 1', 'Kolom 2'];
@@ -12656,11 +12709,23 @@
                             openDirectInShapeEditor(node, poolHeaderRect);
                         });
 
-                        // Main Pool Title
+                        // Main Pool Title (Supports Left/Center/Right alignment & horizontal drag adjustment inside header)
+                        const poolHeaderAlign = node.headerTextAlign || node.textAlign || 'middle';
+                        let poolTitleX = w / 2;
+                        let poolTitleAnchor = 'middle';
+                        if (poolHeaderAlign === 'start' || poolHeaderAlign === 'left') {
+                            poolTitleX = 14;
+                            poolTitleAnchor = 'start';
+                        } else if (poolHeaderAlign === 'end' || poolHeaderAlign === 'right') {
+                            poolTitleX = w - 14;
+                            poolTitleAnchor = 'end';
+                        }
+                        poolTitleX = Math.max(8, Math.min(w - 8, poolTitleX + (node.headerTextOffsetX || 0)));
+
                         const poolTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                        poolTitle.setAttribute('x', w / 2); poolTitle.setAttribute('y', poolHeaderH / 2);
+                        poolTitle.setAttribute('x', poolTitleX); poolTitle.setAttribute('y', poolHeaderH / 2);
                         poolTitle.setAttribute('dominant-baseline', 'central');
-                        poolTitle.setAttribute('text-anchor', 'middle');
+                        poolTitle.setAttribute('text-anchor', poolTitleAnchor);
                         poolTitle.setAttribute('fill', textColor);
                         poolTitle.setAttribute('font-family', node.fontFamily || 'Noto Sans, sans-serif');
                         poolTitle.setAttribute('font-weight', '700');
@@ -12668,12 +12733,44 @@
                         poolTitle.setAttribute('class', 'node-editable-text');
                         poolTitle.setAttribute('data-edit-target', 'swimlane-title');
                         poolTitle.setAttribute('data-node-id', node.id);
-                        poolTitle.style.cursor = 'pointer';
+                        poolTitle.style.cursor = (state.activeHeaderNodeId === node.id) ? 'ew-resize' : 'pointer';
                         poolTitle.textContent = (node.text !== undefined && node.text !== null) ? node.text : '';
                         const pRot = (node.headerTextRotation !== undefined) ? node.headerTextRotation : (node.textRotation || 0);
                         if (pRot) {
-                            poolTitle.setAttribute('transform', `rotate(${pRot}, ${w / 2}, ${poolHeaderH / 2})`);
+                            poolTitle.setAttribute('transform', `rotate(${pRot}, ${poolTitleX}, ${poolHeaderH / 2})`);
                         }
+                        if (state.activeHeaderNodeId === node.id) {
+                            const estTextW = Math.max(60, Math.min(w - 24, (poolTitle.textContent.length || 8) * 7.2 + 20));
+                            let boxX = poolTitleX - estTextW / 2;
+                            if (poolTitleAnchor === 'start') boxX = poolTitleX - 6;
+                            else if (poolTitleAnchor === 'end') boxX = poolTitleX - estTextW + 6;
+                            boxX = Math.max(4, Math.min(w - estTextW - 4, boxX));
+                            const titleBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            titleBox.setAttribute('class', 'selection-box');
+                            titleBox.setAttribute('x', boxX);
+                            titleBox.setAttribute('y', 4);
+                            titleBox.setAttribute('width', estTextW);
+                            titleBox.setAttribute('height', poolHeaderH - 8);
+                            titleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.04)');
+                            titleBox.setAttribute('stroke', '#3b82f6');
+                            titleBox.setAttribute('stroke-width', '1');
+                            titleBox.setAttribute('stroke-dasharray', '3,2');
+                            titleBox.setAttribute('rx', '2');
+                            titleBox.style.pointerEvents = 'none';
+                            shapeEl.appendChild(titleBox);
+                        }
+                        poolTitle.addEventListener('mousedown', (e) => {
+                            if (e.button === 0 && state.activeHeaderNodeId === node.id) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                const cc = screenToCanvasCoords(e.clientX, e.clientY);
+                                state.isDraggingHeaderText = {
+                                    nodeId: node.id,
+                                    startX: cc.x,
+                                    initialOffsetX: node.headerTextOffsetX || 0
+                                };
+                            }
+                        });
                         poolTitle.addEventListener('dblclick', (e) => {
                             e.stopPropagation();
                             openDirectInShapeEditor(node, poolHeaderRect);
@@ -14822,6 +14919,17 @@
                     }
                 }
 
+                if (state.isDraggingHeaderText) {
+                    const hNode = state.nodes.find(n => n.id === state.isDraggingHeaderText.nodeId);
+                    if (hNode) {
+                        const dx = canvasCoords.x - state.isDraggingHeaderText.startX;
+                        const maxRange = Math.max(40, hNode.width - 24);
+                        hNode.headerTextOffsetX = Math.max(-maxRange, Math.min(maxRange, state.isDraggingHeaderText.initialOffsetX + dx));
+                        renderNodes();
+                    }
+                    return;
+                }
+
                 if (state.isPanning) {
                     state.panX = e.clientX - state.panStartX;
                     state.panY = e.clientY - state.panStartY;
@@ -15447,6 +15555,11 @@
                 if (state.isRotatingNode) {
                     saveSnapshot('Putar Shape');
                     document.body.style.cursor = '';
+                }
+
+                if (state.isDraggingHeaderText) {
+                    saveSnapshot('Atur Posisi Teks Header');
+                    state.isDraggingHeaderText = null;
                 }
 
                 if (window._rightPanState) {
