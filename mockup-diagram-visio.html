@@ -8236,16 +8236,93 @@
             /* ======================================================================
                9. SMART OBSTACLE-AVOIDANCE ORTHOGONAL ROUTER (Never Crosses Shape)
                ====================================================================== */
-            function getAnchorCoord(nodeId, portId) {
+            function getAnchorCoord(nodeId, portId, conn) {
                 const node = state.nodes.find(n => n.id === nodeId);
                 if (!node) return null;
                 const anchors = getNodeAnchorPoints(node);
-                return anchors.find(a => a.id === portId) || { x: node.x + node.width / 2, y: node.y + node.height / 2, id: 'right' };
+                const base = anchors.find(a => a.id === portId) || { x: node.x + node.width / 2, y: node.y + node.height / 2, id: 'right' };
+                if (!conn || !state.connections || state.connections.length < 2) return base;
+
+                // Opsi 1: Auto-Offset Port Otomatis when 2+ connections share the same (nodeId, portId)
+                const shared = [];
+                const getOtherCenter = (c, isFromSide) => {
+                    const otherId = isFromSide ? c.toNodeId : c.fromNodeId;
+                    if (otherId) {
+                        const oNode = state.nodes.find(n => n.id === otherId);
+                        if (oNode) return { x: oNode.x + oNode.width / 2, y: oNode.y + oNode.height / 2 };
+                    }
+                    return {
+                        x: isFromSide ? (c.toX !== undefined && c.toX !== null ? c.toX : base.x) : (c.fromX !== undefined && c.fromX !== null ? c.fromX : base.x),
+                        y: isFromSide ? (c.toY !== undefined && c.toY !== null ? c.toY : base.y) : (c.fromY !== undefined && c.fromY !== null ? c.fromY : base.y)
+                    };
+                };
+
+                state.connections.forEach(c => {
+                    if (c.fromNodeId === nodeId && c.fromPort === portId) {
+                        const oc = getOtherCenter(c, true);
+                        shared.push({ connId: c.id, side: 'from', ox: oc.x, oy: oc.y });
+                    }
+                    if (c.toNodeId === nodeId && c.toPort === portId) {
+                        const oc = getOtherCenter(c, false);
+                        shared.push({ connId: c.id, side: 'to', ox: oc.x, oy: oc.y });
+                    }
+                });
+
+                if (shared.length < 2) return base;
+
+                const isHorizEdge = (portId === 'top' || portId === 'bottom');
+                shared.sort((a, b) => {
+                    const diff = isHorizEdge ? (a.ox - b.ox) : (a.oy - b.oy);
+                    if (Math.abs(diff) > 0.5) return diff;
+                    return a.connId < b.connId ? -1 : (a.connId > b.connId ? 1 : 0);
+                });
+
+                const currentSide = (conn.fromNodeId === nodeId && conn.fromPort === portId && !(conn.toNodeId === nodeId && conn.toPort === portId)) ? 'from'
+                    : (conn.toNodeId === nodeId && conn.toPort === portId && !(conn.fromNodeId === nodeId && conn.fromPort === portId)) ? 'to'
+                    : null;
+                let idx = shared.findIndex(s => s.connId === conn.id && (!currentSide || s.side === currentSide));
+                if (idx === -1) return base;
+
+                const count = shared.length;
+                const edgeSpan = isHorizEdge ? (node.width * 0.55) : (node.height * 0.55);
+                const maxStep = isHorizEdge ? 22 : 18;
+                const spacing = Math.min(maxStep, Math.max(10, edgeSpan / count));
+                const offset = (idx - (count - 1) / 2) * spacing;
+
+                let localDx = 0;
+                let localDy = 0;
+                if (isHorizEdge) {
+                    // Avoid spreading off sharp triangle tips
+                    if (node.type === 'triangle' || node.type === 'triangle-up') {
+                        localDx = (portId === 'top') ? offset * 0.35 : offset;
+                    } else if (node.type === 'inverted-triangle') {
+                        localDx = (portId === 'bottom') ? offset * 0.35 : offset;
+                    } else {
+                        localDx = offset;
+                    }
+                } else {
+                    localDy = offset;
+                    if (node.type === 'parallelogram' || node.type === 'data' || node.type === 'parallelogram-flow') {
+                        localDx = -localDy * (0.18 * node.width / Math.max(1, node.height));
+                    }
+                }
+
+                const rot = (!node.isTable && !node.isSwimlane && node.rotation) ? node.rotation : 0;
+                if (rot) {
+                    const rad = (rot * Math.PI) / 180;
+                    const cos = Math.cos(rad);
+                    const sin = Math.sin(rad);
+                    const rdx = localDx * cos - localDy * sin;
+                    const rdy = localDx * sin + localDy * cos;
+                    return { ...base, x: base.x + rdx, y: base.y + rdy };
+                }
+
+                return { ...base, x: base.x + localDx, y: base.y + localDy };
             }
 
-            function getObstacleFreeOrthogonalWaypoints(startNode, startPort, endNode, endPort) {
-                const startAnchor = getAnchorCoord(startNode.id, startPort);
-                const endAnchor = getAnchorCoord(endNode.id, endPort);
+            function getObstacleFreeOrthogonalWaypoints(startNode, startPort, endNode, endPort, conn) {
+                const startAnchor = getAnchorCoord(startNode.id, startPort, conn);
+                const endAnchor = getAnchorCoord(endNode.id, endPort, conn);
                 if (!startAnchor || !endAnchor) return [];
 
                 const sx = startAnchor.x, sy = startAnchor.y;
@@ -8406,14 +8483,14 @@
 
                     let start = null;
                     if (fromNode && conn.fromPort) {
-                        start = getAnchorCoord(conn.fromNodeId, conn.fromPort);
+                        start = getAnchorCoord(conn.fromNodeId, conn.fromPort, conn);
                     } else if (conn.fromX !== null && conn.fromX !== undefined && conn.fromY !== null && conn.fromY !== undefined) {
                         start = { x: conn.fromX, y: conn.fromY };
                     }
 
                     let end = null;
                     if (toNode && conn.toPort) {
-                        end = getAnchorCoord(conn.toNodeId, conn.toPort);
+                        end = getAnchorCoord(conn.toNodeId, conn.toPort, conn);
                     } else if (conn.toX !== null && conn.toX !== undefined && conn.toY !== null && conn.toY !== undefined) {
                         end = { x: conn.toX, y: conn.toY };
                     }
@@ -8439,7 +8516,7 @@
                     } else {
                         // Elbow Orthogonal Connection
                         if (fromNode && toNode) {
-                            waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort);
+                            waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort, conn);
                         } else {
                             const midX = (start.x + end.x) / 2;
                             waypoints = [
