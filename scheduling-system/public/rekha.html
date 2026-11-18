@@ -11918,11 +11918,13 @@
                     e.preventDefault();
                     state.selectedNodeIds = state.nodes.map(n => n.id);
                     state.selectedNodeId = state.selectedNodeIds[0] || null;
-                    state.selectedConnectionId = null;
+                    state.selectedConnectionIds = state.connections.map(c => c.id);
+                    state.selectedConnectionId = state.selectedConnectionIds[0] || null;
                     document.querySelectorAll('.diagram-node').forEach(el => el.classList.add('selected'));
+                    renderConnections();
                     renderSelection();
                     updateFloatingAndPlusBars();
-                    statusHintText.textContent = `Semua objek terpilih (${state.nodes.length} bentuk diblok). Tekan Ctrl+C untuk menyalin.`;
+                    statusHintText.textContent = `Semua objek terpilih (${state.nodes.length} bentuk & ${state.connections.length} panah diblok). Tekan Ctrl+C untuk menyalin.`;
                     return;
                 }
 
