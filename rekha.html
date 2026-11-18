@@ -11155,6 +11155,9 @@
 
             function openDirectInShapeEditor(node, targetEditableEl) {
                 if (!node || node.isLocked || !inShapeDirectEditor) return;
+                state.isDraggingLaneText = null;
+                state.isDraggingHeaderText = null;
+                state.isDraggingNode = false;
                 closeDirectInShapeEditor(true);
 
                 state.editingNodeId = node.id;
@@ -12174,7 +12177,7 @@
                     titleBox.appendChild(boxTip);
 
                     const onStartDragText = (e) => {
-                        if (e.button !== 0 || state.editingNodeId === node.id) return;
+                        if (e.button !== 0 || e.detail >= 2 || state.editingNodeId === node.id) return;
                         e.stopPropagation();
                         e.preventDefault();
                         if (!state.selectedNodeIds.includes(node.id)) {
@@ -13035,7 +13038,7 @@
                                 laneTitleBox.appendChild(lBoxTip);
 
                                 const onStartDragLaneText = (e) => {
-                                    if (e.button !== 0 || state.editingNodeId === node.id) return;
+                                    if (e.button !== 0 || e.detail >= 2 || state.editingNodeId === node.id) return;
                                     e.stopPropagation();
                                     e.preventDefault();
                                     if (!state.selectedNodeIds.includes(node.id)) {
@@ -15117,29 +15120,37 @@
                 }
 
                 if (state.isDraggingLaneText) {
-                    const lNode = state.nodes.find(n => n.id === state.isDraggingLaneText.nodeId);
-                    const lane = lNode && lNode.lanes && lNode.lanes[state.isDraggingLaneText.laneIdx];
-                    if (lane) {
-                        const dx = canvasCoords.x - state.isDraggingLaneText.startX;
-                        const dy = canvasCoords.y - state.isDraggingLaneText.startY;
-                        if (Math.hypot(dx, dy) >= 1.5) state.isDraggingLaneText.moved = true;
-                        lane.offsetX = Math.max(-state.isDraggingLaneText.maxOffX, Math.min(state.isDraggingLaneText.maxOffX, state.isDraggingLaneText.initialOffsetX + dx));
-                        lane.offsetY = Math.max(-state.isDraggingLaneText.maxOffY, Math.min(state.isDraggingLaneText.maxOffY, state.isDraggingLaneText.initialOffsetY + dy));
-                        renderNodes();
+                    if (state.editingNodeId || (typeof e.buttons === 'number' && (e.buttons & 1) === 0)) {
+                        state.isDraggingLaneText = null;
+                    } else {
+                        const lNode = state.nodes.find(n => n.id === state.isDraggingLaneText.nodeId);
+                        const lane = lNode && lNode.lanes && lNode.lanes[state.isDraggingLaneText.laneIdx];
+                        if (lane) {
+                            const dx = canvasCoords.x - state.isDraggingLaneText.startX;
+                            const dy = canvasCoords.y - state.isDraggingLaneText.startY;
+                            if (Math.hypot(dx, dy) >= 1.5) state.isDraggingLaneText.moved = true;
+                            lane.offsetX = Math.max(-state.isDraggingLaneText.maxOffX, Math.min(state.isDraggingLaneText.maxOffX, state.isDraggingLaneText.initialOffsetX + dx));
+                            lane.offsetY = Math.max(-state.isDraggingLaneText.maxOffY, Math.min(state.isDraggingLaneText.maxOffY, state.isDraggingLaneText.initialOffsetY + dy));
+                            renderNodes();
+                        }
+                        return;
                     }
-                    return;
                 }
 
                 if (state.isDraggingHeaderText) {
-                    const hNode = state.nodes.find(n => n.id === state.isDraggingHeaderText.nodeId);
-                    if (hNode) {
-                        const dx = canvasCoords.x - state.isDraggingHeaderText.startX;
-                        if (Math.abs(dx) >= 1.5) state.isDraggingHeaderText.moved = true;
-                        const maxRange = Math.max(40, hNode.width - 24);
-                        hNode.headerTextOffsetX = Math.max(-maxRange, Math.min(maxRange, state.isDraggingHeaderText.initialOffsetX + dx));
-                        renderNodes();
+                    if (state.editingNodeId || (typeof e.buttons === 'number' && (e.buttons & 1) === 0)) {
+                        state.isDraggingHeaderText = null;
+                    } else {
+                        const hNode = state.nodes.find(n => n.id === state.isDraggingHeaderText.nodeId);
+                        if (hNode) {
+                            const dx = canvasCoords.x - state.isDraggingHeaderText.startX;
+                            if (Math.abs(dx) >= 1.5) state.isDraggingHeaderText.moved = true;
+                            const maxRange = Math.max(40, hNode.width - 24);
+                            hNode.headerTextOffsetX = Math.max(-maxRange, Math.min(maxRange, state.isDraggingHeaderText.initialOffsetX + dx));
+                            renderNodes();
+                        }
+                        return;
                     }
-                    return;
                 }
 
                 if (state.isPanning) {
