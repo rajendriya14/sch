@@ -8265,62 +8265,76 @@
                 else if (endPort === 'left') p2x -= offset;
                 else if (endPort === 'right') p2x += offset;
 
-                // Simple natural routing:
-                // Case A: Collinear / Straight line
-                if (sx === ex && (startPort === 'bottom' || startPort === 'top') && (endPort === 'top' || endPort === 'bottom')) {
+                // Case A: Collinear / Straight line (within 2px tolerance for sub-pixel smooth dragging)
+                if (Math.abs(sx - ex) < 2 && ((startPort === 'bottom' && endPort === 'top' && ey >= sy) || (startPort === 'top' && endPort === 'bottom' && ey <= sy))) {
                     return [{ x: sx, y: sy }, { x: ex, y: ey }];
                 }
-                if (sy === ey && (startPort === 'right' || startPort === 'left') && (endPort === 'left' || endPort === 'right')) {
+                if (Math.abs(sy - ey) < 2 && ((startPort === 'right' && endPort === 'left' && ex >= sx) || (startPort === 'left' && endPort === 'right' && ex <= sx))) {
                     return [{ x: sx, y: sy }, { x: ex, y: ey }];
                 }
 
                 // Case B: Horizontal Exit (Right/Left) to Vertical Entry (Top/Bottom)
                 if ((startPort === 'right' || startPort === 'left') && (endPort === 'top' || endPort === 'bottom')) {
-                    // One smooth corner if direction matches
-                    if ((startPort === 'right' && ex >= sx) || (startPort === 'left' && ex <= sx)) {
+                    const dirOkX = (startPort === 'right' && ex >= sx) || (startPort === 'left' && ex <= sx);
+                    const dirOkY = (endPort === 'top' && ey >= sy) || (endPort === 'bottom' && ey <= sy);
+                    if (dirOkX && dirOkY) {
                         return [{ x: sx, y: sy }, { x: ex, y: sy }, { x: ex, y: ey }];
+                    } else if (dirOkX) {
+                        const midX = (sx + ex) / 2;
+                        return [{ x: sx, y: sy }, { x: midX, y: sy }, { x: midX, y: p2y }, { x: ex, y: p2y }, { x: ex, y: ey }];
                     } else {
-                        // Two corners
                         return [{ x: sx, y: sy }, { x: p1x, y: sy }, { x: p1x, y: p2y }, { x: ex, y: p2y }, { x: ex, y: ey }];
                     }
                 }
 
                 // Case C: Vertical Exit (Top/Bottom) to Horizontal Entry (Left/Right)
                 if ((startPort === 'top' || startPort === 'bottom') && (endPort === 'left' || endPort === 'right')) {
-                    if ((startPort === 'bottom' && ey >= sy) || (startPort === 'top' && ey <= sy)) {
+                    const dirOkY = (startPort === 'bottom' && ey >= sy) || (startPort === 'top' && ey <= sy);
+                    const dirOkX = (endPort === 'left' && ex >= sx) || (endPort === 'right' && ex <= sx);
+                    if (dirOkY && dirOkX) {
                         return [{ x: sx, y: sy }, { x: sx, y: ey }, { x: ex, y: ey }];
+                    } else if (dirOkY) {
+                        const midY = (sy + ey) / 2;
+                        return [{ x: sx, y: sy }, { x: sx, y: midY }, { x: p2x, y: midY }, { x: p2x, y: ey }, { x: ex, y: ey }];
                     } else {
                         return [{ x: sx, y: sy }, { x: sx, y: p1y }, { x: p2x, y: p1y }, { x: p2x, y: ey }, { x: ex, y: ey }];
                     }
                 }
 
-                // Case D: Horizontal to Horizontal (e.g. Right to Left)
+                // Case D: Horizontal to Horizontal (Left/Right to Left/Right)
                 if ((startPort === 'right' || startPort === 'left') && (endPort === 'left' || endPort === 'right')) {
-                    if (startPort === 'right' && endPort === 'left' && ex > sx + 30) {
-                        const midX = (sx + ex) / 2;
-                        return [{ x: sx, y: sy }, { x: midX, y: sy }, { x: midX, y: ey }, { x: ex, y: ey }];
-                    } else if (startPort === 'left' && endPort === 'right' && ex < sx - 30) {
-                        const midX = (sx + ex) / 2;
-                        return [{ x: sx, y: sy }, { x: midX, y: sy }, { x: midX, y: ey }, { x: ex, y: ey }];
-                    } else {
-                        // Needs to route around: choose cleaner side (top or bottom)
-                        const detourY = Math.max(startNode.y + startNode.height, endNode.y + endNode.height) + 24;
-                        return [{ x: sx, y: sy }, { x: p1x, y: sy }, { x: p1x, y: detourY }, { x: p2x, y: detourY }, { x: p2x, y: ey }, { x: ex, y: ey }];
+                    if (startPort === 'right' && endPort === 'right') {
+                        const routeX = Math.max(sx, ex) + 24;
+                        return [{ x: sx, y: sy }, { x: routeX, y: sy }, { x: routeX, y: ey }, { x: ex, y: ey }];
                     }
+                    if (startPort === 'left' && endPort === 'left') {
+                        const routeX = Math.min(sx, ex) - 24;
+                        return [{ x: sx, y: sy }, { x: routeX, y: sy }, { x: routeX, y: ey }, { x: ex, y: ey }];
+                    }
+                    if ((startPort === 'right' && endPort === 'left' && ex > sx + 16) || (startPort === 'left' && endPort === 'right' && ex < sx - 16)) {
+                        const midX = (sx + ex) / 2;
+                        return [{ x: sx, y: sy }, { x: midX, y: sy }, { x: midX, y: ey }, { x: ex, y: ey }];
+                    }
+                    const detourY = Math.max(startNode.y + startNode.height, endNode.y + endNode.height) + 24;
+                    return [{ x: sx, y: sy }, { x: p1x, y: sy }, { x: p1x, y: detourY }, { x: p2x, y: detourY }, { x: p2x, y: ey }, { x: ex, y: ey }];
                 }
 
-                // Case E: Vertical to Vertical (e.g. Bottom to Top)
+                // Case E: Vertical to Vertical (Top/Bottom to Top/Bottom)
                 if ((startPort === 'bottom' || startPort === 'top') && (endPort === 'top' || endPort === 'bottom')) {
-                    if (startPort === 'bottom' && endPort === 'top' && ey > sy + 30) {
-                        const midY = (sy + ey) / 2;
-                        return [{ x: sx, y: sy }, { x: sx, y: midY }, { x: ex, y: midY }, { x: ex, y: ey }];
-                    } else if (startPort === 'top' && endPort === 'bottom' && ey < sy - 30) {
-                        const midY = (sy + ey) / 2;
-                        return [{ x: sx, y: sy }, { x: sx, y: midY }, { x: ex, y: midY }, { x: ex, y: ey }];
-                    } else {
-                        const detourX = Math.max(startNode.x + startNode.width, endNode.x + endNode.width) + 24;
-                        return [{ x: sx, y: sy }, { x: sx, y: p1y }, { x: detourX, y: p1y }, { x: detourX, y: p2y }, { x: ex, y: p2y }, { x: ex, y: ey }];
+                    if (startPort === 'bottom' && endPort === 'bottom') {
+                        const routeY = Math.max(sy, ey) + 24;
+                        return [{ x: sx, y: sy }, { x: sx, y: routeY }, { x: ex, y: routeY }, { x: ex, y: ey }];
                     }
+                    if (startPort === 'top' && endPort === 'top') {
+                        const routeY = Math.min(sy, ey) - 24;
+                        return [{ x: sx, y: sy }, { x: sx, y: routeY }, { x: ex, y: routeY }, { x: ex, y: ey }];
+                    }
+                    if ((startPort === 'bottom' && endPort === 'top' && ey > sy + 16) || (startPort === 'top' && endPort === 'bottom' && ey < sy - 16)) {
+                        const midY = (sy + ey) / 2;
+                        return [{ x: sx, y: sy }, { x: sx, y: midY }, { x: ex, y: midY }, { x: ex, y: ey }];
+                    }
+                    const detourX = Math.max(startNode.x + startNode.width, endNode.x + endNode.width) + 24;
+                    return [{ x: sx, y: sy }, { x: sx, y: p1y }, { x: detourX, y: p1y }, { x: detourX, y: p2y }, { x: ex, y: p2y }, { x: ex, y: ey }];
                 }
 
                 // General fallback: standard 2-bend S-curve
@@ -8435,11 +8449,32 @@
                                 { x: end.x, y: end.y }
                             ];
                         }
-                        // Apply custom segment offsets if adjusted by user
+                        // If straight 2-point elbow was bent by user via 'split', promote to 4-point bendable path
+                        if (waypoints.length === 2 && conn.customSegments && conn.customSegments.split !== undefined) {
+                            const val = conn.customSegments.split;
+                            const isH = Math.abs(waypoints[0].y - waypoints[1].y) <= Math.abs(waypoints[0].x - waypoints[1].x);
+                            if (isH) {
+                                waypoints = [
+                                    { x: start.x, y: start.y },
+                                    { x: start.x, y: val },
+                                    { x: end.x, y: val },
+                                    { x: end.x, y: end.y }
+                                ];
+                            } else {
+                                waypoints = [
+                                    { x: start.x, y: start.y },
+                                    { x: val, y: start.y },
+                                    { x: val, y: end.y },
+                                    { x: end.x, y: end.y }
+                                ];
+                            }
+                        }
+                        // Apply custom segment offsets ONLY to interior segments so endpoints stay anchored to shape ports!
                         if (conn.customSegments) {
                             Object.keys(conn.customSegments).forEach(idxStr => {
+                                if (idxStr === 'split') return;
                                 const idx = parseInt(idxStr, 10);
-                                if (idx >= 0 && idx < waypoints.length - 1) {
+                                if (idx > 0 && idx < waypoints.length - 2) {
                                     const val = conn.customSegments[idx];
                                     const pA = waypoints[idx];
                                     const pB = waypoints[idx + 1];
@@ -8534,7 +8569,9 @@
                     // HANYA MUNCUL KETIKA KONEKTOR TERPILIH / DI-KLIK (Point 2: hilang saat selesai koneksi, muncul lagi saat di-klik)
                     // ==========================================================
                     if (isSelected && conn.type === 'elbow' && waypoints.length >= 2) {
-                        for (let i = 0; i < waypoints.length - 1; i++) {
+                        const startSeg = (waypoints.length === 2) ? 0 : 1;
+                        const endSeg = (waypoints.length === 2) ? 0 : (waypoints.length - 3);
+                        for (let i = startSeg; i <= endSeg; i++) {
                             const pA = waypoints[i];
                             const pB = waypoints[i + 1];
                             const segLen = Math.hypot(pB.x - pA.x, pB.y - pA.y);
@@ -8544,11 +8581,12 @@
                             const mx = (pA.x + pB.x) / 2;
                             const my = (pA.y + pB.y) / 2;
                             const dir = isHorizontal ? 'horizontal' : 'vertical';
+                            const segKey = (waypoints.length === 2) ? 'split' : i;
 
                             const handleG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                             handleG.setAttribute('class', 'conn-yellow-handle');
                             handleG.setAttribute('data-conn-id', conn.id);
-                            handleG.setAttribute('data-seg-idx', i);
+                            handleG.setAttribute('data-seg-idx', segKey);
 
                             // Hit circle yang lebar untuk kemudahan klik
                             const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -8582,7 +8620,7 @@
                                 e.stopPropagation();
                                 state.isAdjustingWaypoint = true;
                                 state.adjustingConnId = conn.id;
-                                state.adjustingSegmentIdx = i;
+                                state.adjustingSegmentIdx = segKey;
                                 state.adjustingDir = dir;
                                 state.selectedConnectionId = conn.id;
                                 state.selectedNodeId = null;
@@ -14690,10 +14728,12 @@
                     const conn = state.connections.find(c => c.id === state.adjustingConnId);
                     if (conn) {
                         conn.customSegments = conn.customSegments || {};
-                        if (state.adjustingDir === 'horizontal') {
-                            conn.customSegments[state.adjustingSegmentIdx] = snap(canvasCoords.y);
+                        const val = (state.adjustingDir === 'horizontal') ? canvasCoords.y : canvasCoords.x;
+                        if (state.adjustingSegmentIdx === 'split') {
+                            conn.customSegments.split = val;
+                            conn.customSegments[1] = val;
                         } else {
-                            conn.customSegments[state.adjustingSegmentIdx] = snap(canvasCoords.x);
+                            conn.customSegments[state.adjustingSegmentIdx] = val;
                         }
                         renderConnections();
                     }
