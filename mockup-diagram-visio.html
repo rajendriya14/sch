@@ -12177,7 +12177,12 @@
                     titleBox.appendChild(boxTip);
 
                     const onStartDragText = (e) => {
-                        if (e.button !== 0 || e.detail >= 2 || state.editingNodeId === node.id) return;
+                        if (e.button !== 0 || state.editingNodeId === node.id) return;
+                        if (e.detail >= 2) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
                         e.stopPropagation();
                         e.preventDefault();
                         if (!state.selectedNodeIds.includes(node.id)) {
@@ -13038,7 +13043,12 @@
                                 laneTitleBox.appendChild(lBoxTip);
 
                                 const onStartDragLaneText = (e) => {
-                                    if (e.button !== 0 || e.detail >= 2 || state.editingNodeId === node.id) return;
+                                    if (e.button !== 0 || state.editingNodeId === node.id) return;
+                                    if (e.detail >= 2) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        return;
+                                    }
                                     e.stopPropagation();
                                     e.preventDefault();
                                     if (!state.selectedNodeIds.includes(node.id)) {
@@ -15481,6 +15491,14 @@
 
                 // Group Node dragging (moves all selected nodes together preserving exact relative positions)
                 if (state.isDraggingNode && state.dragNodesInitial && state.dragMouseStartCanvas) {
+                    if (state.editingNodeId || (typeof e.buttons === 'number' && (e.buttons & 1) === 0)) {
+                        state.isDraggingNode = false;
+                        state.dragNodesInitial = null;
+                        state.dragConnsInitial = null;
+                        state.dragMouseStartCanvas = null;
+                        layerGuidelines.innerHTML = '';
+                        return;
+                    }
                     const dx = canvasCoords.x - state.dragMouseStartCanvas.x;
                     const dy = canvasCoords.y - state.dragMouseStartCanvas.y;
 
