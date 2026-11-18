@@ -3932,8 +3932,11 @@
                 </svg>
             </button>
             <input type="file" id="fileInputOpenProject" accept=".svg,.rekha,.json" style="display:none;">
-            <button class="tool-btn" id="btnSaveProject" title="Simpan Diagram (Disket) [Ctrl+S]">
+            <button class="tool-btn" id="btnSaveProject" title="Save (Ctrl+S)">
                 <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+            <button class="tool-btn" id="btnSaveAsProject" title="Save As... (Ctrl+Shift+S)">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><polyline points="15 21 15 14 7 14 7 21"/><polyline points="7 3 7 8 14 8"/><path d="M19 15v6M16 18h6"/></svg>
             </button>
 
             <button class="tool-btn" id="btnPreviewMode" title="Preview Mode (Ctrl+P / Esc to Exit)">
@@ -6654,6 +6657,7 @@
                4.1. SAVE & OPEN & EXPORT ENGINE (VISIO / MIRO / WORD / EXCEL COMPATIBLE)
                ====================================================================== */
             const btnSaveProject = document.getElementById('btnSaveProject');
+            const btnSaveAsProject = document.getElementById('btnSaveAsProject');
             const btnOpenProject = document.getElementById('btnOpenProject');
             const fileInputOpenProject = document.getElementById('fileInputOpenProject');
             const btnCopyVector = document.getElementById('btnCopyVector');
@@ -6670,6 +6674,30 @@
             const saveCloseBtnConfirm = saveConfirmModal ? saveConfirmModal.querySelector('.save-close-btn') : null;
 
             let selectedSaveFormat = 'svg'; // Otomatis format vector secara default!
+            let activeFileHandle = null;
+            let activeFileFormat = 'svg';
+            let activeFileName = '';
+
+            function setActiveProjectFile(handle, fileName = '', format = '') {
+                activeFileHandle = handle || null;
+                activeFileName = fileName || (handle && handle.name) || '';
+                if (format === 'svg' || format === 'rekha') {
+                    activeFileFormat = format;
+                } else if (activeFileName) {
+                    activeFileFormat = /\.(rekha|json)$/i.test(activeFileName) ? 'rekha' : 'svg';
+                } else {
+                    activeFileFormat = 'svg';
+                }
+                if (btnSaveProject) {
+                    btnSaveProject.title = (activeFileHandle && activeFileName)
+                        ? `Save to ${activeFileName} (Ctrl+S)`
+                        : 'Save (Ctrl+S)';
+                }
+            }
+
+            function clearActiveProjectFile() {
+                setActiveProjectFile(null, '', 'svg');
+            }
 
             // Update format option cards
             formatRadioOptions.forEach(card => {
@@ -6695,7 +6723,11 @@
                 const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
                 
                 if (saveFileNameInput) {
-                    saveFileNameInput.value = `rekha_diagram_${dateStr}`;
+                    if (activeFileName) {
+                        saveFileNameInput.value = activeFileName.replace(/\.[a-zA-Z0-9]+$/, '');
+                    } else {
+                        saveFileNameInput.value = `rekha_diagram_${dateStr}`;
+                    }
                 }
 
                 // Update scope labels for multi-page
@@ -7191,6 +7223,9 @@
                         await writable.close();
 
                         const savedName = fileHandle.name || fullFileName;
+                        if (format === 'svg' || format === 'rekha') {
+                            setActiveProjectFile(fileHandle, savedName, format);
+                        }
                         showSaveConfirmationModal(savedName, 'Selected folder on your computer', formatLabel, tipMessage);
                         statusHintText.textContent = `File ${formatLabel} saved successfully: ${savedName}`;
                         return;
@@ -7217,8 +7252,64 @@
                 statusHintText.textContent = `File saved to Downloads folder: ${fullFileName}`;
             }
 
+            async function saveActiveProjectDirect() {
+                if (!activeFileHandle) {
+                    openSaveFormatModal();
+                    return;
+                }
+                try {
+                    if (activeFileHandle.queryPermission) {
+                        let perm = await activeFileHandle.queryPermission({ mode: 'readwrite' });
+                        if (perm !== 'granted' && activeFileHandle.requestPermission) {
+                            perm = await activeFileHandle.requestPermission({ mode: 'readwrite' });
+                        }
+                        if (perm !== 'granted') {
+                            openSaveFormatModal();
+                            return;
+                        }
+                    }
+
+                    saveActiveTabState();
+                    let blob = null;
+                    if (activeFileFormat === 'rekha') {
+                        const rekhaData = getDiagramRekhaString();
+                        blob = new Blob([rekhaData], { type: 'application/json' });
+                    } else {
+                        const svgData = getDiagramSvgString();
+                        blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    }
+
+                    const writable = await activeFileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+
+                    const savedDisplay = activeFileName || activeFileHandle.name || `diagram.${activeFileFormat}`;
+                    if (statusHintText) {
+                        statusHintText.textContent = `✓ Saved to ${savedDisplay}`;
+                    }
+                    if (btnSaveProject) {
+                        const prevColor = btnSaveProject.style.color;
+                        btnSaveProject.style.color = '#10b981';
+                        setTimeout(() => {
+                            if (btnSaveProject) btnSaveProject.style.color = prevColor;
+                        }, 1200);
+                    }
+                } catch (err) {
+                    console.warn('Direct save failed, falling back to Save As:', err);
+                    clearActiveProjectFile();
+                    openSaveFormatModal();
+                }
+            }
+
             if (btnSaveProject) {
                 btnSaveProject.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveActiveProjectDirect();
+                });
+            }
+
+            if (btnSaveAsProject) {
+                btnSaveAsProject.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openSaveFormatModal();
                 });
@@ -7374,6 +7465,7 @@
                         const file = await fileHandle.getFile();
                         const text = await file.text();
                         loadDiagramFromFile(text, file.name);
+                        setActiveProjectFile(fileHandle, file.name);
                         return;
                     } catch (err) {
                         if (err.name === 'AbortError') return;
@@ -7391,6 +7483,7 @@
                         const reader = new FileReader();
                         reader.onload = (rev) => {
                             loadDiagramFromFile(rev.target.result, file.name);
+                            clearActiveProjectFile();
                         };
                         reader.readAsText(file);
                     };
@@ -11853,9 +11946,13 @@
                     exitDrawMode();
                     return;
                 }
-                                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                     e.preventDefault();
-                    openSaveFormatModal();
+                    if (e.shiftKey) {
+                        openSaveFormatModal();
+                    } else {
+                        saveActiveProjectDirect();
+                    }
                     return;
                 }
                 if (e.key === 'F2') {
@@ -15634,6 +15731,7 @@
                 emptyBtnCreateProject.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    clearActiveProjectFile();
                     hideEmptyState();
                 });
             }
