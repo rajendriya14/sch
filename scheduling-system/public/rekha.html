@@ -11451,6 +11451,7 @@
                 state.editingNodeId = null;
                 state.activeHeaderNodeId = null;
                 state.activeHeaderTextNodeId = null;
+                state.activeLaneTextKey = null;
                 activeEditContext = null;
                 if (window.getSelection) {
                     try { window.getSelection().removeAllRanges(); } catch (e) {}
@@ -11593,6 +11594,9 @@
                 if (state.activeHeaderTextNodeId && state.activeHeaderTextNodeId !== id) {
                     state.activeHeaderTextNodeId = null;
                 }
+                if (state.activeLaneTextKey && !state.activeLaneTextKey.startsWith(id + ':')) {
+                    state.activeLaneTextKey = null;
+                }
                 const groupMembers = (targetNode && targetNode.groupId)
                     ? state.nodes.filter(n => n.groupId === targetNode.groupId).map(n => n.id)
                     : [id];
@@ -11708,9 +11712,10 @@
                 state.selectedNodeIds = [];
                 state.selectedConnectionId = null;
                 state.selectedConnectionIds = [];
-                const hadActiveHeader = !!(state.activeHeaderNodeId || state.activeHeaderTextNodeId);
+                const hadActiveHeader = !!(state.activeHeaderNodeId || state.activeHeaderTextNodeId || state.activeLaneTextKey);
                 state.activeHeaderNodeId = null;
                 state.activeHeaderTextNodeId = null;
+                state.activeLaneTextKey = null;
 
                 let hadCellSelection = false;
                 state.nodes.forEach(n => {
@@ -12172,11 +12177,21 @@
                         if (e.button !== 0 || state.editingNodeId === node.id) return;
                         e.stopPropagation();
                         e.preventDefault();
-                        selectNode(node.id, false);
+                        if (!state.selectedNodeIds.includes(node.id)) {
+                            selectNode(node.id, false);
+                        }
                         state.activeHeaderNodeId = node.id;
                         state.activeHeaderTextNodeId = node.id;
+                        state.activeLaneTextKey = null;
                         if (node.isSwimlane) node.selectedLaneIdx = null;
                         if (node.isTable && node.selectedCells) node.selectedCells = null;
+                        // Highlight in-place without rebuilding DOM so dblclick still fires reliably!
+                        shapeEl.querySelectorAll('.lane-title-edit-box').forEach(b => {
+                            b.setAttribute('stroke', 'transparent');
+                            b.setAttribute('fill', 'rgba(0,0,0,0.001)');
+                        });
+                        titleBox.setAttribute('stroke', '#3b82f6');
+                        titleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.06)');
                         updateFloatingAndPlusBars();
                         const cc = screenToCanvasCoords(e.clientX, e.clientY);
                         state.isDraggingHeaderText = {
@@ -12953,6 +12968,12 @@
                                 laneHRect.addEventListener('click', () => {
                                     node.selectedLaneIdx = lIdx;
                                     state.activeHeaderNodeId = null;
+                                    state.activeHeaderTextNodeId = null;
+                                    state.activeLaneTextKey = null;
+                                    shapeEl.querySelectorAll('.header-title-edit-box, .lane-title-edit-box').forEach(b => {
+                                        b.setAttribute('stroke', 'transparent');
+                                        b.setAttribute('fill', 'rgba(0,0,0,0.001)');
+                                    });
                                     updateFloatingAndPlusBars();
                                 });
                                 laneHRect.addEventListener('dblclick', (e) => {
@@ -12962,8 +12983,12 @@
                                 shapeEl.appendChild(laneHRect);
 
                                 const laneTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                                const lX = lhW / 2;
-                                const lY = curY + (laneH / 2);
+                                const maxLaneOffX = Math.max(4, lhW / 2 - 10);
+                                const maxLaneOffY = Math.max(4, laneH / 2 - 10);
+                                const lOffX = Math.max(-maxLaneOffX, Math.min(maxLaneOffX, lane.offsetX || 0));
+                                const lOffY = Math.max(-maxLaneOffY, Math.min(maxLaneOffY, lane.offsetY || 0));
+                                const lX = (lhW / 2) + lOffX;
+                                const lY = curY + (laneH / 2) + lOffY;
                                 laneTitle.setAttribute('x', lX); laneTitle.setAttribute('y', lY);
                                 laneTitle.setAttribute('dominant-baseline', 'central');
                                 laneTitle.setAttribute('text-anchor', 'middle');
@@ -12972,7 +12997,7 @@
                                 laneTitle.setAttribute('class', 'node-editable-text');
                                 laneTitle.setAttribute('data-edit-target', 'swimlane-lane-title');
                                 laneTitle.setAttribute('data-lane-idx', lIdx);
-                                laneTitle.style.cursor = 'pointer';
+                                laneTitle.style.cursor = 'grab';
                                 laneTitle.textContent = lane.title || (`Data ${lIdx + 1}`);
 
                                 const lRot = (lane.rotation !== undefined)
@@ -12984,10 +13009,74 @@
                                     laneTitle.setAttribute('transform', `rotate(${lRot}, ${lX}, ${lY})`);
                                 }
 
-                                laneTitle.addEventListener('dblclick', (e) => {
+                                const laneKey = `${node.id}:${lIdx}`;
+                                const isLaneTextActive = (state.activeLaneTextKey === laneKey && state.editingNodeId !== node.id);
+                                const isVertRot = Math.abs(lRot % 180) === 90;
+                                const estLaneTextLen = Math.max(40, (laneTitle.textContent.length || 5) * 6.5 + 18);
+                                const boxW = isVertRot ? Math.min(lhW - 6, 22) : Math.min(lhW - 6, estLaneTextLen);
+                                const boxH = isVertRot ? Math.min(laneH - 6, estLaneTextLen) : Math.min(laneH - 6, 22);
+                                const lBoxX = Math.max(3, Math.min(lhW - boxW - 3, lX - boxW / 2));
+                                const lBoxY = Math.max(curY + 3, Math.min(curY + laneH - boxH - 3, lY - boxH / 2));
+
+                                const laneTitleBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                                laneTitleBox.setAttribute('class', 'selection-box lane-title-edit-box');
+                                laneTitleBox.setAttribute('x', lBoxX);
+                                laneTitleBox.setAttribute('y', lBoxY);
+                                laneTitleBox.setAttribute('width', Math.max(12, boxW));
+                                laneTitleBox.setAttribute('height', Math.max(14, boxH));
+                                laneTitleBox.setAttribute('rx', '3');
+                                laneTitleBox.setAttribute('fill', isLaneTextActive ? 'rgba(37, 99, 235, 0.06)' : 'rgba(0,0,0,0.001)');
+                                laneTitleBox.setAttribute('stroke', isLaneTextActive ? '#3b82f6' : 'transparent');
+                                laneTitleBox.setAttribute('stroke-width', '1');
+                                laneTitleBox.setAttribute('stroke-dasharray', '3,2');
+                                laneTitleBox.style.cursor = 'grab';
+                                const lBoxTip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                                lBoxTip.textContent = 'Klik untuk munculkan kolom teks, seret untuk geser posisi, Double-click untuk edit teks';
+                                laneTitleBox.appendChild(lBoxTip);
+
+                                const onStartDragLaneText = (e) => {
+                                    if (e.button !== 0 || state.editingNodeId === node.id) return;
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    if (!state.selectedNodeIds.includes(node.id)) {
+                                        selectNode(node.id, false);
+                                    }
+                                    node.selectedLaneIdx = lIdx;
+                                    state.activeHeaderNodeId = null;
+                                    state.activeHeaderTextNodeId = null;
+                                    state.activeLaneTextKey = laneKey;
+                                    shapeEl.querySelectorAll('.header-title-edit-box, .lane-title-edit-box').forEach(b => {
+                                        b.setAttribute('stroke', 'transparent');
+                                        b.setAttribute('fill', 'rgba(0,0,0,0.001)');
+                                    });
+                                    laneTitleBox.setAttribute('stroke', '#3b82f6');
+                                    laneTitleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.06)');
+                                    updateFloatingAndPlusBars();
+                                    const cc = screenToCanvasCoords(e.clientX, e.clientY);
+                                    state.isDraggingLaneText = {
+                                        nodeId: node.id,
+                                        laneIdx: lIdx,
+                                        startX: cc.x,
+                                        startY: cc.y,
+                                        initialOffsetX: lane.offsetX || 0,
+                                        initialOffsetY: lane.offsetY || 0,
+                                        maxOffX: maxLaneOffX,
+                                        maxOffY: maxLaneOffY,
+                                        moved: false
+                                    };
+                                    statusHintText.textContent = 'Kolom teks jalur aktif. Seret untuk geser posisi, atau double-click untuk edit teks.';
+                                };
+
+                                const onDblEditLaneText = (e) => {
                                     e.stopPropagation();
                                     openDirectInShapeEditor(node, laneHRect);
-                                });
+                                };
+
+                                laneTitleBox.addEventListener('mousedown', onStartDragLaneText);
+                                laneTitleBox.addEventListener('dblclick', onDblEditLaneText);
+                                laneTitle.addEventListener('mousedown', onStartDragLaneText);
+                                laneTitle.addEventListener('dblclick', onDblEditLaneText);
+                                shapeEl.appendChild(laneTitleBox);
                                 shapeEl.appendChild(laneTitle);
 
                                 curY += laneH;
@@ -15027,6 +15116,20 @@
                     }
                 }
 
+                if (state.isDraggingLaneText) {
+                    const lNode = state.nodes.find(n => n.id === state.isDraggingLaneText.nodeId);
+                    const lane = lNode && lNode.lanes && lNode.lanes[state.isDraggingLaneText.laneIdx];
+                    if (lane) {
+                        const dx = canvasCoords.x - state.isDraggingLaneText.startX;
+                        const dy = canvasCoords.y - state.isDraggingLaneText.startY;
+                        if (Math.hypot(dx, dy) >= 1.5) state.isDraggingLaneText.moved = true;
+                        lane.offsetX = Math.max(-state.isDraggingLaneText.maxOffX, Math.min(state.isDraggingLaneText.maxOffX, state.isDraggingLaneText.initialOffsetX + dx));
+                        lane.offsetY = Math.max(-state.isDraggingLaneText.maxOffY, Math.min(state.isDraggingLaneText.maxOffY, state.isDraggingLaneText.initialOffsetY + dy));
+                        renderNodes();
+                    }
+                    return;
+                }
+
                 if (state.isDraggingHeaderText) {
                     const hNode = state.nodes.find(n => n.id === state.isDraggingHeaderText.nodeId);
                     if (hNode) {
@@ -15703,11 +15806,30 @@
                     document.body.style.cursor = '';
                 }
 
+                if (state.isDraggingLaneText) {
+                    const lNode = state.nodes.find(n => n.id === state.isDraggingLaneText.nodeId);
+                    const lane = lNode && lNode.lanes && lNode.lanes[state.isDraggingLaneText.laneIdx];
+                    if (lane) {
+                        const dx = canvasCoords.x - state.isDraggingLaneText.startX;
+                        const dy = canvasCoords.y - state.isDraggingLaneText.startY;
+                        if (Math.hypot(dx, dy) >= 1.5) state.isDraggingLaneText.moved = true;
+                        lane.offsetX = Math.max(-state.isDraggingLaneText.maxOffX, Math.min(state.isDraggingLaneText.maxOffX, state.isDraggingLaneText.initialOffsetX + dx));
+                        lane.offsetY = Math.max(-state.isDraggingLaneText.maxOffY, Math.min(state.isDraggingLaneText.maxOffY, state.isDraggingLaneText.initialOffsetY + dy));
+                        renderNodes();
+                    }
+                    return;
+                }
+
+                if (state.isDraggingLaneText) {
+                    if (state.isDraggingLaneText.moved) {
+                        saveSnapshot('Atur Posisi Teks Jalur Swimlane');
+                    }
+                    state.isDraggingLaneText = null;
+                }
+
                 if (state.isDraggingHeaderText) {
                     if (state.isDraggingHeaderText.moved) {
                         saveSnapshot('Atur Posisi Teks Header');
-                    } else {
-                        renderNodes();
                     }
                     state.isDraggingHeaderText = null;
                 }
