@@ -9137,6 +9137,11 @@
                 const alignDropEl = document.getElementById('objectAlignDropdown');
                 if (alignDropEl && alignDropEl.classList.contains('open')) {
                     floatingPropBar.style.display = 'none';
+                    btnPlusTop.style.display = 'none';
+                    btnPlusRight.style.display = 'none';
+                    btnPlusBottom.style.display = 'none';
+                    btnPlusLeft.style.display = 'none';
+                    btnPlusInside.style.display = 'none';
                 } else {
                     floatingPropBar.style.top = `${barTop}px`;
                     floatingPropBar.style.left = `${barLeft}px`;
@@ -12130,6 +12135,84 @@
                 // Container shapes (tables and swimlanes) are rendered first at the back,
                 // so any shapes created on top of a terminal/swimlane are rendered ON TOP!
                 // For non-containers, smaller shapes (like circle badges, step numbers, icons) render ON TOP of larger shapes!
+                const attachTerminalHeaderTextBox = (shapeEl, node, textEl, headerRect, w, headerH, titleX, titleAnchor) => {
+                    const isEditingThis = (state.editingNodeId === node.id);
+                    const isHeaderActive = (state.activeHeaderNodeId === node.id && !isEditingThis);
+                    const estTextW = Math.max(80, Math.min(w - 20, (textEl.textContent.length || 8) * 7.5 + 28));
+                    let boxX = titleX - estTextW / 2;
+                    if (titleAnchor === 'start') boxX = titleX - 8;
+                    else if (titleAnchor === 'end') boxX = titleX - estTextW + 8;
+                    boxX = Math.max(4, Math.min(w - estTextW - 4, boxX));
+
+                    const titleBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    titleBox.setAttribute('class', 'selection-box header-title-edit-box');
+                    titleBox.setAttribute('x', boxX);
+                    titleBox.setAttribute('y', 3);
+                    titleBox.setAttribute('width', estTextW);
+                    titleBox.setAttribute('height', Math.max(14, headerH - 6));
+                    titleBox.setAttribute('rx', '3');
+                    titleBox.setAttribute('fill', isHeaderActive ? 'rgba(37, 99, 235, 0.06)' : 'rgba(0,0,0,0.001)');
+                    titleBox.setAttribute('stroke', isHeaderActive ? '#3b82f6' : 'transparent');
+                    titleBox.setAttribute('stroke-width', '1');
+                    titleBox.setAttribute('stroke-dasharray', '3,2');
+                    titleBox.style.cursor = isEditingThis ? 'text' : 'grab';
+                    titleBox.style.pointerEvents = isEditingThis ? 'none' : 'auto';
+                    const boxTip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    boxTip.textContent = 'Seret kiri/kanan untuk geser posisi teks header, Double-click untuk edit teks';
+                    titleBox.appendChild(boxTip);
+
+                    const showHoverHint = () => {
+                        if (state.activeHeaderNodeId !== node.id && state.editingNodeId !== node.id) {
+                            titleBox.setAttribute('stroke', 'rgba(37, 99, 235, 0.45)');
+                            titleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.03)');
+                        }
+                    };
+                    const hideHoverHint = () => {
+                        if (state.activeHeaderNodeId !== node.id) {
+                            titleBox.setAttribute('stroke', 'transparent');
+                            titleBox.setAttribute('fill', 'rgba(0,0,0,0.001)');
+                        }
+                    };
+                    titleBox.addEventListener('mouseenter', showHoverHint);
+                    titleBox.addEventListener('mouseleave', hideHoverHint);
+
+                    const onStartDragText = (e) => {
+                        if (e.button !== 0 || state.editingNodeId === node.id) return;
+                        e.stopPropagation();
+                        e.preventDefault();
+                        selectNode(node.id, false);
+                        state.activeHeaderNodeId = node.id;
+                        if (node.isSwimlane) node.selectedLaneIdx = null;
+                        if (node.isTable && node.selectedCells) node.selectedCells = null;
+                        updateFloatingAndPlusBars();
+                        const cc = screenToCanvasCoords(e.clientX, e.clientY);
+                        state.isDraggingHeaderText = {
+                            nodeId: node.id,
+                            startX: cc.x,
+                            initialOffsetX: node.headerTextOffsetX || 0,
+                            moved: false
+                        };
+                        statusHintText.textContent = 'Seret kiri/kanan untuk atur posisi teks header, atau double-click untuk edit teks.';
+                    };
+
+                    const onDblEditText = (e) => {
+                        e.stopPropagation();
+                        openDirectInShapeEditor(node, headerRect);
+                    };
+
+                    titleBox.addEventListener('mousedown', onStartDragText);
+                    titleBox.addEventListener('dblclick', onDblEditText);
+                    textEl.style.pointerEvents = isEditingThis ? 'none' : 'auto';
+                    textEl.style.cursor = isEditingThis ? 'text' : 'grab';
+                    textEl.addEventListener('mouseenter', showHoverHint);
+                    textEl.addEventListener('mouseleave', hideHoverHint);
+                    textEl.addEventListener('mousedown', onStartDragText);
+                    textEl.addEventListener('dblclick', onDblEditText);
+
+                    shapeEl.appendChild(titleBox);
+                    shapeEl.appendChild(textEl);
+                };
+
                 const sortedNodes = [...state.nodes].sort((a, b) => {
                     const aIsContainer = (a.isTable || a.isSwimlane) ? 1 : 0;
                     const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
@@ -12253,24 +12336,7 @@
                         if (hRot) {
                             titleText.setAttribute('transform', `rotate(${hRot}, ${titleX}, ${titleY})`);
                         }
-                        if (state.activeHeaderNodeId === node.id) {
-                            titleText.style.pointerEvents = 'auto';
-                            titleText.style.cursor = 'ew-resize';
-                            titleText.addEventListener('mousedown', (e) => {
-                                if (e.button !== 0) return;
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const cc = screenToCanvasCoords(e.clientX, e.clientY);
-                                state.isDraggingHeaderText = {
-                                    nodeId: node.id,
-                                    startX: cc.x,
-                                    initialOffsetX: node.headerTextOffsetX || 0
-                                };
-                            });
-                        } else {
-                            titleText.style.pointerEvents = 'none';
-                        }
-                        shapeEl.appendChild(titleText);
+                        attachTerminalHeaderTextBox(shapeEl, node, titleText, headerRect, w, headerH, titleX, titleAnchor);
 
                         const cols = node.columns || ['Kolom 1', 'Kolom 2'];
                         const rows = node.rows || [];
@@ -12757,43 +12823,7 @@
                         if (pRot) {
                             poolTitle.setAttribute('transform', `rotate(${pRot}, ${poolTitleX}, ${poolHeaderH / 2})`);
                         }
-                        if (state.activeHeaderNodeId === node.id && state.editingNodeId !== node.id) {
-                            const estTextW = Math.max(60, Math.min(w - 24, (poolTitle.textContent.length || 8) * 7.2 + 20));
-                            let boxX = poolTitleX - estTextW / 2;
-                            if (poolTitleAnchor === 'start') boxX = poolTitleX - 6;
-                            else if (poolTitleAnchor === 'end') boxX = poolTitleX - estTextW + 6;
-                            boxX = Math.max(4, Math.min(w - estTextW - 4, boxX));
-                            const titleBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                            titleBox.setAttribute('class', 'selection-box header-title-edit-box');
-                            titleBox.setAttribute('x', boxX);
-                            titleBox.setAttribute('y', 4);
-                            titleBox.setAttribute('width', estTextW);
-                            titleBox.setAttribute('height', poolHeaderH - 8);
-                            titleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.04)');
-                            titleBox.setAttribute('stroke', '#3b82f6');
-                            titleBox.setAttribute('stroke-width', '1');
-                            titleBox.setAttribute('stroke-dasharray', '3,2');
-                            titleBox.setAttribute('rx', '2');
-                            titleBox.style.pointerEvents = 'none';
-                            shapeEl.appendChild(titleBox);
-                        }
-                        poolTitle.addEventListener('mousedown', (e) => {
-                            if (e.button === 0 && state.activeHeaderNodeId === node.id) {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const cc = screenToCanvasCoords(e.clientX, e.clientY);
-                                state.isDraggingHeaderText = {
-                                    nodeId: node.id,
-                                    startX: cc.x,
-                                    initialOffsetX: node.headerTextOffsetX || 0
-                                };
-                            }
-                        });
-                        poolTitle.addEventListener('dblclick', (e) => {
-                            e.stopPropagation();
-                            openDirectInShapeEditor(node, poolHeaderRect);
-                        });
-                        shapeEl.appendChild(poolTitle);
+                        attachTerminalHeaderTextBox(shapeEl, node, poolTitle, poolHeaderRect, w, poolHeaderH, poolTitleX, poolTitleAnchor);
 
                         // Render Lanes
                         const isH = node.orientation !== 'vertical';
@@ -15004,6 +15034,7 @@
                     const hNode = state.nodes.find(n => n.id === state.isDraggingHeaderText.nodeId);
                     if (hNode) {
                         const dx = canvasCoords.x - state.isDraggingHeaderText.startX;
+                        if (Math.abs(dx) >= 1.5) state.isDraggingHeaderText.moved = true;
                         const maxRange = Math.max(40, hNode.width - 24);
                         hNode.headerTextOffsetX = Math.max(-maxRange, Math.min(maxRange, state.isDraggingHeaderText.initialOffsetX + dx));
                         renderNodes();
@@ -15676,7 +15707,11 @@
                 }
 
                 if (state.isDraggingHeaderText) {
-                    saveSnapshot('Atur Posisi Teks Header');
+                    if (state.isDraggingHeaderText.moved) {
+                        saveSnapshot('Atur Posisi Teks Header');
+                    } else {
+                        renderNodes();
+                    }
                     state.isDraggingHeaderText = null;
                 }
 
