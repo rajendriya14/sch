@@ -14,7 +14,7 @@
     <!-- Google Fonts: Inter, Noto Sans, Roboto, JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
         
@@ -1682,8 +1682,6 @@
         }
 
         .node-label-text {
-            font-size: 13px;
-            font-weight: 500;
             pointer-events: none;
             user-select: none;
             text-anchor: middle;
@@ -4415,9 +4413,20 @@
                     <option value="Noto Sans" selected>Noto Sans</option>
                     <option value="Inter">Inter</option>
                     <option value="Roboto">Roboto</option>
+                    <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Space Grotesk">Space Grotesk</option>
                     <option value="Arial">Arial</option>
-                    <option value="JetBrains Mono">JetBrains Mono</option>
+                    <option value="Calibri">Calibri</option>
+                    <option value="Segoe UI">Segoe UI</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Tahoma">Tahoma</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
                     <option value="Georgia">Georgia</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="JetBrains Mono">JetBrains Mono</option>
+                    <option value="Courier New">Courier New</option>
                 </select>
 
                 <!-- 7. Font Size Stepper -->
@@ -6900,7 +6909,6 @@
                     '.table-col-divider-group',
                     '.terminal-cell-hitzone',
                     '.swimlane-divider-hitzone',
-                    '.swimlane-header-hitzone',
                     '.table-divider-visual',
                     '.selection-box',
                     '.resize-handle',
@@ -6920,8 +6928,8 @@
                         el.style.pointerEvents = 'none';
                     });
 
-                    // Ensure table header has concrete clean background (never black!)
-                    cloneNodes.querySelectorAll('.terminal-header-hitzone').forEach(hRect => {
+                    // Ensure table & swimlane headers have concrete clean background (never white/missing or black!)
+                    cloneNodes.querySelectorAll('.terminal-header-hitzone, .swimlane-header-hitzone').forEach(hRect => {
                         hRect.removeAttribute('class');
                         const f = hRect.getAttribute('fill') || '';
                         if (f.includes('var(--bg-hover)') || !f || f === 'none') {
@@ -6994,10 +7002,9 @@
             <path d="M 9 1 L 0 5 L 9 9 z" fill="#0f172a"/>
         </marker>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
-            text { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;family=Roboto:wght@400;500;700&amp;display=swap');
+            svg { font-family: 'Noto Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
             .node-body { stroke-width: 1.8; }
-            .node-label-text { font-size: 13px; font-weight: 500; }
             .connection-visible-line { stroke: #0f172a; stroke-width: 1.8; fill: none; }
             .table-divider-visual { stroke: #cbd5e1; stroke-width: 1; }
         </style>
@@ -10300,6 +10307,7 @@
                 state.nodes.filter(n => targetIds.includes(n.id)).forEach(node => {
                     node.fontFamily = fpFontFamily.value;
                 });
+                fpFontFamily.blur();
                 saveSnapshot('Ubah Jenis Huruf');
                 renderNodes();
             });
@@ -12653,7 +12661,9 @@
                         poolTitle.setAttribute('x', w / 2); poolTitle.setAttribute('y', poolHeaderH / 2);
                         poolTitle.setAttribute('dominant-baseline', 'central');
                         poolTitle.setAttribute('text-anchor', 'middle');
-                        poolTitle.setAttribute('fill', textColor); poolTitle.setAttribute('font-weight', '700');
+                        poolTitle.setAttribute('fill', textColor);
+                        poolTitle.setAttribute('font-family', node.fontFamily || 'Noto Sans, sans-serif');
+                        poolTitle.setAttribute('font-weight', '700');
                         poolTitle.setAttribute('font-size', '13');
                         poolTitle.setAttribute('class', 'node-editable-text');
                         poolTitle.setAttribute('data-edit-target', 'swimlane-title');
@@ -13477,7 +13487,10 @@
                         textEl.setAttribute('fill', textColor);
                         textEl.setAttribute('font-family', fontFamily);
                         textEl.setAttribute('font-size', fontSize);
-                        if (node.isBold) textEl.setAttribute('font-weight', '700');
+                        textEl.setAttribute('font-weight', node.isBold ? '700' : '500');
+                        textEl.style.fontFamily = fontFamily;
+                        textEl.style.fontSize = `${fontSize}px`;
+                        textEl.style.fontWeight = node.isBold ? '700' : '500';
                         textEl.setAttribute('dominant-baseline', 'central');
 
                         const lines = wrapSvgTextLines(String(node.text), maxTextW, fontFamily, fontSize, !!node.isBold);
@@ -14382,6 +14395,33 @@
                     renderNodes();
                 }
 
+                if (e.button === 2) {
+                    // Long-press right-click -> temporarily switch to Pan (Hand) mode, release -> back to Select mode
+                    if (window._rightPanState && window._rightPanState.timerId) {
+                        clearTimeout(window._rightPanState.timerId);
+                    }
+                    const rp = {
+                        startClientX: e.clientX,
+                        startClientY: e.clientY,
+                        lastClientX: e.clientX,
+                        lastClientY: e.clientY,
+                        activated: false,
+                        timerId: null
+                    };
+                    rp.timerId = setTimeout(() => {
+                        if (window._rightPanState === rp && !rp.activated) {
+                            rp.activated = true;
+                            state.isPanning = true;
+                            state.panStartX = rp.lastClientX - state.panX;
+                            state.panStartY = rp.lastClientY - state.panY;
+                            setMode('hand');
+                            viewport.classList.add('panning');
+                        }
+                    }, 180);
+                    window._rightPanState = rp;
+                    return;
+                }
+
                 if (e.button === 1 || (e.button === 0 && (isSpacePressed || state.mode === 'hand' || document.body.classList.contains('in-preview-mode')))) {
                     state.isPanning = true;
                     state.panStartX = e.clientX - state.panX;
@@ -14604,6 +14644,12 @@
 
             // Right-Click Context Menu Trigger for Terminal & Objects (Accessible on selected, grouped, small, & nested shapes)
             viewport.addEventListener('contextmenu', (e) => {
+                if (window._suppressNextContextMenu || (window._rightPanState && window._rightPanState.activated)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window._suppressNextContextMenu = false;
+                    return;
+                }
                 const cellHitzone = e.target.closest('.terminal-cell-hitzone');
                 const nodeGroup = e.target.closest('.diagram-node');
                 const dragPlate = e.target.closest('.selection-drag-plate');
@@ -14760,6 +14806,20 @@
                 if (state.isErasingFreehand) {
                     eraseDrawingsNear(canvasCoords.x, canvasCoords.y);
                     return;
+                }
+
+                if (window._rightPanState) {
+                    window._rightPanState.lastClientX = e.clientX;
+                    window._rightPanState.lastClientY = e.clientY;
+                    if (!window._rightPanState.activated && Math.hypot(e.clientX - window._rightPanState.startClientX, e.clientY - window._rightPanState.startClientY) > 4) {
+                        clearTimeout(window._rightPanState.timerId);
+                        window._rightPanState.activated = true;
+                        state.isPanning = true;
+                        state.panStartX = e.clientX - state.panX;
+                        state.panStartY = e.clientY - state.panY;
+                        setMode('hand');
+                        viewport.classList.add('panning');
+                    }
                 }
 
                 if (state.isPanning) {
@@ -15387,6 +15447,20 @@
                 if (state.isRotatingNode) {
                     saveSnapshot('Putar Shape');
                     document.body.style.cursor = '';
+                }
+
+                if (window._rightPanState) {
+                    const rp = window._rightPanState;
+                    if (rp.timerId) clearTimeout(rp.timerId);
+                    const wasActivated = rp.activated;
+                    window._rightPanState = null;
+                    if (wasActivated) {
+                        window._suppressNextContextMenu = true;
+                        setTimeout(() => { window._suppressNextContextMenu = false; }, 120);
+                        state.isPanning = false;
+                        viewport.classList.remove('panning');
+                        setMode('select');
+                    }
                 }
 
                 state.isPanning = false;
