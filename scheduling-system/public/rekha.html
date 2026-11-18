@@ -11450,6 +11450,7 @@
                 }
                 state.editingNodeId = null;
                 state.activeHeaderNodeId = null;
+                state.activeHeaderTextNodeId = null;
                 activeEditContext = null;
                 if (window.getSelection) {
                     try { window.getSelection().removeAllRanges(); } catch (e) {}
@@ -11589,6 +11590,9 @@
                 if (!state.selectedConnectionIds) state.selectedConnectionIds = [];
 
                 const targetNode = state.nodes.find(n => n.id === id);
+                if (state.activeHeaderTextNodeId && state.activeHeaderTextNodeId !== id) {
+                    state.activeHeaderTextNodeId = null;
+                }
                 const groupMembers = (targetNode && targetNode.groupId)
                     ? state.nodes.filter(n => n.groupId === targetNode.groupId).map(n => n.id)
                     : [id];
@@ -11704,6 +11708,9 @@
                 state.selectedNodeIds = [];
                 state.selectedConnectionId = null;
                 state.selectedConnectionIds = [];
+                const hadActiveHeader = !!(state.activeHeaderNodeId || state.activeHeaderTextNodeId);
+                state.activeHeaderNodeId = null;
+                state.activeHeaderTextNodeId = null;
 
                 let hadCellSelection = false;
                 state.nodes.forEach(n => {
@@ -11714,7 +11721,7 @@
                 });
 
                 document.querySelectorAll('.diagram-node').forEach(el => el.classList.remove('selected'));
-                if (hadCellSelection) {
+                if (hadCellSelection || hadActiveHeader) {
                     renderNodes();
                 }
                 renderConnections();
@@ -12137,7 +12144,7 @@
                 // For non-containers, smaller shapes (like circle badges, step numbers, icons) render ON TOP of larger shapes!
                 const attachTerminalHeaderTextBox = (shapeEl, node, textEl, headerRect, w, headerH, titleX, titleAnchor) => {
                     const isEditingThis = (state.editingNodeId === node.id);
-                    const isHeaderActive = (state.activeHeaderNodeId === node.id && !isEditingThis);
+                    const isHeaderActive = (state.activeHeaderTextNodeId === node.id && !isEditingThis);
                     const estTextW = Math.max(80, Math.min(w - 20, (textEl.textContent.length || 8) * 7.5 + 28));
                     let boxX = titleX - estTextW / 2;
                     if (titleAnchor === 'start') boxX = titleX - 8;
@@ -12158,23 +12165,8 @@
                     titleBox.style.cursor = isEditingThis ? 'text' : 'grab';
                     titleBox.style.pointerEvents = isEditingThis ? 'none' : 'auto';
                     const boxTip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-                    boxTip.textContent = 'Seret kiri/kanan untuk geser posisi teks header, Double-click untuk edit teks';
+                    boxTip.textContent = 'Klik untuk munculkan kolom teks, seret kiri/kanan untuk geser posisi, Double-click untuk edit teks';
                     titleBox.appendChild(boxTip);
-
-                    const showHoverHint = () => {
-                        if (state.activeHeaderNodeId !== node.id && state.editingNodeId !== node.id) {
-                            titleBox.setAttribute('stroke', 'rgba(37, 99, 235, 0.45)');
-                            titleBox.setAttribute('fill', 'rgba(37, 99, 235, 0.03)');
-                        }
-                    };
-                    const hideHoverHint = () => {
-                        if (state.activeHeaderNodeId !== node.id) {
-                            titleBox.setAttribute('stroke', 'transparent');
-                            titleBox.setAttribute('fill', 'rgba(0,0,0,0.001)');
-                        }
-                    };
-                    titleBox.addEventListener('mouseenter', showHoverHint);
-                    titleBox.addEventListener('mouseleave', hideHoverHint);
 
                     const onStartDragText = (e) => {
                         if (e.button !== 0 || state.editingNodeId === node.id) return;
@@ -12182,6 +12174,7 @@
                         e.preventDefault();
                         selectNode(node.id, false);
                         state.activeHeaderNodeId = node.id;
+                        state.activeHeaderTextNodeId = node.id;
                         if (node.isSwimlane) node.selectedLaneIdx = null;
                         if (node.isTable && node.selectedCells) node.selectedCells = null;
                         updateFloatingAndPlusBars();
@@ -12192,7 +12185,7 @@
                             initialOffsetX: node.headerTextOffsetX || 0,
                             moved: false
                         };
-                        statusHintText.textContent = 'Seret kiri/kanan untuk atur posisi teks header, atau double-click untuk edit teks.';
+                        statusHintText.textContent = 'Kolom teks header aktif. Seret kiri/kanan untuk geser posisi, atau double-click untuk edit teks.';
                     };
 
                     const onDblEditText = (e) => {
@@ -12204,8 +12197,6 @@
                     titleBox.addEventListener('dblclick', onDblEditText);
                     textEl.style.pointerEvents = isEditingThis ? 'none' : 'auto';
                     textEl.style.cursor = isEditingThis ? 'text' : 'grab';
-                    textEl.addEventListener('mouseenter', showHoverHint);
-                    textEl.addEventListener('mouseleave', hideHoverHint);
                     textEl.addEventListener('mousedown', onStartDragText);
                     textEl.addEventListener('dblclick', onDblEditText);
 
@@ -12279,12 +12270,15 @@
                         // Header click handler for toolbox & text position (Point 4 & Move Handle)
                         const onHeaderClick = (e) => {
                             // Do not stop propagation: let event bubble so viewport mousedown can start dragging node!
+                            const hadHeaderText = (state.activeHeaderTextNodeId === node.id);
+                            state.activeHeaderTextNodeId = null;
                             selectNode(node.id, false);
                             state.activeHeaderNodeId = node.id;
                             if (node.selectedCells) {
                                 node.selectedCells = null;
                                 updateTableSelectionOverlay(node);
                             }
+                            if (hadHeaderText) renderNodes();
                             updateFloatingAndPlusBars();
                             statusHintText.textContent = 'Header Matriks Terpilih. Tarik header untuk memindahkan posisi tabel di kanvas.';
                         };
@@ -12781,9 +12775,12 @@
                         shapeEl.appendChild(poolHeaderRect);
 
                         const onPoolHeaderClick = (e) => {
+                            const hadHeaderText = (state.activeHeaderTextNodeId === node.id);
+                            state.activeHeaderTextNodeId = null;
                             selectNode(node.id, false);
                             state.activeHeaderNodeId = node.id;
                             node.selectedLaneIdx = null;
+                            if (hadHeaderText) renderNodes();
                             updateFloatingAndPlusBars();
                             statusHintText.textContent = 'Swimlane Terpilih. Tarik header untuk memindahkan seluruh rumah.';
                         };
