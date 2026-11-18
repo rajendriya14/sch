@@ -8156,50 +8156,109 @@
             /* ======================================================================
                8. SHADOW CONNECTOR MAGNET PORTS & SNAPPING
                ====================================================================== */
+            function getPortSide(portId) {
+                if (!portId) return 'right';
+                const base = String(portId).split('-')[0];
+                if (base === 'top' || base === 'right' || base === 'bottom' || base === 'left') return base;
+                return 'right';
+            }
+
             function getNodeRelativePorts(node) {
                 const w = node.width;
                 const h = node.height;
                 const type = node.type;
+                const isContainer = !!(node.isTable || node.isSwimlane);
+                const addHorizSubs = !isContainer && w >= 90;
+                const addVertSubs = !isContainer && h >= 70;
 
                 if (type === 'triangle' || type === 'triangle-up') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.75,      cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.25,      cy: h / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'bottom-1', cx: w * 0.28, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.72, cy: h, dir: 'down' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'inverted-triangle') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.75,      cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.25,      cy: h / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1', cx: w * 0.28, cy: 0, dir: 'up' },
+                            { id: 'top-2', cx: w * 0.72, cy: 0, dir: 'up' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'parallelogram' || type === 'data' || type === 'parallelogram-flow') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.30, cy: 0, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.78, cy: 0, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.22, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.70, cy: h, dir: 'down' }
+                        );
+                    }
+                    if (addVertSubs) {
+                        ports.push(
+                            { id: 'left-1',  cx: w * 0.18 * 0.72,     cy: h * 0.28, dir: 'left' },
+                            { id: 'left-2',  cx: w * 0.18 * 0.28,     cy: h * 0.72, dir: 'left' },
+                            { id: 'right-1', cx: w - w * 0.18 * 0.28, cy: h * 0.28, dir: 'right' },
+                            { id: 'right-2', cx: w - w * 0.18 * 0.72, cy: h * 0.72, dir: 'right' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'trapezoid' || type === 'trapezoid-flow') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.30, cy: 0, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.70, cy: 0, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.25, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.75, cy: h, dir: 'down' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'manual-operation') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w * 0.91,      cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: w * 0.09,      cy: h / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.25, cy: 0, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.75, cy: 0, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.30, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.70, cy: h, dir: 'down' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'pentagon') {
                     return [
@@ -8210,52 +8269,114 @@
                     ];
                 }
                 if (type === 'pentagon-down' || type === 'offpage-ref') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,        dir: 'up' },
                         { id: 'right',  cx: w,             cy: h * 0.31, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
                         { id: 'left',   cx: 0,             cy: h * 0.31, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1', cx: w * 0.25, cy: 0, dir: 'up' },
+                            { id: 'top-2', cx: w * 0.75, cy: 0, dir: 'up' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'document' || type === 'multidocument' || type === 'document-alt' || type === 'note-alt') {
-                    return [
-                        { id: 'top',    cx: w / 2,         cy: 0,            dir: 'up' },
-                        { id: 'right',  cx: w,             cy: (h - 12) / 2, dir: 'right' },
-                        { id: 'bottom', cx: w / 2,         cy: h - 12,       dir: 'down' },
-                        { id: 'left',   cx: 0,             cy: (h - 12) / 2, dir: 'left' }
+                    const effH = h - 12;
+                    const ports = [
+                        { id: 'top',    cx: w / 2,         cy: 0,        dir: 'up' },
+                        { id: 'right',  cx: w,             cy: effH / 2, dir: 'right' },
+                        { id: 'bottom', cx: w / 2,         cy: effH,     dir: 'down' },
+                        { id: 'left',   cx: 0,             cy: effH / 2, dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.25, cy: 0,    dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.75, cy: 0,    dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.25, cy: effH, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.75, cy: effH, dir: 'down' }
+                        );
+                    }
+                    if (addVertSubs) {
+                        ports.push(
+                            { id: 'left-1',  cx: 0, cy: effH * 0.28, dir: 'left' },
+                            { id: 'left-2',  cx: 0, cy: effH * 0.72, dir: 'left' },
+                            { id: 'right-1', cx: w, cy: effH * 0.28, dir: 'right' },
+                            { id: 'right-2', cx: w, cy: effH * 0.72, dir: 'right' }
+                        );
+                    }
+                    return ports;
                 }
                 if (type === 'manual-input') {
-                    return [
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: h * 0.11, dir: 'up' },
                         { id: 'right',  cx: w,             cy: h / 2,    dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,        dir: 'down' },
                         { id: 'left',   cx: 0,             cy: h / 2,    dir: 'left' }
                     ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.25, cy: h * 0.165, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.75, cy: h * 0.055, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.25, cy: h,         dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.75, cy: h,         dir: 'down' }
+                        );
+                    }
+                    if (addVertSubs) {
+                        ports.push(
+                            { id: 'left-1',  cx: 0, cy: h * 0.38, dir: 'left' },
+                            { id: 'left-2',  cx: 0, cy: h * 0.74, dir: 'left' },
+                            { id: 'right-1', cx: w, cy: h * 0.28, dir: 'right' },
+                            { id: 'right-2', cx: w, cy: h * 0.72, dir: 'right' }
+                        );
+                    }
+                    return ports;
                 }
-                if (type === 'display') {
-                    return [
+                if (type === 'display' || type === 'delay') {
+                    const ports = [
                         { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
                         { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
                         { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
                         { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
                     ];
-                }
-                if (type === 'delay') {
-                    return [
-                        { id: 'top',    cx: w / 2,         cy: 0,     dir: 'up' },
-                        { id: 'right',  cx: w,             cy: h / 2, dir: 'right' },
-                        { id: 'bottom', cx: w / 2,         cy: h,     dir: 'down' },
-                        { id: 'left',   cx: 0,             cy: h / 2, dir: 'left' }
-                    ];
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.28, cy: 0, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.70, cy: 0, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.28, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.70, cy: h, dir: 'down' }
+                        );
+                    }
+                    return ports;
                 }
 
-                return [
+                const ports = [
                     { id: 'top',    cx: w / 2, cy: 0,     dir: 'up' },
                     { id: 'right',  cx: w,     cy: h / 2, dir: 'right' },
                     { id: 'bottom', cx: w / 2, cy: h,     dir: 'down' },
                     { id: 'left',   cx: 0,     cy: h / 2, dir: 'left' }
                 ];
+                if (type !== 'diamond' && type !== 'decision' && type !== 'circle' && type !== 'ellipse') {
+                    if (addHorizSubs) {
+                        ports.push(
+                            { id: 'top-1',    cx: w * 0.25, cy: 0, dir: 'up' },
+                            { id: 'top-2',    cx: w * 0.75, cy: 0, dir: 'up' },
+                            { id: 'bottom-1', cx: w * 0.25, cy: h, dir: 'down' },
+                            { id: 'bottom-2', cx: w * 0.75, cy: h, dir: 'down' }
+                        );
+                    }
+                    if (addVertSubs) {
+                        ports.push(
+                            { id: 'left-1',  cx: 0, cy: h * 0.28, dir: 'left' },
+                            { id: 'left-2',  cx: 0, cy: h * 0.72, dir: 'left' },
+                            { id: 'right-1', cx: w, cy: h * 0.28, dir: 'right' },
+                            { id: 'right-2', cx: w, cy: h * 0.72, dir: 'right' }
+                        );
+                    }
+                }
+                return ports;
             }
 
             function getNodeAnchorPoints(node) {
@@ -8329,124 +8450,49 @@
             /* ======================================================================
                9. SMART OBSTACLE-AVOIDANCE ORTHOGONAL ROUTER (Never Crosses Shape)
                ====================================================================== */
-            function getAnchorCoord(nodeId, portId, conn) {
+            function getAnchorCoord(nodeId, portId) {
                 const node = state.nodes.find(n => n.id === nodeId);
                 if (!node) return null;
                 const anchors = getNodeAnchorPoints(node);
-                const base = anchors.find(a => a.id === portId) || { x: node.x + node.width / 2, y: node.y + node.height / 2, id: 'right' };
-                if (!conn || !state.connections || state.connections.length < 2) return base;
-
-                // Opsi 1: Auto-Offset Port Otomatis when 2+ connections share the same (nodeId, portId)
-                const shared = [];
-                const getOtherCenter = (c, isFromSide) => {
-                    const otherId = isFromSide ? c.toNodeId : c.fromNodeId;
-                    if (otherId) {
-                        const oNode = state.nodes.find(n => n.id === otherId);
-                        if (oNode) return { x: oNode.x + oNode.width / 2, y: oNode.y + oNode.height / 2 };
-                    }
-                    return {
-                        x: isFromSide ? (c.toX !== undefined && c.toX !== null ? c.toX : base.x) : (c.fromX !== undefined && c.fromX !== null ? c.fromX : base.x),
-                        y: isFromSide ? (c.toY !== undefined && c.toY !== null ? c.toY : base.y) : (c.fromY !== undefined && c.fromY !== null ? c.fromY : base.y)
-                    };
-                };
-
-                state.connections.forEach(c => {
-                    if (c.fromNodeId === nodeId && c.fromPort === portId) {
-                        const oc = getOtherCenter(c, true);
-                        shared.push({ connId: c.id, side: 'from', ox: oc.x, oy: oc.y });
-                    }
-                    if (c.toNodeId === nodeId && c.toPort === portId) {
-                        const oc = getOtherCenter(c, false);
-                        shared.push({ connId: c.id, side: 'to', ox: oc.x, oy: oc.y });
-                    }
-                });
-
-                if (shared.length < 2) return base;
-
-                const isHorizEdge = (portId === 'top' || portId === 'bottom');
-                shared.sort((a, b) => {
-                    const diff = isHorizEdge ? (a.ox - b.ox) : (a.oy - b.oy);
-                    if (Math.abs(diff) > 0.5) return diff;
-                    return a.connId < b.connId ? -1 : (a.connId > b.connId ? 1 : 0);
-                });
-
-                const currentSide = (conn.fromNodeId === nodeId && conn.fromPort === portId && !(conn.toNodeId === nodeId && conn.toPort === portId)) ? 'from'
-                    : (conn.toNodeId === nodeId && conn.toPort === portId && !(conn.fromNodeId === nodeId && conn.fromPort === portId)) ? 'to'
-                    : null;
-                let idx = shared.findIndex(s => s.connId === conn.id && (!currentSide || s.side === currentSide));
-                if (idx === -1) return base;
-
-                const count = shared.length;
-                const edgeSpan = isHorizEdge ? (node.width * 0.55) : (node.height * 0.55);
-                const maxStep = isHorizEdge ? 22 : 18;
-                const spacing = Math.min(maxStep, Math.max(10, edgeSpan / count));
-                const offset = (idx - (count - 1) / 2) * spacing;
-
-                let localDx = 0;
-                let localDy = 0;
-                if (isHorizEdge) {
-                    // Avoid spreading off sharp triangle tips
-                    if (node.type === 'triangle' || node.type === 'triangle-up') {
-                        localDx = (portId === 'top') ? offset * 0.35 : offset;
-                    } else if (node.type === 'inverted-triangle') {
-                        localDx = (portId === 'bottom') ? offset * 0.35 : offset;
-                    } else {
-                        localDx = offset;
-                    }
-                } else {
-                    localDy = offset;
-                    if (node.type === 'parallelogram' || node.type === 'data' || node.type === 'parallelogram-flow') {
-                        localDx = -localDy * (0.18 * node.width / Math.max(1, node.height));
-                    }
-                }
-
-                const rot = (!node.isTable && !node.isSwimlane && node.rotation) ? node.rotation : 0;
-                if (rot) {
-                    const rad = (rot * Math.PI) / 180;
-                    const cos = Math.cos(rad);
-                    const sin = Math.sin(rad);
-                    const rdx = localDx * cos - localDy * sin;
-                    const rdy = localDx * sin + localDy * cos;
-                    return { ...base, x: base.x + rdx, y: base.y + rdy };
-                }
-
-                return { ...base, x: base.x + localDx, y: base.y + localDy };
+                return anchors.find(a => a.id === portId) || { x: node.x + node.width / 2, y: node.y + node.height / 2, id: 'right' };
             }
 
-            function getObstacleFreeOrthogonalWaypoints(startNode, startPort, endNode, endPort, conn) {
-                const startAnchor = getAnchorCoord(startNode.id, startPort, conn);
-                const endAnchor = getAnchorCoord(endNode.id, endPort, conn);
+            function getObstacleFreeOrthogonalWaypoints(startNode, startPort, endNode, endPort) {
+                const startAnchor = getAnchorCoord(startNode.id, startPort);
+                const endAnchor = getAnchorCoord(endNode.id, endPort);
                 if (!startAnchor || !endAnchor) return [];
 
+                const sSide = getPortSide(startPort);
+                const eSide = getPortSide(endPort);
                 const sx = startAnchor.x, sy = startAnchor.y;
                 const ex = endAnchor.x, ey = endAnchor.y;
 
                 // Port stubs (20px outside shape edge)
                 const offset = 20;
                 let p1x = sx, p1y = sy;
-                if (startPort === 'top') p1y -= offset;
-                else if (startPort === 'bottom') p1y += offset;
-                else if (startPort === 'left') p1x -= offset;
-                else if (startPort === 'right') p1x += offset;
+                if (sSide === 'top') p1y -= offset;
+                else if (sSide === 'bottom') p1y += offset;
+                else if (sSide === 'left') p1x -= offset;
+                else if (sSide === 'right') p1x += offset;
 
                 let p2x = ex, p2y = ey;
-                if (endPort === 'top') p2y -= offset;
-                else if (endPort === 'bottom') p2y += offset;
-                else if (endPort === 'left') p2x -= offset;
-                else if (endPort === 'right') p2x += offset;
+                if (eSide === 'top') p2y -= offset;
+                else if (eSide === 'bottom') p2y += offset;
+                else if (eSide === 'left') p2x -= offset;
+                else if (eSide === 'right') p2x += offset;
 
                 // Case A: Collinear / Straight line (within 2px tolerance for sub-pixel smooth dragging)
-                if (Math.abs(sx - ex) < 2 && ((startPort === 'bottom' && endPort === 'top' && ey >= sy) || (startPort === 'top' && endPort === 'bottom' && ey <= sy))) {
+                if (Math.abs(sx - ex) < 2 && ((sSide === 'bottom' && eSide === 'top' && ey >= sy) || (sSide === 'top' && eSide === 'bottom' && ey <= sy))) {
                     return [{ x: sx, y: sy }, { x: ex, y: ey }];
                 }
-                if (Math.abs(sy - ey) < 2 && ((startPort === 'right' && endPort === 'left' && ex >= sx) || (startPort === 'left' && endPort === 'right' && ex <= sx))) {
+                if (Math.abs(sy - ey) < 2 && ((sSide === 'right' && eSide === 'left' && ex >= sx) || (sSide === 'left' && eSide === 'right' && ex <= sx))) {
                     return [{ x: sx, y: sy }, { x: ex, y: ey }];
                 }
 
                 // Case B: Horizontal Exit (Right/Left) to Vertical Entry (Top/Bottom)
-                if ((startPort === 'right' || startPort === 'left') && (endPort === 'top' || endPort === 'bottom')) {
-                    const dirOkX = (startPort === 'right' && ex >= sx) || (startPort === 'left' && ex <= sx);
-                    const dirOkY = (endPort === 'top' && ey >= sy) || (endPort === 'bottom' && ey <= sy);
+                if ((sSide === 'right' || sSide === 'left') && (eSide === 'top' || eSide === 'bottom')) {
+                    const dirOkX = (sSide === 'right' && ex >= sx) || (sSide === 'left' && ex <= sx);
+                    const dirOkY = (eSide === 'top' && ey >= sy) || (eSide === 'bottom' && ey <= sy);
                     if (dirOkX && dirOkY) {
                         return [{ x: sx, y: sy }, { x: ex, y: sy }, { x: ex, y: ey }];
                     } else if (dirOkX) {
@@ -8458,9 +8504,9 @@
                 }
 
                 // Case C: Vertical Exit (Top/Bottom) to Horizontal Entry (Left/Right)
-                if ((startPort === 'top' || startPort === 'bottom') && (endPort === 'left' || endPort === 'right')) {
-                    const dirOkY = (startPort === 'bottom' && ey >= sy) || (startPort === 'top' && ey <= sy);
-                    const dirOkX = (endPort === 'left' && ex >= sx) || (endPort === 'right' && ex <= sx);
+                if ((sSide === 'top' || sSide === 'bottom') && (eSide === 'left' || eSide === 'right')) {
+                    const dirOkY = (sSide === 'bottom' && ey >= sy) || (sSide === 'top' && ey <= sy);
+                    const dirOkX = (eSide === 'left' && ex >= sx) || (eSide === 'right' && ex <= sx);
                     if (dirOkY && dirOkX) {
                         return [{ x: sx, y: sy }, { x: sx, y: ey }, { x: ex, y: ey }];
                     } else if (dirOkY) {
@@ -8472,16 +8518,16 @@
                 }
 
                 // Case D: Horizontal to Horizontal (Left/Right to Left/Right)
-                if ((startPort === 'right' || startPort === 'left') && (endPort === 'left' || endPort === 'right')) {
-                    if (startPort === 'right' && endPort === 'right') {
+                if ((sSide === 'right' || sSide === 'left') && (eSide === 'left' || eSide === 'right')) {
+                    if (sSide === 'right' && eSide === 'right') {
                         const routeX = Math.max(sx, ex) + 24;
                         return [{ x: sx, y: sy }, { x: routeX, y: sy }, { x: routeX, y: ey }, { x: ex, y: ey }];
                     }
-                    if (startPort === 'left' && endPort === 'left') {
+                    if (sSide === 'left' && eSide === 'left') {
                         const routeX = Math.min(sx, ex) - 24;
                         return [{ x: sx, y: sy }, { x: routeX, y: sy }, { x: routeX, y: ey }, { x: ex, y: ey }];
                     }
-                    if ((startPort === 'right' && endPort === 'left' && ex > sx + 16) || (startPort === 'left' && endPort === 'right' && ex < sx - 16)) {
+                    if ((sSide === 'right' && eSide === 'left' && ex > sx + 16) || (sSide === 'left' && eSide === 'right' && ex < sx - 16)) {
                         const midX = (sx + ex) / 2;
                         return [{ x: sx, y: sy }, { x: midX, y: sy }, { x: midX, y: ey }, { x: ex, y: ey }];
                     }
@@ -8490,16 +8536,16 @@
                 }
 
                 // Case E: Vertical to Vertical (Top/Bottom to Top/Bottom)
-                if ((startPort === 'bottom' || startPort === 'top') && (endPort === 'top' || endPort === 'bottom')) {
-                    if (startPort === 'bottom' && endPort === 'bottom') {
+                if ((sSide === 'bottom' || sSide === 'top') && (eSide === 'top' || eSide === 'bottom')) {
+                    if (sSide === 'bottom' && eSide === 'bottom') {
                         const routeY = Math.max(sy, ey) + 24;
                         return [{ x: sx, y: sy }, { x: sx, y: routeY }, { x: ex, y: routeY }, { x: ex, y: ey }];
                     }
-                    if (startPort === 'top' && endPort === 'top') {
+                    if (sSide === 'top' && eSide === 'top') {
                         const routeY = Math.min(sy, ey) - 24;
                         return [{ x: sx, y: sy }, { x: sx, y: routeY }, { x: ex, y: routeY }, { x: ex, y: ey }];
                     }
-                    if ((startPort === 'bottom' && endPort === 'top' && ey > sy + 16) || (startPort === 'top' && endPort === 'bottom' && ey < sy - 16)) {
+                    if ((sSide === 'bottom' && eSide === 'top' && ey > sy + 16) || (sSide === 'top' && eSide === 'bottom' && ey < sy - 16)) {
                         const midY = (sy + ey) / 2;
                         return [{ x: sx, y: sy }, { x: sx, y: midY }, { x: ex, y: midY }, { x: ex, y: ey }];
                     }
@@ -8576,14 +8622,14 @@
 
                     let start = null;
                     if (fromNode && conn.fromPort) {
-                        start = getAnchorCoord(conn.fromNodeId, conn.fromPort, conn);
+                        start = getAnchorCoord(conn.fromNodeId, conn.fromPort);
                     } else if (conn.fromX !== null && conn.fromX !== undefined && conn.fromY !== null && conn.fromY !== undefined) {
                         start = { x: conn.fromX, y: conn.fromY };
                     }
 
                     let end = null;
                     if (toNode && conn.toPort) {
-                        end = getAnchorCoord(conn.toNodeId, conn.toPort, conn);
+                        end = getAnchorCoord(conn.toNodeId, conn.toPort);
                     } else if (conn.toX !== null && conn.toX !== undefined && conn.toY !== null && conn.toY !== undefined) {
                         end = { x: conn.toX, y: conn.toY };
                     }
@@ -8609,7 +8655,7 @@
                     } else {
                         // Elbow Orthogonal Connection
                         if (fromNode && toNode) {
-                            waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort, conn);
+                            waypoints = getObstacleFreeOrthogonalWaypoints(fromNode, conn.fromPort, toNode, conn.toPort);
                         } else {
                             const midX = (start.x + end.x) / 2;
                             waypoints = [
@@ -13500,18 +13546,22 @@
                     const portR = isSmall ? Math.min(3.5, Math.max(2, Math.min(w, h) * 0.1)) : 5.5;
 
                     ports.forEach(p => {
+                        const isSubPort = p.id.includes('-');
+                        const effHitzoneR = isSubPort ? Math.max(3, hitzoneR * 0.72) : hitzoneR;
+                        const effPortR = isSubPort ? Math.max(2, portR * 0.78) : portR;
+
                         const hitzone = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                         hitzone.setAttribute('class', 'shadow-anchor-hitzone');
                         hitzone.setAttribute('cx', p.cx);
                         hitzone.setAttribute('cy', p.cy);
-                        hitzone.setAttribute('r', hitzoneR);
+                        hitzone.setAttribute('r', effHitzoneR);
 
                         const portCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                         portCircle.setAttribute('class', 'shadow-anchor-port');
                         portCircle.setAttribute('data-port-id', p.id);
                         portCircle.setAttribute('cx', p.cx);
                         portCircle.setAttribute('cy', p.cy);
-                        portCircle.setAttribute('r', portR);
+                        portCircle.setAttribute('r', effPortR);
 
                         const onPortDown = (e) => {
                             e.stopPropagation();
