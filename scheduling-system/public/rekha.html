@@ -11319,17 +11319,33 @@
                     if (labelEl) labelEl.style.visibility = 'hidden';
                 } else if (targetEl) {
                     const rect = targetEl.getBoundingClientRect();
-                    left = rect.left - vpRect.left - 4;
-                    top = rect.top - vpRect.top - 2;
-                    width = Math.max(rect.width + 16, 60);
-                    height = Math.max(rect.height + 6, 20);
-                    const compStyle = window.getComputedStyle(targetEl);
-                    fontSize = compStyle.fontSize;
-                    isBold = compStyle.fontWeight === '700' || compStyle.fontWeight === 'bold';
-                    const textAnchor = targetEl.getAttribute('text-anchor') || 'middle';
-                    align = textAnchor === 'start' ? 'left' : (textAnchor === 'end' ? 'right' : 'center');
-                    if (targetEl.tagName && targetEl.tagName.toLowerCase() === 'text') {
-                        targetEl.style.visibility = 'hidden';
+                    const isHeaderRect = targetEl.classList && (targetEl.classList.contains('swimlane-header-hitzone') || targetEl.classList.contains('terminal-header-hitzone'));
+                    if (isHeaderRect) {
+                        left = rect.left - vpRect.left + 6;
+                        top = rect.top - vpRect.top + 2;
+                        width = Math.max(40, rect.width - 12);
+                        height = Math.max(20, rect.height - 4);
+                        const hAlign = node.headerTextAlign || node.textAlign || 'middle';
+                        align = (hAlign === 'start' || hAlign === 'left') ? 'left' : ((hAlign === 'end' || hAlign === 'right') ? 'right' : 'center');
+                        fontSize = `${Math.max(11, 13 * state.zoom)}px`;
+                        isBold = true;
+                        const hLabelEl = nodeGroup ? nodeGroup.querySelector(`[data-edit-target="${targetEl.getAttribute('data-edit-target')}"]`) : null;
+                        if (hLabelEl && hLabelEl !== targetEl) hLabelEl.style.visibility = 'hidden';
+                        const tBoxEl = nodeGroup ? nodeGroup.querySelector('.header-title-edit-box') : null;
+                        if (tBoxEl) tBoxEl.style.display = 'none';
+                    } else {
+                        left = rect.left - vpRect.left - 4;
+                        top = rect.top - vpRect.top - 2;
+                        width = Math.max(rect.width + 16, 60);
+                        height = Math.max(rect.height + 6, 20);
+                        const compStyle = window.getComputedStyle(targetEl);
+                        fontSize = compStyle.fontSize;
+                        isBold = compStyle.fontWeight === '700' || compStyle.fontWeight === 'bold';
+                        const textAnchor = targetEl.getAttribute('text-anchor') || 'middle';
+                        align = textAnchor === 'start' ? 'left' : (textAnchor === 'end' ? 'right' : 'center');
+                        if (targetEl.tagName && targetEl.tagName.toLowerCase() === 'text') {
+                            targetEl.style.visibility = 'hidden';
+                        }
                     }
                 } else {
                     const safeInnerW = getShapeTextMaxWidth(node);
@@ -11351,6 +11367,8 @@
                 inShapeDirectEditor.style.fontFamily = node.fontFamily || 'Noto Sans, sans-serif';
                 inShapeDirectEditor.style.fontWeight = isBold ? '700' : '400';
                 inShapeDirectEditor.style.textAlign = align;
+                inShapeDirectEditor.style.overflow = 'hidden';
+                inShapeDirectEditor.style.boxSizing = 'border-box';
                 inShapeDirectEditor.style.color = node.customTextColor || (state.theme === 'dark' ? '#f8fafc' : '#0f172a');
 
                 if (isSpecialOverlay || !initialText) {
@@ -11426,7 +11444,11 @@
                     inShapeDirectEditor.blur();
                 }
                 state.editingNodeId = null;
+                state.activeHeaderNodeId = null;
                 activeEditContext = null;
+                if (window.getSelection) {
+                    try { window.getSelection().removeAllRanges(); } catch (e) {}
+                }
                 renderNodes();
                 renderSelection();
                 updateFloatingAndPlusBars();
@@ -12113,10 +12135,6 @@
                     const bIsContainer = (b.isTable || b.isSwimlane) ? 1 : 0;
                     if (aIsContainer !== bIsContainer) return bIsContainer - aIsContainer;
 
-                    const aSel = selIds.includes(a.id) ? 1 : 0;
-                    const bSel = selIds.includes(b.id) ? 1 : 0;
-                    if (aSel !== bSel) return aSel - bSel;
-
                     return (b.width * b.height) - (a.width * a.height);
                 });
 
@@ -12739,14 +12757,14 @@
                         if (pRot) {
                             poolTitle.setAttribute('transform', `rotate(${pRot}, ${poolTitleX}, ${poolHeaderH / 2})`);
                         }
-                        if (state.activeHeaderNodeId === node.id) {
+                        if (state.activeHeaderNodeId === node.id && state.editingNodeId !== node.id) {
                             const estTextW = Math.max(60, Math.min(w - 24, (poolTitle.textContent.length || 8) * 7.2 + 20));
                             let boxX = poolTitleX - estTextW / 2;
                             if (poolTitleAnchor === 'start') boxX = poolTitleX - 6;
                             else if (poolTitleAnchor === 'end') boxX = poolTitleX - estTextW + 6;
                             boxX = Math.max(4, Math.min(w - estTextW - 4, boxX));
                             const titleBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                            titleBox.setAttribute('class', 'selection-box');
+                            titleBox.setAttribute('class', 'selection-box header-title-edit-box');
                             titleBox.setAttribute('x', boxX);
                             titleBox.setAttribute('y', 4);
                             titleBox.setAttribute('width', estTextW);
@@ -14432,6 +14450,66 @@
                 }
             });
 
+            function captureDragConnectionsInitial() {
+                const draggedSet = new Set((state.dragNodesInitial || []).map(item => item.id));
+                const selConnSet = new Set(state.selectedConnectionIds || []);
+                if (state.selectedConnectionId) selConnSet.add(state.selectedConnectionId);
+
+                state.dragConnsInitial = [];
+                (state.connections || []).forEach(c => {
+                    const fromDragged = c.fromNodeId && draggedSet.has(c.fromNodeId);
+                    const toDragged = c.toNodeId && draggedSet.has(c.toNodeId);
+                    const isSelectedConn = selConnSet.has(c.id);
+                    if (!(fromDragged && toDragged) && !isSelectedConn) return;
+
+                    const entry = {
+                        id: c.id,
+                        moveFromXY: !c.fromNodeId && c.fromX != null && c.fromY != null && isSelectedConn,
+                        startFromX: c.fromX,
+                        startFromY: c.fromY,
+                        moveToXY: !c.toNodeId && c.toX != null && c.toY != null && isSelectedConn,
+                        startToX: c.toX,
+                        startToY: c.toY,
+                        segments: []
+                    };
+
+                    if (c.customSegments && Object.keys(c.customSegments).length > 0) {
+                        const fromNode = c.fromNodeId ? state.nodes.find(n => n.id === c.fromNodeId) : null;
+                        const toNode = c.toNodeId ? state.nodes.find(n => n.id === c.toNodeId) : null;
+                        let baseWps = [];
+                        if (fromNode && toNode && c.fromPort && c.toPort) {
+                            baseWps = getObstacleFreeOrthogonalWaypoints(fromNode, c.fromPort, toNode, c.toPort);
+                        } else {
+                            const sPt = fromNode && c.fromPort ? getAnchorCoord(c.fromNodeId, c.fromPort) : (c.fromX != null ? { x: c.fromX, y: c.fromY } : null);
+                            const ePt = toNode && c.toPort ? getAnchorCoord(c.toNodeId, c.toPort) : (c.toX != null ? { x: c.toX, y: c.toY } : null);
+                            if (sPt && ePt) {
+                                const midX = (sPt.x + ePt.x) / 2;
+                                baseWps = [{ x: sPt.x, y: sPt.y }, { x: midX, y: sPt.y }, { x: midX, y: ePt.y }, { x: ePt.x, y: ePt.y }];
+                            }
+                        }
+
+                        Object.keys(c.customSegments).forEach(k => {
+                            const val = c.customSegments[k];
+                            if (typeof val !== 'number') return;
+                            let axis = 'x';
+                            if (k === 'split' && baseWps.length === 2) {
+                                axis = (Math.abs(baseWps[0].y - baseWps[1].y) <= Math.abs(baseWps[0].x - baseWps[1].x)) ? 'y' : 'x';
+                            } else {
+                                const idx = parseInt(k, 10);
+                                if (!isNaN(idx) && idx >= 0 && idx < baseWps.length - 1) {
+                                    axis = (Math.abs(baseWps[idx].y - baseWps[idx + 1].y) <= Math.abs(baseWps[idx].x - baseWps[idx + 1].x)) ? 'y' : 'x';
+                                }
+                            }
+                            entry.segments.push({ key: k, axis, startVal: val });
+                        });
+                    }
+
+                    if (entry.moveFromXY || entry.moveToXY || entry.segments.length > 0) {
+                        state.dragConnsInitial.push(entry);
+                    }
+                });
+            }
+
             viewport.addEventListener('mousedown', (e) => {
                 if (e.target.closest('#floatingPenBar') || e.target.closest('#floatingPropBar') || e.target.closest('#fpColorPopover') || e.target.closest('#fpAlignPopover') || e.target.closest('#fpMorePopover') || e.target.closest('#fpRotatePopover') || e.target.closest('#tableContextMenu') || e.target.closest('#canvasContextMenu') || e.target.closest('.shadow-plus-btn') || e.target.closest('#inShapeDirectEditor') || e.target.closest('.shadow-anchor-port') || e.target.closest('.shadow-anchor-hitzone')) {
                     return;
@@ -14656,6 +14734,7 @@
                         state.dragNodesInitial = state.nodes
                             .filter(n => curSelectedIds.includes(n.id) && !n.isLocked)
                             .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                        captureDragConnectionsInitial();
                         return;
                     }
                     if (unselectedShapeUnderCursor) {
@@ -14669,6 +14748,7 @@
                             state.dragNodesInitial = state.nodes
                                 .filter(n => nextSelIds.includes(n.id) && !n.isLocked)
                                 .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                            captureDragConnectionsInitial();
                         }
                         return;
                     }
@@ -14719,6 +14799,7 @@
                         state.dragNodesInitial = state.nodes
                             .filter(n => curSelectedIds.includes(n.id) && !n.isLocked)
                             .map(n => ({ id: n.id, startX: n.x, startY: n.y }));
+                        captureDragConnectionsInitial();
                     }
                     return;
                 }
@@ -15287,6 +15368,31 @@
                         calculateGroupMagneticAlignment(draggedIds);
                     }
 
+                    // Move connected/grouped arrows rigidly (customSegments & free endpoints) along with dragged nodes
+                    if (state.dragConnsInitial && state.dragConnsInitial.length > 0 && state.dragNodesInitial.length > 0) {
+                        const refItem = state.dragNodesInitial[0];
+                        const refNode = state.nodes.find(nd => nd.id === refItem.id);
+                        const actualDx = refNode ? (refNode.x - refItem.startX) : dx;
+                        const actualDy = refNode ? (refNode.y - refItem.startY) : dy;
+                        state.dragConnsInitial.forEach(ci => {
+                            const c = state.connections.find(cn => cn.id === ci.id);
+                            if (!c) return;
+                            if (ci.moveFromXY) {
+                                c.fromX = ci.startFromX + actualDx;
+                                c.fromY = ci.startFromY + actualDy;
+                            }
+                            if (ci.moveToXY) {
+                                c.toX = ci.startToX + actualDx;
+                                c.toY = ci.startToY + actualDy;
+                            }
+                            if (ci.segments && c.customSegments) {
+                                ci.segments.forEach(seg => {
+                                    c.customSegments[seg.key] = seg.startVal + (seg.axis === 'x' ? actualDx : actualDy);
+                                });
+                            }
+                        });
+                    }
+
                     // Smooth 60fps+ in-place SVG transform update (no full DOM rebuild while dragging!)
                     state.dragNodesInitial.forEach(item => {
                         const n = state.nodes.find(node => node.id === item.id);
@@ -15346,8 +15452,20 @@
                         });
                         state.selectedNodeIds = hitNodes.map(n => n.id);
                         state.selectedNodeId = state.selectedNodeIds[0] || null;
-                        if (state.selectedNodeIds.length > 0) {
-                            statusHintText.textContent = `${state.selectedNodeIds.length} bentuk berhasil diblok (terpilih). Tekan Ctrl+C untuk menyalin.`;
+                        const hitNodeSet = new Set(state.selectedNodeIds);
+                        const hitConns = state.connections.filter(c => {
+                            if (c.fromNodeId && c.toNodeId && hitNodeSet.has(c.fromNodeId) && hitNodeSet.has(c.toNodeId)) return true;
+                            const sPt = (c.fromNodeId && c.fromPort) ? getAnchorCoord(c.fromNodeId, c.fromPort) : (c.fromX != null ? { x: c.fromX, y: c.fromY } : null);
+                            const ePt = (c.toNodeId && c.toPort) ? getAnchorCoord(c.toNodeId, c.toPort) : (c.toX != null ? { x: c.toX, y: c.toY } : null);
+                            const sIn = sPt && sPt.x >= minX && sPt.x <= maxX && sPt.y >= minY && sPt.y <= maxY;
+                            const eIn = ePt && ePt.x >= minX && ePt.x <= maxX && ePt.y >= minY && ePt.y <= maxY;
+                            return !!(sIn && eIn);
+                        });
+                        state.selectedConnectionIds = hitConns.map(c => c.id);
+                        state.selectedConnectionId = state.selectedConnectionIds[0] || null;
+                        renderConnections();
+                        if (state.selectedNodeIds.length > 0 || state.selectedConnectionIds.length > 0) {
+                            statusHintText.textContent = `${state.selectedNodeIds.length} bentuk & ${state.selectedConnectionIds.length} panah diblok (terpilih). Tekan Ctrl+C untuk menyalin.`;
                         }
                     }
                     renderSelection();
@@ -15580,6 +15698,7 @@
                 state.isDraggingNode = false;
                 state.isSelectingTerminalCells = false;
                 state.dragNodesInitial = null;
+                state.dragConnsInitial = null;
                 state.dragMouseStartCanvas = null;
                 state.isResizing = false;
                 state.isResizingGroup = false;
