@@ -11447,14 +11447,15 @@
 
                     const newNode = JSON.parse(JSON.stringify(oldNode));
                     newNode.id = newId;
-                    newNode.x = snap(newNode.x + 30);
-                    newNode.y = snap(newNode.y + 30);
+                    // Use exact uniform offset (no per-node grid snap) so grouped shapes keep 100% identical relative positions!
+                    newNode.x = newNode.x + 30;
+                    newNode.y = newNode.y + 30;
                     oldNode.x += 30;
                     oldNode.y += 30;
 
                     if (oldNode.groupId) {
                         if (!groupMap[oldNode.groupId]) {
-                            groupMap[oldNode.groupId] = 'grp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                            groupMap[oldNode.groupId] = 'grp_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6);
                         }
                         newNode.groupId = groupMap[oldNode.groupId];
                     }
