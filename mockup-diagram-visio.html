@@ -11228,6 +11228,13 @@
                 let left, top, width, height, align, fontSize, isBold;
                 let customPlaceholder = '';
                 let isSpecialOverlay = false;
+                let editorRotation = 0;
+
+                if (nodeGroup) {
+                    nodeGroup.querySelectorAll('.header-title-edit-box, .lane-title-edit-box').forEach(b => {
+                        b.style.display = 'none';
+                    });
+                }
 
                 if (targetType === 'swimlane-title') {
                     const hEl = (nodeGroup ? nodeGroup.querySelector('.swimlane-header-hitzone') : null) || targetEl;
@@ -11237,18 +11244,20 @@
                         width: node.width * state.zoom,
                         height: 28 * state.zoom
                     };
-                    const editW = Math.min(Math.max(rect.width - 24, 220), Math.max(320, rect.width * 0.75));
-                    left = rect.left - vpRect.left + ((rect.width - editW) / 2);
+                    const editW = Math.max(80, rect.width - 12);
+                    left = rect.left - vpRect.left + 6;
                     top = rect.top - vpRect.top + Math.max(2, (rect.height - 24) / 2);
                     width = editW;
-                    height = 24;
+                    height = Math.max(20, Math.min(26, rect.height - 4));
                     const titleTextEl = nodeGroup ? nodeGroup.querySelector('text[data-edit-target="swimlane-title"]') : null;
                     if (titleTextEl) titleTextEl.style.visibility = 'hidden';
-                    align = 'center';
+                    const hAlign = node.headerTextAlign || node.textAlign || 'middle';
+                    align = (hAlign === 'start' || hAlign === 'left') ? 'left' : ((hAlign === 'end' || hAlign === 'right') ? 'right' : 'center');
                     fontSize = `${Math.max(12, 13 * state.zoom)}px`;
                     isBold = true;
                     customPlaceholder = 'Judul Swimlane...';
                     isSpecialOverlay = true;
+                    editorRotation = (node.headerTextRotation !== undefined) ? node.headerTextRotation : (node.textRotation || 0);
                 } else if (targetType === 'swimlane-lane-title') {
                     const lEl = (nodeGroup ? nodeGroup.querySelector(`.swimlane-lane-hitzone[data-lane-idx="${rowIdx}"]`) : null) || targetEl;
                     const rect = lEl ? lEl.getBoundingClientRect() : {
@@ -11257,12 +11266,37 @@
                         width: (node.laneHeaderSize || 110) * state.zoom,
                         height: 50 * state.zoom
                     };
-                    left = rect.left - vpRect.left + 4;
-                    top = rect.top - vpRect.top + Math.max(2, (rect.height - 24) / 2);
-                    width = Math.max(rect.width - 8, 70);
-                    height = 24;
+                    const lane = (node.lanes && node.lanes[rowIdx]) ? node.lanes[rowIdx] : null;
+                    const lRot = (lane && lane.rotation !== undefined)
+                        ? lane.rotation
+                        : ((node.laneRotations && node.laneRotations[rowIdx] !== undefined)
+                            ? node.laneRotations[rowIdx]
+                            : (node.textRotation || 0));
                     const laneTitleEl = nodeGroup ? nodeGroup.querySelector(`text[data-edit-target="swimlane-lane-title"][data-lane-idx="${rowIdx}"]`) : null;
                     if (laneTitleEl) laneTitleEl.style.visibility = 'hidden';
+
+                    let centerX = (rect.left - vpRect.left) + (rect.width / 2);
+                    let centerY = (rect.top - vpRect.top) + (rect.height / 2);
+                    if (laneTitleEl) {
+                        const lx = parseFloat(laneTitleEl.getAttribute('x'));
+                        const ly = parseFloat(laneTitleEl.getAttribute('y'));
+                        if (!isNaN(lx) && !isNaN(ly)) {
+                            centerX = ((node.x + lx) * state.zoom) + state.panX;
+                            centerY = ((node.y + ly) * state.zoom) + state.panY;
+                        }
+                    }
+
+                    const isVertRot = Math.abs(lRot % 180) === 90;
+                    if (isVertRot) {
+                        width = Math.max(60, rect.height - 10);
+                        height = Math.max(20, Math.min(28, rect.width - 6));
+                    } else {
+                        width = Math.max(rect.width - 8, 70);
+                        height = 24;
+                    }
+                    left = centerX - (width / 2);
+                    top = centerY - (height / 2);
+                    editorRotation = lRot;
                     align = 'center';
                     fontSize = `${Math.max(11, 12 * state.zoom)}px`;
                     isBold = true;
@@ -11377,6 +11411,8 @@
                 inShapeDirectEditor.style.textAlign = align;
                 inShapeDirectEditor.style.overflow = 'hidden';
                 inShapeDirectEditor.style.boxSizing = 'border-box';
+                inShapeDirectEditor.style.transformOrigin = 'center center';
+                inShapeDirectEditor.style.transform = editorRotation ? `rotate(${editorRotation}deg)` : '';
                 inShapeDirectEditor.style.color = node.customTextColor || (state.theme === 'dark' ? '#f8fafc' : '#0f172a');
 
                 if (isSpecialOverlay || !initialText) {
@@ -11445,6 +11481,8 @@
                 }
 
                 inShapeDirectEditor.style.display = 'none';
+                inShapeDirectEditor.style.transform = '';
+                inShapeDirectEditor.style.transformOrigin = '';
                 inShapeDirectEditor.placeholder = '';
                 inShapeDirectEditor.style.border = 'none';
                 inShapeDirectEditor.style.boxShadow = 'none';
