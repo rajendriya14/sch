@@ -3957,7 +3957,7 @@
                 </svg>
             </div>
             <div class="active-project-status-card" id="activeProjectStatusCard">
-                <span id="activeProjectTitlePill" class="active-project-title-pill" title="New Book (Klik Save untuk Save As)">New Book</span>
+                <span id="activeProjectTitlePill" class="active-project-title-pill" title="New Canvas (Klik Save untuk Save As)">New Canvas</span>
             </div>
         </div>
 
@@ -6945,13 +6945,13 @@
 
             function updateActiveProjectTitleUI(displayFileName = '') {
                 const cleanName = String(displayFileName || '').trim().replace(/\.[a-zA-Z0-9]+$/, '');
-                const label = cleanName || 'New Book';
+                const label = cleanName || 'New Canvas';
                 const pill = document.getElementById('activeProjectTitlePill');
                 if (pill) {
                     pill.textContent = label;
                     pill.title = (activeFileHandle && displayFileName)
                         ? `File aktif: ${displayFileName} (Klik Save / Ctrl+S untuk langsung simpan)`
-                        : (cleanName ? `${displayFileName} (Klik Save untuk Save As)` : 'New Book (Klik Save untuk Save As)');
+                        : (cleanName ? `${displayFileName} (Klik Save untuk Save As)` : 'New Canvas (Klik Save untuk Save As)');
                 }
                 document.title = `${label} — rekha`;
             }
