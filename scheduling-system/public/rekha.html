@@ -12178,14 +12178,11 @@
 
                     const onStartDragText = (e) => {
                         if (e.button !== 0 || state.editingNodeId === node.id) return;
+                        e.stopPropagation();
                         if (e.detail >= 2) {
-                            e.stopPropagation();
-                            e.preventDefault();
                             state.isDraggingHeaderText = null;
-                            openDirectInShapeEditor(node, headerRect);
                             return;
                         }
-                        e.stopPropagation();
                         e.preventDefault();
                         if (!state.selectedNodeIds.includes(node.id)) {
                             selectNode(node.id, false);
@@ -13049,14 +13046,11 @@
 
                                 const onStartDragLaneText = (e) => {
                                     if (e.button !== 0 || state.editingNodeId === node.id) return;
+                                    e.stopPropagation();
                                     if (e.detail >= 2) {
-                                        e.stopPropagation();
-                                        e.preventDefault();
                                         state.isDraggingLaneText = null;
-                                        openDirectInShapeEditor(node, laneHRect);
                                         return;
                                     }
-                                    e.stopPropagation();
                                     e.preventDefault();
                                     if (!state.selectedNodeIds.includes(node.id)) {
                                         selectNode(node.id, false);
