@@ -3695,13 +3695,13 @@
             box-shadow: none;
         }
         .empty-easel-illustration {
-            width: 96px;
-            height: 92px;
+            width: 136px;
+            height: 106px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #0f172a;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
         [data-theme="dark"] .empty-easel-illustration {
             color: #f4f4f5;
@@ -5096,24 +5096,32 @@
         <div class="flex items-center justify-center">
             <div class="empty-root">
                 <div class="empty-easel-illustration" aria-hidden="true">
-                    <svg width="96" height="92" viewBox="0 0 96 92" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Standing Easel Tripod Legs -->
-                        <line x1="48" y1="10" x2="48" y2="83" stroke="currentColor" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="42" y1="62" x2="25" y2="86" stroke="currentColor" stroke-opacity="0.45" stroke-width="2.2" stroke-linecap="round"/>
-                        <line x1="54" y1="62" x2="71" y2="86" stroke="currentColor" stroke-opacity="0.45" stroke-width="2.2" stroke-linecap="round"/>
-                        <line x1="33" y1="74" x2="63" y2="74" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.8" stroke-linecap="round"/>
-                        <!-- Top Easel Clamp -->
-                        <rect x="42" y="8" width="12" height="5" rx="2" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.6"/>
-                        <!-- Soft Background Depth Canvas -->
-                        <rect x="19" y="19" width="52" height="40" rx="6" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.12" stroke-width="1.4"/>
-                        <!-- Main Standing Canvas Board -->
-                        <rect x="23" y="15" width="50" height="43" rx="6" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.7"/>
-                        <!-- Subtle Canvas Diagram Sketch Inside -->
-                        <rect x="33" y="25" width="12" height="8" rx="2" stroke="currentColor" stroke-opacity="0.65" stroke-width="1.6"/>
-                        <rect x="51" y="39" width="12" height="8" rx="2" stroke="currentColor" stroke-opacity="0.65" stroke-width="1.6"/>
-                        <path d="M45 29H57V37" stroke="currentColor" stroke-opacity="0.5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <!-- Easel Bottom Ledge / Tray -->
-                        <rect x="18" y="58" width="60" height="4.5" rx="2.25" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.6"/>
+                    <svg width="136" height="106" viewBox="0 0 136 106" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Soft Ground Shadow -->
+                        <ellipse cx="68" cy="95" rx="34" ry="5" fill="currentColor" fill-opacity="0.06"/>
+                        <!-- Back Card 1 (Farthest, Faint) -->
+                        <g transform="translate(26, 31) skewY(-22) scale(0.84, 1)" opacity="0.12">
+                            <rect x="0" y="0" width="52" height="54" rx="10" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-width="1.5"/>
+                        </g>
+                        <!-- Middle Card 2 -->
+                        <g transform="translate(42, 35) skewY(-22) scale(0.84, 1)" opacity="0.24">
+                            <rect x="0" y="0" width="52" height="54" rx="10" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-width="1.5"/>
+                        </g>
+                        <!-- Front Card 3D Rim + Main Card -->
+                        <g transform="translate(56, 38) skewY(-22) scale(0.84, 1)">
+                            <rect x="0" y="0" width="52" height="54" rx="10" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.18" stroke-width="1.3"/>
+                        </g>
+                        <g transform="translate(59, 39) skewY(-22) scale(0.84, 1)">
+                            <rect x="0" y="0" width="52" height="54" rx="10" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-opacity="0.34" stroke-width="1.5"/>
+                            <!-- Standing Canvas (Easel) Symbol Inside Front Card -->
+                            <g transform="translate(12, 12)">
+                                <line x1="14" y1="2" x2="14" y2="25" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="11" y1="19" x2="5" y2="28" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                <line x1="17" y1="19" x2="23" y2="28" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                <rect x="4" y="4" width="20" height="15" rx="2.5" fill="var(--canvas-bg, #ffffff)" stroke="currentColor" stroke-width="1.7"/>
+                                <line x1="2" y1="19" x2="26" y2="19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                            </g>
+                        </g>
                     </svg>
                 </div>
                 <div class="empty-header">
@@ -5255,7 +5263,6 @@
                                 <div class="field-title">
                                     <span>Vector SVG (.svg)</span>
                                 </div>
-                                <p class="field-description">High-resolution vector format without loss. Ideal for Microsoft Word, Excel, PowerPoint, and Miro.</p>
                             </div>
                         </label>
 
@@ -5271,7 +5278,6 @@
                                 <div class="field-title">
                                     <span>rekha Project (.rekha)</span>
                                 </div>
-                                <p class="field-description">Saves complete diagram flow, nodes, tables, text, and canvas strokes. Can be reopened and edited anytime.</p>
                             </div>
                         </label>
 
@@ -5287,7 +5293,6 @@
                                 <div class="field-title">
                                     <span>PDF Document (.pdf)</span>
                                 </div>
-                                <p class="field-description">Standard print-ready vector document or formal report attachment with proportional layout.</p>
                             </div>
                         </label>
 
@@ -5303,7 +5308,6 @@
                                 <div class="field-title">
                                     <span>HD PNG Image (.png)</span>
                                 </div>
-                                <p class="field-description">High-resolution image with clean background for quick sharing to chats or presentations.</p>
                             </div>
                         </label>
 
