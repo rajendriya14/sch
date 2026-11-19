@@ -456,45 +456,22 @@
 
         .active-project-status-card {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            align-items: center;
             flex-shrink: 0;
-            gap: 2px;
             min-width: 115px;
             max-width: 220px;
-        }
-
-        .active-project-last-save {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 10.5px;
-            font-weight: 500;
-            line-height: 1.15;
-            color: var(--text-muted);
-            padding-left: 2px;
-            white-space: nowrap;
-        }
-
-        .active-project-last-save svg {
-            width: 11px;
-            height: 11px;
-            color: var(--text-muted);
-            flex-shrink: 0;
-            opacity: 0.85;
-            transition: color 0.2s ease, opacity 0.2s ease;
         }
 
         .active-project-title-pill {
             display: block;
             width: 100%;
             max-width: 220px;
-            padding: 2px 10px;
+            padding: 4px 12px;
             border-radius: 7px;
             background: var(--bg-panel-subtle, var(--bg-hover));
             border: 1px solid var(--border-light);
             color: var(--text-secondary);
-            font-size: 11.5px;
+            font-size: 12px;
             font-weight: 500;
             line-height: 1.35;
             white-space: nowrap;
@@ -3863,15 +3840,6 @@
                 </svg>
             </div>
             <div class="active-project-status-card" id="activeProjectStatusCard">
-                <div class="active-project-last-save" id="activeProjectLastSave">
-                    <span>Last Save</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
-                    </svg>
-                    <span id="activeProjectLastSaveTime">--:--</span>
-                </div>
                 <span id="activeProjectTitlePill" class="active-project-title-pill" title="New Book (Klik Save untuk Save As)">New Book</span>
             </div>
         </div>
@@ -6766,18 +6734,6 @@
                 updateActiveProjectTitleUI(activeFileName);
             }
 
-            function updateLastSaveTimeUI(dateInput = null) {
-                const timeEl = document.getElementById('activeProjectLastSaveTime');
-                if (!timeEl) return;
-                if (!dateInput) {
-                    timeEl.textContent = '--:--';
-                    return;
-                }
-                const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
-                const pad = (n) => String(n).padStart(2, '0');
-                timeEl.textContent = `${pad(d.getHours())}-${pad(d.getMinutes())}`;
-            }
-
             function updateActiveProjectTitleUI(displayFileName = '') {
                 const cleanName = String(displayFileName || '').trim().replace(/\.[a-zA-Z0-9]+$/, '');
                 const label = cleanName || 'New Book';
@@ -6791,12 +6747,10 @@
                 document.title = `${label} — rekha`;
             }
 
-            function clearActiveProjectFile(displayFileName = '', fileDate = null) {
+            function clearActiveProjectFile(displayFileName = '') {
                 setActiveProjectFile(null, displayFileName, 'svg');
-                updateLastSaveTimeUI(fileDate);
             }
             updateActiveProjectTitleUI('');
-            updateLastSaveTimeUI(null);
 
             // Update format option cards
             formatRadioOptions.forEach(card => {
@@ -7322,7 +7276,6 @@
                         const savedName = fileHandle.name || fullFileName;
                         if (format === 'svg' || format === 'rekha') {
                             setActiveProjectFile(fileHandle, savedName, format);
-                            updateLastSaveTimeUI(new Date());
                         }
                         showSaveConfirmationModal(savedName, 'Selected folder on your computer', formatLabel, tipMessage);
                         statusHintText.textContent = `File ${formatLabel} saved successfully: ${savedName}`;
@@ -7382,7 +7335,6 @@
                     await writable.close();
 
                     const savedDisplay = activeFileName || activeFileHandle.name || `diagram.${activeFileFormat}`;
-                    updateLastSaveTimeUI(new Date());
                     if (statusHintText) {
                         statusHintText.textContent = `✓ Saved to ${savedDisplay}`;
                     }
@@ -7572,7 +7524,6 @@
                         const text = await file.text();
                         loadDiagramFromFile(text, file.name);
                         setActiveProjectFile(fileHandle, file.name);
-                        updateLastSaveTimeUI(file.lastModified || new Date());
                         return;
                     } catch (err) {
                         if (err.name === 'AbortError') return;
@@ -7590,7 +7541,7 @@
                         const reader = new FileReader();
                         reader.onload = (rev) => {
                             loadDiagramFromFile(rev.target.result, file.name);
-                            clearActiveProjectFile(file.name, file.lastModified || new Date());
+                            clearActiveProjectFile(file.name);
                         };
                         reader.readAsText(file);
                     };
