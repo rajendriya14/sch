@@ -457,8 +457,9 @@
         .active-project-title-pill {
             display: inline-flex;
             align-items: center;
+            flex-shrink: 0;
             max-width: 220px;
-            padding: 4px 11px;
+            padding: 4px 12px;
             border-radius: 999px;
             background: var(--bg-hover);
             border: 1px solid var(--border-color);
@@ -3830,7 +3831,7 @@
                     <text x="4" y="27" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5px" fill="url(#pencilHatchPattern)" stroke="#0f172a" stroke-width="1.15" stroke-linejoin="round">rekha</text>
                 </svg>
             </div>
-            <span id="activeProjectTitlePill" class="active-project-title-pill" title="New Canvas (Klik Save untuk Save As)">New Canvas</span>
+            <span id="activeProjectTitlePill" class="active-project-title-pill" title="New Book (Klik Save untuk Save As)">New Book</span>
         </div>
 
         <!-- Center Toolbar (Clean Icon-Only CAD Style, Text "Garis:" preserved) -->
@@ -6725,13 +6726,13 @@
 
             function updateActiveProjectTitleUI(displayFileName = '') {
                 const cleanName = String(displayFileName || '').trim().replace(/\.[a-zA-Z0-9]+$/, '');
-                const label = cleanName || 'New Canvas';
+                const label = cleanName || 'New Book';
                 const pill = document.getElementById('activeProjectTitlePill');
                 if (pill) {
                     pill.textContent = label;
                     pill.title = (activeFileHandle && displayFileName)
                         ? `File aktif: ${displayFileName} (Klik Save / Ctrl+S untuk langsung simpan)`
-                        : (cleanName ? `${displayFileName} (Klik Save untuk Save As)` : 'New Canvas (Klik Save untuk Save As)');
+                        : (cleanName ? `${displayFileName} (Klik Save untuk Save As)` : 'New Book (Klik Save untuk Save As)');
                 }
                 document.title = `${label} — rekha`;
             }
