@@ -1540,6 +1540,125 @@
             border-color: var(--border-focus);
         }
 
+        .my-shape-tile-wrap {
+            position: relative;
+        }
+        .my-shape-delete-btn {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #ef4444;
+            font-size: 11px;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 4;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        .my-shape-tile-wrap:hover .my-shape-delete-btn {
+            display: flex;
+        }
+
+        /* Custom Shape Studio Modal */
+        .studio-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 9500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .studio-modal-card {
+            width: 680px;
+            max-width: 96vw;
+            background: var(--bg-panel, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: var(--text-primary, #0f172a);
+        }
+        .studio-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
+        }
+        .studio-modal-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-panel-subtle, #f8fafc);
+            border-bottom: 1px solid var(--border-light, #e2e8f0);
+        }
+        .studio-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            height: 30px;
+            padding: 0 9px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            background: var(--bg-panel, #ffffff);
+            color: var(--text-primary, #0f172a);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .studio-tool-btn:hover {
+            background: var(--bg-hover, #f1f5f9);
+        }
+        .studio-tool-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+        .studio-canvas-stage {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-workspace, #f1f5f9);
+        }
+        .studio-svg-canvas {
+            width: 560px;
+            max-width: 100%;
+            height: 300px;
+            background: #ffffff;
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 10px;
+            box-shadow: inset 0 1px 4px rgba(15, 23, 42, 0.05);
+            cursor: crosshair;
+            user-select: none;
+        }
+        [data-theme="dark"] .studio-svg-canvas {
+            background: #18181b;
+        }
+        .studio-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-light, #e2e8f0);
+        }
+
         .stencil-shape-tile {
             height: 48px;
             background: var(--bg-panel-subtle);
@@ -4273,6 +4392,16 @@
         </div>
     </div>
 
+    <!-- Custom Shapes Section (Populated by Custom Shape Studio) -->
+    <div class="stencil-category-section" id="myShapesSection" style="display:none;">
+        <div class="stencil-category-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span>My Shapes</span>
+            <svg class="cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="stencil-category-body">
+            <div class="stencil-shape-grid-6col" id="myShapesGrid"></div>
+        </div>
+    </div>
 
     <div class="manage-shapes-wrap" style="padding: 12px 14px; margin-top: auto;">
         <button class="btn-manage-shapes" id="btnManageShapes" style="width:100%; padding: 8px 12px; border-radius: 8px; background: #e2e8f0; border: none; font-size: 13px; font-weight: 600; color: #1e293b; cursor: pointer; text-align: center;">
@@ -5036,6 +5165,71 @@
     <!-- ======================================================================
          SAVE FORMAT OPTIONS MODAL (Download Dialog - Shadcn Field & Checkbox Pattern)
          ====================================================================== -->
+    <!-- CUSTOM SHAPE STUDIO MODAL -->
+    <div class="studio-modal-overlay" id="customShapeStudioModal">
+        <div class="studio-modal-card">
+            <div class="studio-modal-header">
+                <div>
+                    <div style="font-size:15px;font-weight:700;">Custom Shape Studio</div>
+                    <div style="font-size:11.5px;color:var(--text-muted);">Gambar atau gabungkan bentuk vektor di canvas khusus, lalu simpan ke My Shapes</div>
+                </div>
+                <button type="button" class="studio-tool-btn" id="btnCloseShapeStudio" style="padding:0 10px;">✕</button>
+            </div>
+            <div class="studio-modal-toolbar">
+                <button type="button" class="studio-tool-btn active" data-studio-tool="select" title="Pilih & Geser Elemen">↖ Pilih</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="rect" title="Kotak (Rectangle)">▭ Kotak</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="ellipse" title="Lingkaran / Oval">◯ Lingkaran</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="triangle" title="Segitiga">△ Segitiga</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="line" title="Garis Lurus">╱ Garis</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="pen" title="Poligon / Pen (Klik titik, Double-click selesai)">✒ Pen</button>
+                <button type="button" class="studio-tool-btn" data-studio-tool="freehand" title="Gambar Bebas">〰 Bebas</button>
+                <div style="width:1px;height:20px;background:var(--border-color,#cbd5e1);margin:0 2px;"></div>
+                <label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;" title="Warna Isi (Fill)">
+                    Fill <input type="color" id="studioFillColor" value="#ffffff" style="width:24px;height:22px;border:none;background:none;cursor:pointer;padding:0;">
+                </label>
+                <label style="display:inline-flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;">
+                    <input type="checkbox" id="studioNoFill"> Transparan
+                </label>
+                <label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;" title="Warna Garis (Stroke)">
+                    Garis <input type="color" id="studioStrokeColor" value="#0f172a" style="width:24px;height:22px;border:none;background:none;cursor:pointer;padding:0;">
+                </label>
+                <select id="studioStrokeWidth" style="height:26px;border-radius:6px;border:1px solid var(--border-color,#cbd5e1);background:var(--bg-panel,#fff);color:var(--text-primary,#0f172a);font-size:11.5px;padding:0 4px;" title="Ketebalan Garis">
+                    <option value="1.5">1.5px</option>
+                    <option value="2" selected>2px</option>
+                    <option value="3">3px</option>
+                    <option value="4">4px</option>
+                </select>
+                <button type="button" class="studio-tool-btn" id="btnStudioUndo" title="Undo Elemen Terakhir">↶ Undo</button>
+                <button type="button" class="studio-tool-btn" id="btnStudioClear" title="Bersihkan Canvas Studio">🗑 Bersihkan</button>
+            </div>
+            <div class="studio-canvas-stage">
+                <svg class="studio-svg-canvas" id="studioSvgCanvas" viewBox="0 0 560 300">
+                    <defs>
+                        <pattern id="studioGridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <circle cx="10" cy="10" r="1" fill="#cbd5e1" opacity="0.7"/>
+                        </pattern>
+                    </defs>
+                    <rect x="0" y="0" width="560" height="300" fill="url(#studioGridPattern)"/>
+                    <g id="studioElementsLayer"></g>
+                    <g id="studioPreviewLayer"></g>
+                </svg>
+                <div style="font-size:11.5px;color:var(--text-muted);" id="studioHintText">
+                    💡 Tips: Pilih alat (Kotak/Lingkaran/Pen/Bebas) lalu gambar di canvas. Untuk alat <b>Pen</b>, klik titik-titik lalu double-click untuk selesai.
+                </div>
+            </div>
+            <div class="studio-modal-footer">
+                <div style="display:flex;align-items:center;gap:8px;flex:1;">
+                    <label for="studioShapeName" style="font-size:12.5px;font-weight:600;white-space:nowrap;">Nama Shape:</label>
+                    <input type="text" id="studioShapeName" placeholder="Misal: Custom Step BAK" style="flex:1;height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border-color,#cbd5e1);background:var(--bg-panel,#fff);color:var(--text-primary,#0f172a);font-size:13px;">
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" class="studio-tool-btn" id="btnStudioCancel" style="height:34px;padding:0 14px;">Batal</button>
+                    <button type="button" class="studio-tool-btn active" id="btnStudioSave" style="height:34px;padding:0 16px;font-weight:600;">Simpan ke My Shapes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="save-confirm-modal" id="saveFormatModal" style="display:none;">
         <div class="save-confirm-card format-modal-card" style="width: 530px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
             <!-- Shadcn FieldGroup Container -->
@@ -12372,7 +12566,31 @@
                         return;
                     }
 
-                    if (node.isTable) {
+                    if (node.type === 'custom-vector' && node.customVector && Array.isArray(node.customVector.elements)) {
+                        shapeEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        const vbW = Math.max(1, node.customVector.vbW || 100);
+                        const vbH = Math.max(1, node.customVector.vbH || 100);
+                        const sx = w / vbW;
+                        const sy = h / vbH;
+                        const innerG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        innerG.setAttribute('transform', `scale(${sx}, ${sy})`);
+                        node.customVector.elements.forEach((elDef, idx) => {
+                            const el = document.createElementNS('http://www.w3.org/2000/svg', elDef.tag);
+                            if (idx === 0) el.setAttribute('class', 'node-body');
+                            Object.keys(elDef.attrs || {}).forEach(k => {
+                                el.setAttribute(k, elDef.attrs[k]);
+                            });
+                            if (node.customFill && elDef.attrs && elDef.attrs.fill !== 'none') {
+                                el.setAttribute('fill', node.customFill);
+                            }
+                            if (node.customStroke && elDef.attrs && elDef.attrs.stroke !== 'none') {
+                                el.setAttribute('stroke', node.customStroke);
+                            }
+                            innerG.appendChild(el);
+                        });
+                        shapeEl.appendChild(innerG);
+                        g.appendChild(shapeEl);
+                    } else if (node.isTable) {
                         shapeEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                         shapeEl.setAttribute('class', 'table-shape-group');
                         const outer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -16305,12 +16523,466 @@
                     statusHintText.textContent = `Panah (${arrowType.toUpperCase()}) berhasil diletakkan di kanvas!`;
                     return;
                 }
+                const customShapeId = e.dataTransfer.getData('application/diag-custom-shape');
+                if (customShapeId) {
+                    const coords = screenToCanvasCoords(e.clientX, e.clientY);
+                    const cList = loadCustomShapesFromStorage();
+                    const found = cList.find(cs => cs.id === customShapeId);
+                    if (found) createCustomVectorNode(found, coords.x, coords.y);
+                    return;
+                }
                 const shapeType = e.dataTransfer.getData('application/diag-shape') || e.dataTransfer.getData('text/plain');
                 if (shapeType) {
                     const coords = screenToCanvasCoords(e.clientX, e.clientY);
                     createNode(shapeType, coords.x, coords.y);
                 }
             });
+
+            /* ======================================================================
+               19B. CUSTOM SHAPE STUDIO (Dedicated Vector Shape Builder & My Shapes)
+               ====================================================================== */
+            const CUSTOM_SHAPES_KEY = 'rekha_custom_shapes_v1';
+            function loadCustomShapesFromStorage() {
+                try {
+                    const raw = localStorage.getItem(CUSTOM_SHAPES_KEY);
+                    const arr = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(arr) ? arr : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            function saveCustomShapesToStorage(list) {
+                try {
+                    localStorage.setItem(CUSTOM_SHAPES_KEY, JSON.stringify(list || []));
+                } catch (e) {}
+            }
+
+            function createCustomVectorNode(customShape, canvasX, canvasY) {
+                hideEmptyState();
+                const id = 'node_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+                const w = Math.max(40, Math.round(customShape.width || customShape.vbW || 120));
+                const h = Math.max(40, Math.round(customShape.height || customShape.vbH || 90));
+                const node = {
+                    id,
+                    type: 'custom-vector',
+                    x: snap(canvasX - w / 2),
+                    y: snap(canvasY - h / 2),
+                    width: w,
+                    height: h,
+                    text: '',
+                    lineStyle: 'solid',
+                    customVector: JSON.parse(JSON.stringify({
+                        vbW: customShape.vbW || w,
+                        vbH: customShape.vbH || h,
+                        elements: customShape.elements || []
+                    }))
+                };
+                state.nodes.push(node);
+                saveSnapshot('Tambah Custom Shape');
+                renderNodes();
+                selectNode(node.id, false);
+                updateStats();
+                return node;
+            }
+
+            function renderMyShapesSidebar() {
+                const section = document.getElementById('myShapesSection');
+                const grid = document.getElementById('myShapesGrid');
+                if (!section || !grid) return;
+                const list = loadCustomShapesFromStorage();
+                grid.innerHTML = '';
+                if (list.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+                section.style.display = 'block';
+                list.forEach(cs => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'my-shape-tile-wrap';
+
+                    const tile = document.createElement('div');
+                    tile.className = 'stencil-shape-tile';
+                    tile.title = `${cs.name} (Klik atau drag ke kanvas)`;
+                    tile.setAttribute('draggable', 'true');
+
+                    const svgThumb = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svgThumb.setAttribute('viewBox', `0 0 ${cs.vbW || 100} ${cs.vbH || 100}`);
+                    (cs.elements || []).forEach(elDef => {
+                        const el = document.createElementNS('http://www.w3.org/2000/svg', elDef.tag);
+                        Object.keys(elDef.attrs || {}).forEach(k => el.setAttribute(k, elDef.attrs[k]));
+                        svgThumb.appendChild(el);
+                    });
+                    tile.appendChild(svgThumb);
+
+                    tile.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('application/diag-custom-shape', cs.id);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    });
+                    tile.addEventListener('click', () => {
+                        const rect = viewport.getBoundingClientRect();
+                        const canvasCenter = screenToCanvasCoords(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                        const jitter = (Math.random() - 0.5) * 40;
+                        createCustomVectorNode(cs, canvasCenter.x + jitter, canvasCenter.y + jitter);
+                    });
+
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'my-shape-delete-btn';
+                    delBtn.textContent = '×';
+                    delBtn.title = `Hapus "${cs.name}"`;
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const next = loadCustomShapesFromStorage().filter(item => item.id !== cs.id);
+                        saveCustomShapesToStorage(next);
+                        renderMyShapesSidebar();
+                    });
+
+                    wrap.appendChild(tile);
+                    wrap.appendChild(delBtn);
+                    grid.appendChild(wrap);
+                });
+            }
+
+            (function initCustomShapeStudio() {
+                const btnManageShapes = document.getElementById('btnManageShapes');
+                const modal = document.getElementById('customShapeStudioModal');
+                const btnClose = document.getElementById('btnCloseShapeStudio');
+                const btnCancel = document.getElementById('btnStudioCancel');
+                const btnSave = document.getElementById('btnStudioSave');
+                const btnUndo = document.getElementById('btnStudioUndo');
+                const btnClear = document.getElementById('btnStudioClear');
+                const svgCanvas = document.getElementById('studioSvgCanvas');
+                const elemsLayer = document.getElementById('studioElementsLayer');
+                const previewLayer = document.getElementById('studioPreviewLayer');
+                const fillInput = document.getElementById('studioFillColor');
+                const noFillInput = document.getElementById('studioNoFill');
+                const strokeInput = document.getElementById('studioStrokeColor');
+                const strokeWidthInput = document.getElementById('studioStrokeWidth');
+                const nameInput = document.getElementById('studioShapeName');
+                const toolBtns = document.querySelectorAll('[data-studio-tool]');
+
+                renderMyShapesSidebar();
+                if (!btnManageShapes || !modal || !svgCanvas) return;
+
+                let studioTool = 'rect';
+                let studioElements = [];
+                let selectedIdx = -1;
+                let dragDraw = null;
+                let penPoints = [];
+                let freehandPoints = [];
+
+                const setStudioTool = (t) => {
+                    studioTool = t;
+                    penPoints = [];
+                    previewLayer.innerHTML = '';
+                    toolBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-studio-tool') === t));
+                    svgCanvas.style.cursor = (t === 'select') ? 'default' : 'crosshair';
+                };
+                toolBtns.forEach(b => b.addEventListener('click', () => setStudioTool(b.getAttribute('data-studio-tool'))));
+
+                const getStudioCoords = (e) => {
+                    const rect = svgCanvas.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 560;
+                    const y = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 300;
+                    return { x: Math.round(x / 5) * 5, y: Math.round(y / 5) * 5 };
+                };
+
+                const getStyleAttrs = () => ({
+                    fill: noFillInput.checked ? 'none' : fillInput.value,
+                    stroke: strokeInput.value,
+                    'stroke-width': strokeWidthInput.value,
+                    'stroke-linejoin': 'round',
+                    'stroke-linecap': 'round'
+                });
+
+                const getElemBBox = (elDef) => {
+                    const a = elDef.attrs || {};
+                    if (elDef.tag === 'rect') {
+                        return { minX: +a.x, minY: +a.y, maxX: +a.x + +a.width, maxY: +a.y + +a.height };
+                    }
+                    if (elDef.tag === 'ellipse') {
+                        return { minX: +a.cx - +a.rx, minY: +a.cy - +a.ry, maxX: +a.cx + +a.rx, maxY: +a.cy + +a.ry };
+                    }
+                    if (elDef.tag === 'line') {
+                        return { minX: Math.min(+a.x1, +a.x2), minY: Math.min(+a.y1, +a.y2), maxX: Math.max(+a.x1, +a.x2), maxY: Math.max(+a.y1, +a.y2) };
+                    }
+                    if (elDef.tag === 'polygon' && a.points) {
+                        const pts = a.points.trim().split(/\s+/).map(p => p.split(',').map(Number));
+                        return {
+                            minX: Math.min(...pts.map(p => p[0])),
+                            minY: Math.min(...pts.map(p => p[1])),
+                            maxX: Math.max(...pts.map(p => p[0])),
+                            maxY: Math.max(...pts.map(p => p[1]))
+                        };
+                    }
+                    if (elDef.tag === 'path' && a.d) {
+                        const nums = a.d.match(/-?\d+(\.\d+)?/g)?.map(Number) || [0, 0];
+                        const xs = nums.filter((_, i) => i % 2 === 0);
+                        const ys = nums.filter((_, i) => i % 2 === 1);
+                        return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
+                    }
+                    return { minX: 0, minY: 0, maxX: 50, maxY: 50 };
+                };
+
+                const shiftElement = (elDef, dx, dy) => {
+                    const a = elDef.attrs;
+                    if (elDef.tag === 'rect') { a.x = +a.x + dx; a.y = +a.y + dy; }
+                    else if (elDef.tag === 'ellipse') { a.cx = +a.cx + dx; a.cy = +a.cy + dy; }
+                    else if (elDef.tag === 'line') { a.x1 = +a.x1 + dx; a.y1 = +a.y1 + dy; a.x2 = +a.x2 + dx; a.y2 = +a.y2 + dy; }
+                    else if (elDef.tag === 'polygon') {
+                        a.points = a.points.trim().split(/\s+/).map(p => {
+                            const [px, py] = p.split(',').map(Number);
+                            return `${px + dx},${py + dy}`;
+                        }).join(' ');
+                    } else if (elDef.tag === 'path') {
+                        let idx = 0;
+                        a.d = a.d.replace(/-?\d+(\.\d+)?/g, (m) => {
+                            const v = parseFloat(m) + (idx % 2 === 0 ? dx : dy);
+                            idx++;
+                            return String(Math.round(v * 100) / 100);
+                        });
+                    }
+                };
+
+                const renderStudioCanvas = () => {
+                    elemsLayer.innerHTML = '';
+                    studioElements.forEach((elDef, idx) => {
+                        const el = document.createElementNS('http://www.w3.org/2000/svg', elDef.tag);
+                        Object.keys(elDef.attrs || {}).forEach(k => el.setAttribute(k, elDef.attrs[k]));
+                        el.style.cursor = (studioTool === 'select') ? 'move' : 'crosshair';
+                        if (idx === selectedIdx && studioTool === 'select') {
+                            el.setAttribute('filter', 'drop-shadow(0 0 3px #2563eb)');
+                        }
+                        el.addEventListener('mousedown', (ev) => {
+                            if (studioTool !== 'select') return;
+                            ev.stopPropagation();
+                            selectedIdx = idx;
+                            const pt = getStudioCoords(ev);
+                            dragDraw = { mode: 'move', idx, lastX: pt.x, lastY: pt.y };
+                            renderStudioCanvas();
+                        });
+                        elemsLayer.appendChild(el);
+                    });
+                };
+
+                svgCanvas.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    const pt = getStudioCoords(e);
+                    if (studioTool === 'select') {
+                        selectedIdx = -1;
+                        renderStudioCanvas();
+                        return;
+                    }
+                    if (studioTool === 'pen') {
+                        if (penPoints.length >= 3 && Math.hypot(pt.x - penPoints[0].x, pt.y - penPoints[0].y) < 12) {
+                            studioElements.push({
+                                tag: 'polygon',
+                                attrs: { points: penPoints.map(p => `${p.x},${p.y}`).join(' '), ...getStyleAttrs() }
+                            });
+                            penPoints = [];
+                            previewLayer.innerHTML = '';
+                            renderStudioCanvas();
+                            return;
+                        }
+                        penPoints.push(pt);
+                        previewLayer.innerHTML = '';
+                        const pLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                        pLine.setAttribute('points', penPoints.map(p => `${p.x},${p.y}`).join(' '));
+                        pLine.setAttribute('fill', 'none');
+                        pLine.setAttribute('stroke', '#2563eb');
+                        pLine.setAttribute('stroke-width', '2');
+                        pLine.setAttribute('stroke-dasharray', '4,2');
+                        previewLayer.appendChild(pLine);
+                        return;
+                    }
+                    if (studioTool === 'freehand') {
+                        freehandPoints = [pt];
+                        dragDraw = { mode: 'freehand' };
+                        return;
+                    }
+                    dragDraw = { mode: studioTool, startX: pt.x, startY: pt.y, curX: pt.x, curY: pt.y };
+                });
+
+                svgCanvas.addEventListener('dblclick', () => {
+                    if (studioTool === 'pen' && penPoints.length >= 2) {
+                        const tag = penPoints.length >= 3 ? 'polygon' : 'polyline';
+                        const attrs = tag === 'polygon'
+                            ? { points: penPoints.map(p => `${p.x},${p.y}`).join(' '), ...getStyleAttrs() }
+                            : { points: penPoints.map(p => `${p.x},${p.y}`).join(' '), ...getStyleAttrs(), fill: 'none' };
+                        studioElements.push({ tag: tag === 'polygon' ? 'polygon' : 'path', attrs: tag === 'polygon' ? attrs : { d: `M ${penPoints.map(p => `${p.x} ${p.y}`).join(' L ')}`, ...getStyleAttrs(), fill: 'none' } });
+                        penPoints = [];
+                        previewLayer.innerHTML = '';
+                        renderStudioCanvas();
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (modal.style.display !== 'flex' || !dragDraw) return;
+                    const pt = getStudioCoords(e);
+                    if (dragDraw.mode === 'move') {
+                        const dx = pt.x - dragDraw.lastX;
+                        const dy = pt.y - dragDraw.lastY;
+                        if (dx !== 0 || dy !== 0) {
+                            shiftElement(studioElements[dragDraw.idx], dx, dy);
+                            dragDraw.lastX = pt.x;
+                            dragDraw.lastY = pt.y;
+                            renderStudioCanvas();
+                        }
+                        return;
+                    }
+                    if (dragDraw.mode === 'freehand') {
+                        const last = freehandPoints[freehandPoints.length - 1];
+                        if (!last || Math.hypot(pt.x - last.x, pt.y - last.y) >= 4) {
+                            freehandPoints.push(pt);
+                            previewLayer.innerHTML = '';
+                            const pEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            pEl.setAttribute('d', `M ${freehandPoints.map(p => `${p.x} ${p.y}`).join(' L ')}`);
+                            pEl.setAttribute('fill', 'none');
+                            pEl.setAttribute('stroke', strokeInput.value);
+                            pEl.setAttribute('stroke-width', strokeWidthInput.value);
+                            previewLayer.appendChild(pEl);
+                        }
+                        return;
+                    }
+                    dragDraw.curX = pt.x;
+                    dragDraw.curY = pt.y;
+                    previewLayer.innerHTML = '';
+                    const x = Math.min(dragDraw.startX, dragDraw.curX);
+                    const y = Math.min(dragDraw.startY, dragDraw.curY);
+                    const w = Math.max(5, Math.abs(dragDraw.curX - dragDraw.startX));
+                    const h = Math.max(5, Math.abs(dragDraw.curY - dragDraw.startY));
+                    let pEl = null;
+                    if (dragDraw.mode === 'rect') {
+                        pEl = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        pEl.setAttribute('x', x); pEl.setAttribute('y', y); pEl.setAttribute('width', w); pEl.setAttribute('height', h); pEl.setAttribute('rx', '4');
+                    } else if (dragDraw.mode === 'ellipse') {
+                        pEl = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                        pEl.setAttribute('cx', x + w / 2); pEl.setAttribute('cy', y + h / 2); pEl.setAttribute('rx', w / 2); pEl.setAttribute('ry', h / 2);
+                    } else if (dragDraw.mode === 'triangle') {
+                        pEl = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        pEl.setAttribute('points', `${x + w / 2},${y} ${x + w},${y + h} ${x},${y + h}`);
+                    } else if (dragDraw.mode === 'line') {
+                        pEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        pEl.setAttribute('x1', dragDraw.startX); pEl.setAttribute('y1', dragDraw.startY); pEl.setAttribute('x2', dragDraw.curX); pEl.setAttribute('y2', dragDraw.curY);
+                    }
+                    if (pEl) {
+                        const st = getStyleAttrs();
+                        Object.keys(st).forEach(k => pEl.setAttribute(k, st[k]));
+                        previewLayer.appendChild(pEl);
+                    }
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (modal.style.display !== 'flex' || !dragDraw) return;
+                    if (dragDraw.mode === 'freehand') {
+                        if (freehandPoints.length >= 2) {
+                            studioElements.push({
+                                tag: 'path',
+                                attrs: { d: `M ${freehandPoints.map(p => `${p.x} ${p.y}`).join(' L ')}`, ...getStyleAttrs(), fill: noFillInput.checked ? 'none' : fillInput.value }
+                            });
+                        }
+                        freehandPoints = [];
+                        previewLayer.innerHTML = '';
+                        dragDraw = null;
+                        renderStudioCanvas();
+                        return;
+                    }
+                    if (dragDraw.mode !== 'move') {
+                        const x = Math.min(dragDraw.startX, dragDraw.curX);
+                        const y = Math.min(dragDraw.startY, dragDraw.curY);
+                        const w = Math.abs(dragDraw.curX - dragDraw.startX);
+                        const h = Math.abs(dragDraw.curY - dragDraw.startY);
+                        if (w >= 8 || h >= 8) {
+                            if (dragDraw.mode === 'rect') {
+                                studioElements.push({ tag: 'rect', attrs: { x, y, width: Math.max(10, w), height: Math.max(10, h), rx: 4, ...getStyleAttrs() } });
+                            } else if (dragDraw.mode === 'ellipse') {
+                                studioElements.push({ tag: 'ellipse', attrs: { cx: x + Math.max(10, w) / 2, cy: y + Math.max(10, h) / 2, rx: Math.max(10, w) / 2, ry: Math.max(10, h) / 2, ...getStyleAttrs() } });
+                            } else if (dragDraw.mode === 'triangle') {
+                                const rw = Math.max(10, w), rh = Math.max(10, h);
+                                studioElements.push({ tag: 'polygon', attrs: { points: `${x + rw / 2},${y} ${x + rw},${y + rh} ${x},${y + rh}`, ...getStyleAttrs() } });
+                            } else if (dragDraw.mode === 'line') {
+                                studioElements.push({ tag: 'line', attrs: { x1: dragDraw.startX, y1: dragDraw.startY, x2: dragDraw.curX, y2: dragDraw.curY, ...getStyleAttrs(), fill: 'none' } });
+                            }
+                        }
+                        previewLayer.innerHTML = '';
+                        renderStudioCanvas();
+                    }
+                    dragDraw = null;
+                });
+
+                btnUndo.addEventListener('click', () => {
+                    if (studioElements.length > 0) {
+                        studioElements.pop();
+                        selectedIdx = -1;
+                        renderStudioCanvas();
+                    }
+                });
+
+                btnClear.addEventListener('click', () => {
+                    studioElements = [];
+                    penPoints = [];
+                    selectedIdx = -1;
+                    previewLayer.innerHTML = '';
+                    renderStudioCanvas();
+                });
+
+                const openStudio = () => {
+                    studioElements = [];
+                    penPoints = [];
+                    selectedIdx = -1;
+                    nameInput.value = `Custom Shape ${loadCustomShapesFromStorage().length + 1}`;
+                    setStudioTool('rect');
+                    renderStudioCanvas();
+                    modal.style.display = 'flex';
+                };
+                const closeStudio = () => {
+                    modal.style.display = 'none';
+                    dragDraw = null;
+                    penPoints = [];
+                    previewLayer.innerHTML = '';
+                };
+
+                btnManageShapes.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openStudio();
+                });
+                btnClose.addEventListener('click', closeStudio);
+                btnCancel.addEventListener('click', closeStudio);
+                modal.addEventListener('click', (e) => { if (e.target === modal) closeStudio(); });
+
+                btnSave.addEventListener('click', () => {
+                    if (studioElements.length === 0) {
+                        alert('Gambar minimal 1 bentuk terlebih dahulu di canvas studio.');
+                        return;
+                    }
+                    const boxes = studioElements.map(getElemBBox);
+                    const minX = Math.min(...boxes.map(b => b.minX));
+                    const minY = Math.min(...boxes.map(b => b.minY));
+                    const maxX = Math.max(...boxes.map(b => b.maxX));
+                    const maxY = Math.max(...boxes.map(b => b.maxY));
+                    const vbW = Math.max(20, Math.round(maxX - minX) + 8);
+                    const vbH = Math.max(20, Math.round(maxY - minY) + 8);
+
+                    const normalized = JSON.parse(JSON.stringify(studioElements));
+                    normalized.forEach(el => shiftElement(el, -(minX - 4), -(minY - 4)));
+
+                    const newShape = {
+                        id: 'cshape_' + Date.now(),
+                        name: (nameInput.value || '').trim() || 'Custom Shape',
+                        width: Math.min(220, Math.max(60, vbW)),
+                        height: Math.min(180, Math.max(50, vbH)),
+                        vbW,
+                        vbH,
+                        elements: normalized
+                    };
+                    const list = loadCustomShapesFromStorage();
+                    list.push(newShape);
+                    saveCustomShapesToStorage(list);
+                    renderMyShapesSidebar();
+                    closeStudio();
+                    statusHintText.textContent = `✓ Custom Shape "${newShape.name}" disimpan ke kategori My Shapes!`;
+                });
+            })();
 
             function updateStats() {
                 statObjects.textContent = `${state.nodes.length} Objek | ${state.connections.length} Panah`;
