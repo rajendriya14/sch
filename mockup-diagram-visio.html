@@ -14974,6 +14974,48 @@
                     return;
                 }
 
+                // SIMULTANEOUS LEFT + RIGHT CLICK HOLD -> Temporary Freehand Draw Mode, release -> back to Select Mode
+                if ((e.buttons & 3) === 3 && !document.body.classList.contains('in-preview-mode')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window._rightPanState) {
+                        if (window._rightPanState.timerId) clearTimeout(window._rightPanState.timerId);
+                        window._rightPanState = null;
+                    }
+                    state.isPanning = false;
+                    viewport.classList.remove('panning');
+                    state.isMarqueeSelecting = false;
+                    if (state.isDraggingNode && state.dragNodesInitial) {
+                        state.dragNodesInitial.forEach(item => {
+                            const nd = state.nodes.find(n => n.id === item.id);
+                            if (nd) { nd.x = item.startX; nd.y = item.startY; }
+                        });
+                        renderNodes();
+                    }
+                    state.isDraggingNode = false;
+                    state.dragNodesInitial = null;
+                    state.dragConnsInitial = null;
+                    window._chordDrawActive = true;
+                    window._suppressNextContextMenu = true;
+
+                    const canvasCoords = screenToCanvasCoords(e.clientX, e.clientY);
+                    setMode('draw');
+                    state.isDrawingFreehand = true;
+                    const isHighlighter = (state.freehandTool === 'highlighter');
+                    const strokeWidth = isHighlighter ? 14 : (state.freehandWidth || 3);
+                    const strokeOpacity = isHighlighter ? 0.38 : 1.0;
+                    state.currentFreehandStroke = {
+                        id: 'stroke_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        tool: (state.freehandTool === 'eraser' || state.freehandTool === 'partial-eraser') ? 'pen' : (state.freehandTool || 'pen'),
+                        color: state.freehandColor || '#2563eb',
+                        width: strokeWidth,
+                        opacity: strokeOpacity,
+                        points: [{ x: canvasCoords.x, y: canvasCoords.y }]
+                    };
+                    renderLiveFreehandStroke();
+                    return;
+                }
+
                 // FREEHAND DRAWING & ERASING HANDLER
                 if (state.mode === 'draw' && e.button === 0) {
                     const canvasCoords = screenToCanvasCoords(e.clientX, e.clientY);
@@ -15923,6 +15965,12 @@
                     state.currentFreehandStroke = null;
                     if (layerLiveDrawings) layerLiveDrawings.innerHTML = '';
                     renderDrawings();
+                    if (window._chordDrawActive) {
+                        window._chordDrawActive = false;
+                        window._suppressNextContextMenu = true;
+                        setTimeout(() => { window._suppressNextContextMenu = false; }, 160);
+                        setMode('select');
+                    }
                     return;
                 }
 
