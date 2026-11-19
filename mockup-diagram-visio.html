@@ -6341,16 +6341,26 @@
                     if (stroke.opacity && stroke.opacity < 1) {
                         pathEl.setAttribute('stroke-opacity', stroke.opacity);
                     }
-                    pathEl.setAttribute('class', 'freehand-stroke-path');
+                    const isStrokeSelected = Array.isArray(state.selectedDrawingIds) && state.selectedDrawingIds.includes(stroke.id);
+                    pathEl.setAttribute('class', `freehand-stroke-path${isStrokeSelected ? ' selected' : ''}`);
                     pathEl.setAttribute('data-id', stroke.id);
+                    if (isStrokeSelected) {
+                        pathEl.setAttribute('filter', 'drop-shadow(0 0 4px rgba(37, 99, 235, 0.85))');
+                    }
 
-                    // Quick click erasing when eraser is active
+                    // Quick click erasing when eraser is active, or select stroke in select mode
                     pathEl.addEventListener('mousedown', (e) => {
                         if (state.mode === 'draw' && (state.freehandTool === 'eraser' || state.freehandTool === 'partial-eraser')) {
                             e.stopPropagation();
                             state.drawings = state.drawings.filter(s => s.id !== stroke.id);
                             renderDrawings();
                             saveSnapshot('Hapus Coretan Bebas');
+                        } else if (state.mode === 'select' && e.button === 0) {
+                            e.stopPropagation();
+                            clearSelection();
+                            state.selectedDrawingIds = [stroke.id];
+                            renderDrawings();
+                            statusHintText.textContent = 'Goresan bebas terpilih. Tekan Delete untuk menghapus.';
                         }
                     });
 
@@ -12017,6 +12027,8 @@
                 state.selectedNodeIds = [];
                 state.selectedConnectionId = null;
                 state.selectedConnectionIds = [];
+                const hadDrawingSel = Array.isArray(state.selectedDrawingIds) && state.selectedDrawingIds.length > 0;
+                state.selectedDrawingIds = [];
                 const hadActiveHeader = !!(state.activeHeaderNodeId || state.activeHeaderTextNodeId || state.activeLaneTextKey);
                 state.activeHeaderNodeId = null;
                 state.activeHeaderTextNodeId = null;
@@ -12033,6 +12045,9 @@
                 document.querySelectorAll('.diagram-node').forEach(el => el.classList.remove('selected'));
                 if (hadCellSelection || hadActiveHeader) {
                     renderNodes();
+                }
+                if (hadDrawingSel) {
+                    renderDrawings();
                 }
                 renderConnections();
                 renderSelection();
@@ -12142,7 +12157,11 @@
                     ? state.selectedNodeIds
                     : (state.selectedNodeId ? [state.selectedNodeId] : []);
 
-                if (connIdsToDelete.length === 0 && currentIds.length === 0) return;
+                const drawingIdsToDelete = (state.selectedDrawingIds && state.selectedDrawingIds.length > 0)
+                    ? [...state.selectedDrawingIds]
+                    : [];
+
+                if (connIdsToDelete.length === 0 && currentIds.length === 0 && drawingIdsToDelete.length === 0) return;
 
                 // If active node is a single table/terminal and has a selected/blocked cell range (and no connections selected),
                 // delete/clear ONLY the content of the selected block, DO NOT delete the terminal itself!
@@ -12190,9 +12209,17 @@
                     msgParts.push(`${idsToDelete.size} bentuk`);
                 }
 
+                if (drawingIdsToDelete.length > 0) {
+                    const drawSet = new Set(drawingIdsToDelete);
+                    state.drawings = (state.drawings || []).filter(d => !drawSet.has(d.id));
+                    state.selectedDrawingIds = [];
+                    msgParts.push(`${drawingIdsToDelete.length} goresan`);
+                }
+
                 saveSnapshot('Hapus Objek');
                 renderNodes();
                 renderConnections();
+                renderDrawings();
                 renderSelection();
                 updateFloatingAndPlusBars();
                 updateStats();
@@ -12306,11 +12333,13 @@
                     state.selectedNodeId = state.selectedNodeIds[0] || null;
                     state.selectedConnectionIds = state.connections.map(c => c.id);
                     state.selectedConnectionId = state.selectedConnectionIds[0] || null;
+                    state.selectedDrawingIds = (state.drawings || []).map(d => d.id);
                     document.querySelectorAll('.diagram-node').forEach(el => el.classList.add('selected'));
                     renderConnections();
+                    renderDrawings();
                     renderSelection();
                     updateFloatingAndPlusBars();
-                    statusHintText.textContent = `Semua objek terpilih (${state.nodes.length} bentuk & ${state.connections.length} panah diblok). Tekan Ctrl+C untuk menyalin.`;
+                    statusHintText.textContent = `Semua objek terpilih (${state.nodes.length} bentuk, ${state.connections.length} panah, & ${state.selectedDrawingIds.length} goresan diblok). Tekan Delete untuk menghapus.`;
                     return;
                 }
 
