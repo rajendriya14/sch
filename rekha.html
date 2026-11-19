@@ -1661,6 +1661,93 @@
             border-top: 1px solid var(--border-light, #e2e8f0);
         }
 
+        /* Bottom-Right ReUI/Shadcn Alert Toast System (Info, Success, Warning, Error) */
+        #rekhaToastContainer {
+            position: fixed;
+            bottom: 42px;
+            right: 20px;
+            z-index: 9800;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .rekha-toast-alert {
+            pointer-events: auto;
+            min-width: 300px;
+            max-width: 390px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            cursor: pointer;
+            animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .rekha-toast-alert.hiding {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .rekha-toast-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.3;
+        }
+        .rekha-toast-header svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        .rekha-toast-desc {
+            padding-left: 24px;
+            font-size: 12.5px;
+            line-height: 1.42;
+            color: #64748b;
+        }
+        /* 1. Info Alert */
+        .rekha-toast-alert.toast-info {
+            background: #faf8ff;
+            border-color: #ddd6fe;
+        }
+        .rekha-toast-alert.toast-info .rekha-toast-header svg { color: #7c3aed; }
+        /* 2. Success Alert */
+        .rekha-toast-alert.toast-success {
+            background: #f0fdf8;
+            border-color: #a7f3d0;
+        }
+        .rekha-toast-alert.toast-success .rekha-toast-header svg { color: #10b981; }
+        /* 3. Warning Alert */
+        .rekha-toast-alert.toast-warning {
+            background: #fffdf2;
+            border-color: #fde68a;
+        }
+        .rekha-toast-alert.toast-warning .rekha-toast-header svg { color: #d97706; }
+        /* 4. Error Alert */
+        .rekha-toast-alert.toast-error {
+            background: #fef6f6;
+            border-color: #fecaca;
+        }
+        .rekha-toast-alert.toast-error .rekha-toast-header svg { color: #ef4444; }
+        /* Dark Mode Toast Variants */
+        [data-theme="dark"] .rekha-toast-alert .rekha-toast-header { color: #f4f4f5; }
+        [data-theme="dark"] .rekha-toast-alert .rekha-toast-desc { color: #a1a1aa; }
+        [data-theme="dark"] .rekha-toast-alert.toast-info { background: #1e1b2e; border-color: #4c1d95; }
+        [data-theme="dark"] .rekha-toast-alert.toast-success { background: #0f241d; border-color: #065f46; }
+        [data-theme="dark"] .rekha-toast-alert.toast-warning { background: #261f0d; border-color: #92400e; }
+        [data-theme="dark"] .rekha-toast-alert.toast-error { background: #2a1215; border-color: #991b1b; }
+
         .stencil-shape-tile {
             height: 48px;
             background: var(--bg-panel-subtle);
@@ -5240,6 +5327,8 @@
         </div>
     </div>
 
+    <div id="rekhaToastContainer" aria-live="polite"></div>
+
     <div class="save-confirm-modal" id="saveFormatModal" style="display:none;">
         <div class="save-confirm-card format-modal-card" style="width: 530px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
             <!-- Shadcn FieldGroup Container -->
@@ -7075,6 +7164,54 @@
                 });
             }
 
+            function showRekhaToast(type = 'info', title = '', description = '', durationMs = 3600) {
+                const container = document.getElementById('rekhaToastContainer');
+                if (!container) return;
+                const validTypes = ['info', 'success', 'warning', 'error'];
+                const t = validTypes.includes(type) ? type : 'info';
+
+                const icons = {
+                    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+                    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                };
+
+                const card = document.createElement('div');
+                card.className = `rekha-toast-alert toast-${t}`;
+
+                const header = document.createElement('div');
+                header.className = 'rekha-toast-header';
+                header.innerHTML = icons[t];
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = title;
+                header.appendChild(titleSpan);
+                card.appendChild(header);
+
+                if (description) {
+                    const descEl = document.createElement('div');
+                    descEl.className = 'rekha-toast-desc';
+                    descEl.textContent = description;
+                    card.appendChild(descEl);
+                }
+
+                const dismiss = () => {
+                    if (card.classList.contains('hiding')) return;
+                    card.classList.add('hiding');
+                    setTimeout(() => { if (card.parentNode) card.parentNode.removeChild(card); }, 200);
+                };
+                card.addEventListener('click', dismiss);
+
+                container.appendChild(card);
+                while (container.children.length > 4) {
+                    container.removeChild(container.firstChild);
+                }
+                if (durationMs > 0) {
+                    setTimeout(dismiss, durationMs);
+                }
+            }
+            window.showRekhaToast = showRekhaToast;
+
             function showSaveConfirmationModal(fileName, folderLocation, formatLabel, tipMessage) {
                 const modal = document.getElementById('saveConfirmModal') || saveConfirmModal;
                 const confirmFileName = document.getElementById('saveConfirmFileName');
@@ -7500,7 +7637,7 @@
                         if (format === 'svg' || format === 'rekha') {
                             setActiveProjectFile(fileHandle, savedName, format);
                         }
-                        showSaveConfirmationModal(savedName, 'Selected folder on your computer', formatLabel, tipMessage);
+                        showRekhaToast('success', 'Success! File saved', `Saved ${formatLabel} as "${savedName}".`);
                         statusHintText.textContent = `File ${formatLabel} saved successfully: ${savedName}`;
                         return;
                     } catch (err) {
@@ -7522,7 +7659,7 @@
                 document.body.removeChild(downloadLink);
                 URL.revokeObjectURL(blobUrl);
 
-                showSaveConfirmationModal(fullFileName, 'Computer Downloads Folder', formatLabel, tipMessage);
+                showRekhaToast('success', 'Success! File downloaded', `Saved ${formatLabel} to Downloads as "${fullFileName}".`);
                 statusHintText.textContent = `File saved to Downloads folder: ${fullFileName}`;
             }
 
@@ -7558,6 +7695,7 @@
                     await writable.close();
 
                     const savedDisplay = activeFileName || activeFileHandle.name || `diagram.${activeFileFormat}`;
+                    showRekhaToast('success', 'Success! Changes saved', `Updated "${savedDisplay}" directly without creating a new file.`);
                     if (statusHintText) {
                         statusHintText.textContent = `✓ Saved to ${savedDisplay}`;
                     }
@@ -7577,6 +7715,7 @@
                     }
                 } catch (err) {
                     console.warn('Direct save failed, falling back to Save As:', err);
+                    showRekhaToast('warning', 'Warning! Save As required', 'Direct overwrite unavailable. Please choose a file location.');
                     clearActiveProjectFile();
                     openSaveFormatModal();
                 }
@@ -7747,6 +7886,7 @@
                         const text = await file.text();
                         loadDiagramFromFile(text, file.name);
                         setActiveProjectFile(fileHandle, file.name);
+                        showRekhaToast('info', 'Info! File opened', `Now editing "${file.name}". Press Ctrl+S anytime to save directly.`);
                         return;
                     } catch (err) {
                         if (err.name === 'AbortError') return;
@@ -7765,6 +7905,7 @@
                         reader.onload = (rev) => {
                             loadDiagramFromFile(rev.target.result, file.name);
                             clearActiveProjectFile(file.name);
+                            showRekhaToast('info', 'Info! File imported', `Opened "${file.name}". Use Save As to choose your save location.`);
                         };
                         reader.readAsText(file);
                     };
@@ -17035,7 +17176,7 @@
 
                 btnSave.addEventListener('click', () => {
                     if (studioElements.length === 0) {
-                        alert('Gambar minimal 1 bentuk terlebih dahulu di canvas studio.');
+                        showRekhaToast('warning', 'Warning! Canvas is empty', 'Gambar minimal 1 bentuk terlebih dahulu di canvas studio.');
                         return;
                     }
                     const boxes = studioElements.map(getElemBBox);
@@ -17063,6 +17204,7 @@
                     saveCustomShapesToStorage(list);
                     renderMyShapesSidebar();
                     closeStudio();
+                    showRekhaToast('success', 'Success! Custom shape saved', `"${newShape.name}" has been added to My Shapes.`);
                     statusHintText.textContent = `✓ Custom Shape "${newShape.name}" disimpan ke kategori My Shapes!`;
                 });
             })();
