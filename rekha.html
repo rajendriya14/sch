@@ -3121,9 +3121,13 @@
         .canvas-tab-item {
             display: inline-flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
+            width: 150px;
+            flex: 0 0 150px;
             height: 30px;
             padding: 0 10px;
+            box-sizing: border-box;
             background: transparent;
             color: var(--text-muted);
             font-size: 12px;
@@ -3162,7 +3166,8 @@
         }
 
         .tab-title-text {
-            max-width: 140px;
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -5403,41 +5408,6 @@
                     </div>
                 </fieldset>
 
-                <!-- FieldSet 2: Canvas Scope -->
-                <fieldset class="field-set">
-                    <legend class="field-legend">Canvas Scope</legend>
-                    <p class="field-description">Choose which canvases to include in the saved file.</p>
-                    <div class="field-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        
-                        <label class="field field-horizontal save-scope-option active" id="saveScopeActiveWrap" for="scope-active">
-                            <div class="shadcn-checkbox-wrapper">
-                                <input type="radio" id="scope-active" name="saveScopeRadio" value="active" checked class="shadcn-checkbox-input">
-                                <div class="shadcn-checkbox-box">
-                                    <svg class="shadcn-checkbox-check" viewBox="0 0 16 16"><path d="M3.5 8.5L6.5 11.5L12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </div>
-                            </div>
-                            <div class="field-content">
-                                <div class="field-title" id="saveScopeActiveTitle">Active Canvas</div>
-                                <p class="field-description" id="saveScopeActiveSubtitle">Current active canvas only</p>
-                            </div>
-                        </label>
-
-                        <label class="field field-horizontal save-scope-option" id="saveScopeAllWrap" for="scope-all">
-                            <div class="shadcn-checkbox-wrapper">
-                                <input type="radio" id="scope-all" name="saveScopeRadio" value="all" class="shadcn-checkbox-input">
-                                <div class="shadcn-checkbox-box">
-                                    <svg class="shadcn-checkbox-check" viewBox="0 0 16 16"><path d="M3.5 8.5L6.5 11.5L12.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </div>
-                            </div>
-                            <div class="field-content">
-                                <div class="field-title" id="saveScopeAllTitle">All Canvases</div>
-                                <p class="field-description" id="saveScopeAllSubtitle">All canvas tabs in this project</p>
-                            </div>
-                        </label>
-
-                    </div>
-                </fieldset>
-
                 <!-- FieldSet 3: File Name -->
                 <fieldset class="field-set">
                     <legend class="field-legend">File Name</legend>
@@ -7095,24 +7065,6 @@
                     }
                 }
 
-                // Update scope labels for multi-page
-                const activeTab = state.tabs.find(t => t.id === state.activeTabId) || state.tabs[0];
-                const activeTitleEl = document.getElementById('saveScopeActiveTitle');
-                if (activeTitleEl) activeTitleEl.textContent = `Active Canvas ("${activeTab ? activeTab.name : 'Canvas 1'}")`;
-                const allTitleEl = document.getElementById('saveScopeAllTitle');
-                if (allTitleEl) allTitleEl.textContent = `All Canvases (${state.tabs.length} ${state.tabs.length > 1 ? 'Canvases' : 'Canvas'})`;
-
-                // Setup scope radio listeners
-                const scopeOptions = document.querySelectorAll('.save-scope-option');
-                scopeOptions.forEach(opt => {
-                    opt.onclick = () => {
-                        const radio = opt.querySelector('input[type="radio"]');
-                        if (radio) radio.checked = true;
-                        scopeOptions.forEach(o => o.classList.remove('active'));
-                        opt.classList.add('active');
-                    };
-                });
-
                 // Otomatis pilih vector SVG secara default
                 selectedSaveFormat = 'svg';
                 formatRadioOptions.forEach(c => {
@@ -7569,8 +7521,7 @@
 
             async function executeSaveDiagram(format, baseName) {
                 saveActiveTabState();
-                const saveScopeInput = document.querySelector('input[name="saveScopeRadio"]:checked');
-                const saveScope = saveScopeInput ? saveScopeInput.value : 'active';
+                const saveScope = 'all';
                 const activeTab = state.tabs.find(t => t.id === state.activeTabId) || state.tabs[0];
                 const activeTabName = activeTab ? activeTab.name : 'Canvas 1';
 
@@ -7588,7 +7539,7 @@
                         description: 'Scalable Vector Graphics (*.svg)',
                         accept: { 'image/svg+xml': ['.svg'] }
                     }];
-                    formatLabel = `Vector SVG (.svg) [${saveScope === 'all' ? 'All Canvases' : activeTabName}]`;
+                    formatLabel = `Vector SVG (.svg) [${state.tabs.length} ${state.tabs.length > 1 ? 'Canvases' : 'Canvas'}]`;
                 } else if (format === 'rekha') {
                     ext = '.rekha';
                     const rekhaData = getDiagramRekhaString();
