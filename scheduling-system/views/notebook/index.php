@@ -480,29 +480,26 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                 <i class="bi bi-arrow-repeat" style="cursor:pointer;" title="Reset Filter" onclick="selectFilter('ALL', 'Personal Notebook')"></i>
             </div>
 
-            <button type="button" class="sidebar-nav-item active" id="nav-ALL" onclick="selectFilter('ALL', 'Personal Notebook')">
-                <span class="sidebar-nav-left">
-                    <i class="bi bi-journals"></i>
-                    <span>Semua Catatan</span>
-                </span>
-                <span class="sidebar-count" id="cnt-ALL">0</span>
-            </button>
-
-            <button type="button" class="sidebar-nav-item" id="nav-Meeting" onclick="selectFilter('#Meeting', 'Meeting &amp; Sync')">
-                <span class="sidebar-nav-left">
-                    <i class="bi bi-chat-square-text"></i>
-                    <span>Meeting &amp; Sync</span>
-                </span>
-                <span class="sidebar-count" id="cnt-Meeting">0</span>
-            </button>
-
-            <button type="button" class="sidebar-nav-item" id="nav-Personal" onclick="selectFilter('#Personal', 'Personal Notes')">
+            <button type="button" class="sidebar-nav-item" id="nav-AllNotes"
+                    data-bs-toggle="collapse" data-bs-target="#allNotesSubmenu" aria-expanded="true">
                 <span class="sidebar-nav-left">
                     <i class="bi bi-journal-text"></i>
-                    <span>Personal Notes</span>
+                    <span>All Notes</span>
                 </span>
-                <span class="sidebar-count" id="cnt-Personal">0</span>
+                <span class="d-flex align-items-center gap-2">
+                    <span class="sidebar-count" id="cnt-AllNotes">0</span>
+                    <i class="bi bi-chevron-down" style="font-size:0.72rem; color:#9ca3af;"></i>
+                </span>
             </button>
+            <div class="collapse show ps-3" id="allNotesSubmenu">
+                <button type="button" class="sidebar-nav-item active" id="nav-ALL" onclick="selectFilter('ALL', 'Semua Catatan')">
+                    <span class="sidebar-nav-left">
+                        <i class="bi bi-journals"></i>
+                        <span>Semua Catatan</span>
+                    </span>
+                    <span class="sidebar-count" id="cnt-ALL">0</span>
+                </button>
+            </div>
 
             <button type="button" class="sidebar-nav-item" id="nav-Kanban" onclick="switchView('kanban')">
                 <span class="sidebar-nav-left">
@@ -973,8 +970,7 @@ function setActiveSidebarNav(navId, title) {
 
 function selectFilter(tag, title) {
     activeTagFilter = tag;
-    const navId = tag === '#Meeting' ? 'nav-Meeting' : (tag === '#Personal' ? 'nav-Personal' : 'nav-ALL');
-    setActiveSidebarNav(navId, title || 'Personal Notebook');
+    setActiveSidebarNav('nav-ALL', title || 'Semua Catatan');
     if (currentView === 'kanban') {
         switchView('month');
         return;
@@ -1004,9 +1000,8 @@ function renderAll() {
 }
 
 function updateSidebarCounts() {
+    document.getElementById('cnt-AllNotes').textContent = events.length;
     document.getElementById('cnt-ALL').textContent = events.length;
-    document.getElementById('cnt-Meeting').textContent = events.filter(e => e.tag === '#Meeting').length;
-    document.getElementById('cnt-Personal').textContent = events.filter(e => e.tag === '#Personal').length;
     const emailCnt = events.filter(e => e.email_reminder && e.status !== 'Done').length;
     document.getElementById('cnt-Email').textContent = emailCnt;
     document.getElementById('cnt-Kanban').textContent = events.length;
@@ -1048,9 +1043,7 @@ function switchView(view) {
     if (view === 'kanban') {
         setActiveSidebarNav('nav-Kanban', 'Kanban Board');
     } else {
-        const navMap = { 'ALL': ['nav-ALL', 'Personal Notebook'], '#Meeting': ['nav-Meeting', 'Meeting & Sync'], '#Personal': ['nav-Personal', 'Personal Notes'] };
-        const [navId, title] = navMap[activeTagFilter] || ['nav-ALL', 'Personal Notebook'];
-        setActiveSidebarNav(navId, title);
+        setActiveSidebarNav('nav-ALL', 'Semua Catatan');
     }
     renderAll();
 }
