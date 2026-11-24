@@ -236,6 +236,35 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         background: #ffffff;
     }
 
+    .nb-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        flex-wrap: wrap;
+    }
+
+    .nb-bc-link {
+        color: #6b7280;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.12s;
+    }
+
+    .nb-bc-link:hover {
+        color: var(--nb-text);
+    }
+
+    .nb-bc-sep {
+        color: #9ca3af;
+        font-size: 0.72rem;
+    }
+
+    .nb-bc-current {
+        color: var(--nb-text);
+        font-weight: 500;
+    }
+
     .nb-content {
         padding: 18px 24px 36px;
         max-width: 1380px;
@@ -564,7 +593,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                 <button type="button" class="btn-cal-ghost px-2" onclick="toggleSidebar()" title="Toggle Sidebar">
                     <i class="bi bi-layout-sidebar"></i>
                 </button>
-                <span class="fw-semibold" style="font-size:0.95rem;" id="topbarTitle">Personal Notebook</span>
+                <nav aria-label="breadcrumb" class="nb-breadcrumb" id="topbarBreadcrumb">
+                    <a href="index.php?page=portal" class="nb-bc-link">Home</a>
+                    <i class="bi bi-chevron-right nb-bc-sep"></i>
+                    <span class="nb-bc-current">All Notes</span>
+                </nav>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge rounded-pill d-none d-sm-inline-flex align-items-center" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.72rem;">
@@ -1092,11 +1125,33 @@ function toggleSidebar(forceOpen = null) {
     }
 }
 
+function renderBreadcrumb(navId) {
+    const bc = document.getElementById('topbarBreadcrumb');
+    if (!bc) return;
+
+    const trails = {
+        'nav-ALL':      [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes' }],
+        'nav-Meeting':  [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes', onclick: "selectFilter('ALL', 'All Notes')" }, { label: 'Meeting & Sync' }],
+        'nav-Personal': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes', onclick: "selectFilter('ALL', 'All Notes')" }, { label: 'Personal Notes' }],
+        'nav-Kanban':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Kanban Board' }],
+        'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
+        'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }]
+    };
+
+    const items = trails[navId] || trails['nav-ALL'];
+    bc.innerHTML = items.map((item, idx) => {
+        const isLast = idx === items.length - 1;
+        if (isLast) return `<span class="nb-bc-current">${esc(item.label)}</span>`;
+        if (item.href) return `<a href="${item.href}" class="nb-bc-link">${esc(item.label)}</a>`;
+        return `<span class="nb-bc-link" onclick="${item.onclick}">${esc(item.label)}</span>`;
+    }).join('<i class="bi bi-chevron-right nb-bc-sep"></i>');
+}
+
 function setActiveSidebarNav(navId, title) {
     document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
     const el = document.getElementById(navId);
     if (el) el.classList.add('active');
-    if (title) document.getElementById('topbarTitle').textContent = title;
+    renderBreadcrumb(navId);
     if (window.innerWidth < 992) toggleSidebar(false);
 }
 
