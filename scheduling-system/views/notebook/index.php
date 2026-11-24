@@ -45,7 +45,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         position: fixed;
         inset: 0;
         background: rgba(15, 23, 42, 0.35);
-        z-index: 1035;
+        z-index: 1045;
     }
 
     .nb-sidebar-backdrop.is-open {
@@ -62,7 +62,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         flex-direction: column;
         justify-content: space-between;
         padding: 14px 12px;
-        transition: margin-left 0.2s ease, opacity 0.2s ease;
+        transition: margin-left 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
     }
 
     .nb-sidebar.is-collapsed {
@@ -77,8 +77,21 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             top: 0;
             bottom: 0;
             left: 0;
-            z-index: 1040;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+            z-index: 1050;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.16);
+            margin-left: 0 !important;
+            transform: translateX(0);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+        .nb-sidebar.is-collapsed {
+            transform: translateX(-100%);
+            margin-left: 0 !important;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
         .nb-content {
             padding: 14px 14px 32px;
@@ -299,12 +312,14 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         background: #ffffff;
         border: 1px solid var(--nb-border);
         border-radius: 12px;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .cal-toolbar {
         padding: 12px 16px;
         border-bottom: 1px solid var(--nb-border);
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -446,6 +461,10 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     <!-- LEFT SIDEBAR -->
     <aside class="nb-sidebar" id="nbSidebar">
         <div>
+            <div class="d-flex d-lg-none align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <span class="fw-bold small" style="color:var(--excel-green);"><i class="bi bi-journal-bookmark me-1"></i>Personal Notebook</span>
+                <button type="button" class="btn-close btn-sm" onclick="toggleSidebar(false)" aria-label="Close"></button>
+            </div>
             <div class="sidebar-search">
                 <i class="bi bi-search"></i>
                 <input type="text" id="sidebarSearch" placeholder="Filter notes &amp; tasks" oninput="renderAll()">
