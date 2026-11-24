@@ -319,26 +319,71 @@ class Database
     }
 
     /**
-     * Tabel notebook_tasks untuk catatan personal, timeline & kalender.
+     * Tabel notebook_tasks & notebook_settings untuk catatan personal, kalender, kanban & email reminder.
      */
     public static function ensureNotebookTables(): void
     {
         try {
             self::$instance->exec('
                 CREATE TABLE IF NOT EXISTS notebook_tasks (
-                    id          INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id     INT NOT NULL,
-                    title       VARCHAR(255) NOT NULL,
-                    notes       TEXT DEFAULT NULL,
-                    due_date    DATE NOT NULL,
-                    due_time    TIME DEFAULT NULL,
-                    priority    ENUM("Low", "Medium", "High") NOT NULL DEFAULT "Medium",
-                    status      ENUM("Todo", "In Progress", "Done") NOT NULL DEFAULT "Todo",
-                    color       VARCHAR(20) DEFAULT "#2563eb",
-                    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    id                    INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id               INT NOT NULL,
+                    title                 VARCHAR(255) NOT NULL,
+                    notes                 TEXT DEFAULT NULL,
+                    due_date              DATE NOT NULL,
+                    due_time              TIME DEFAULT NULL,
+                    duration_minutes      INT NOT NULL DEFAULT 60,
+                    priority              ENUM("Low", "Medium", "High") NOT NULL DEFAULT "Medium",
+                    status                ENUM("Todo", "In Progress", "Done") NOT NULL DEFAULT "Todo",
+                    tag                   VARCHAR(50) NOT NULL DEFAULT "#Personal",
+                    theme                 VARCHAR(30) NOT NULL DEFAULT "theme-green",
+                    color                 VARCHAR(20) DEFAULT "#217346",
+                    is_pinned             TINYINT(1) NOT NULL DEFAULT 0,
+                    email_reminder        TINYINT(1) NOT NULL DEFAULT 0,
+                    reminder_freq         ENUM("once", "workdays", "daily", "custom") NOT NULL DEFAULT "once",
+                    reminder_lead         VARCHAR(10) NOT NULL DEFAULT "1h",
+                    reminder_send_time    TIME DEFAULT NULL,
+                    reminder_days         VARCHAR(60) DEFAULT NULL,
+                    reminder_emails       TEXT DEFAULT NULL,
+                    last_reminder_sent_at DATETIME DEFAULT NULL,
+                    created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_user_due (user_id, due_date),
                     INDEX idx_user_status (user_id, status)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
+
+            $extraCols = [
+                'duration_minutes'      => 'INT NOT NULL DEFAULT 60 AFTER due_time',
+                'tag'                   => 'VARCHAR(50) NOT NULL DEFAULT "#Personal" AFTER status',
+                'theme'                 => 'VARCHAR(30) NOT NULL DEFAULT "theme-green" AFTER tag',
+                'is_pinned'             => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER color',
+                'email_reminder'        => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER is_pinned',
+                'reminder_freq'         => 'ENUM("once","workdays","daily","custom") NOT NULL DEFAULT "once" AFTER email_reminder',
+                'reminder_lead'         => 'VARCHAR(10) NOT NULL DEFAULT "1h" AFTER reminder_freq',
+                'reminder_send_time'    => 'TIME DEFAULT NULL AFTER reminder_lead',
+                'reminder_days'         => 'VARCHAR(60) DEFAULT NULL AFTER reminder_send_time',
+                'reminder_emails'       => 'TEXT DEFAULT NULL AFTER reminder_days',
+                'last_reminder_sent_at' => 'DATETIME DEFAULT NULL AFTER reminder_emails',
+            ];
+            foreach ($extraCols as $col => $def) {
+                try {
+                    self::$instance->exec("ALTER TABLE notebook_tasks ADD COLUMN {$col} {$def}");
+                } catch (\PDOException $e) {
+                    // Column already exists
+                }
+            }
+
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS notebook_settings (
+                    user_id               INT PRIMARY KEY,
+                    emails                TEXT DEFAULT NULL,
+                    digest_enabled        TINYINT(1) NOT NULL DEFAULT 1,
+                    digest_freq           ENUM("workdays", "daily", "custom") NOT NULL DEFAULT "workdays",
+                    digest_days           VARCHAR(60) DEFAULT "Sen,Sel,Rab,Kam,Jum",
+                    digest_time           TIME NOT NULL DEFAULT "07:30:00",
+                    last_digest_sent_date DATE DEFAULT NULL,
+                    updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
         } catch (\PDOException $e) {

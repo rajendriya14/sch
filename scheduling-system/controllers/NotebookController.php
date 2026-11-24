@@ -4,6 +4,7 @@ namespace Controllers;
 
 use Models\NotebookTask;
 use Services\AuthService;
+use Services\MailService;
 
 class NotebookController
 {
@@ -22,9 +23,11 @@ class NotebookController
 
     private function isJsonRequest(): bool
     {
-        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+        $accept  = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
         $reqWith = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
-        return strpos($accept, 'application/json') !== false || $reqWith === 'xmlhttprequest' || isset($_GET['format']) && $_GET['format'] === 'json';
+        return strpos($accept, 'application/json') !== false
+            || $reqWith === 'xmlhttprequest'
+            || (isset($_GET['format']) && $_GET['format'] === 'json');
     }
 
     private function jsonResponse(array $data, int $statusCode = 200): void
@@ -42,16 +45,17 @@ class NotebookController
      */
     public function index(): void
     {
-        $userId       = $this->getCurrentUserId();
-        $user         = AuthService::user();
-        $hideSidebar  = true;
-        $brandTitle   = 'Personal Notebook';
-        $brandIcon    = 'bi-journal-bookmark';
-        $brandUrl     = 'index.php?page=portal';
-        $appLabel     = 'Personal Workspace';
-        $pageName     = 'notebook';
+        $userId      = $this->getCurrentUserId();
+        $user        = AuthService::user();
+        $hideSidebar = true;
+        $brandTitle  = 'Personal Notebook';
+        $brandIcon   = 'bi-journal-bookmark';
+        $brandUrl    = 'index.php?page=portal';
+        $appLabel    = 'Personal Workspace';
+        $pageName    = 'notebook';
 
-        $tasks = NotebookTask::allByUser($userId);
+        $tasks    = NotebookTask::allByUser($userId);
+        $settings = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
 
         require_once __DIR__ . '/../views/layouts/header.php';
         require_once __DIR__ . '/../views/notebook/index.php';
@@ -64,8 +68,8 @@ class NotebookController
     public function apiGetTasks(): void
     {
         $userId = $this->getCurrentUserId();
-        $start = $_GET['start'] ?? date('Y-m-01', strtotime('-1 month'));
-        $end   = $_GET['end']   ?? date('Y-m-t', strtotime('+2 months'));
+        $start  = $_GET['start'] ?? date('Y-m-01', strtotime('-1 month'));
+        $end    = $_GET['end']   ?? date('Y-m-t', strtotime('+2 months'));
 
         $tasks = NotebookTask::getByUserAndRange($userId, $start, $end);
         $this->jsonResponse(['success' => true, 'data' => $tasks]);
@@ -78,17 +82,27 @@ class NotebookController
     {
         $userId = $this->getCurrentUserId();
 
-        $id = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
-        $title = trim((string) ($_POST['title'] ?? ''));
-        $notes = trim((string) ($_POST['notes'] ?? ''));
-        $dueDate = trim((string) ($_POST['due_date'] ?? ''));
-        $dueTime = trim((string) ($_POST['due_time'] ?? ''));
-        $priority = trim((string) ($_POST['priority'] ?? 'Medium'));
-        $status = trim((string) ($_POST['status'] ?? 'Todo'));
-        $color = trim((string) ($_POST['color'] ?? '#2563eb'));
+        $id               = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
+        $title            = trim((string) ($_POST['title'] ?? ''));
+        $notes            = trim((string) ($_POST['notes'] ?? ''));
+        $dueDate          = trim((string) ($_POST['due_date'] ?? ''));
+        $dueTime          = trim((string) ($_POST['due_time'] ?? ''));
+        $duration         = max(15, (int) ($_POST['duration_minutes'] ?? 60));
+        $priority         = trim((string) ($_POST['priority'] ?? 'Medium'));
+        $status           = trim((string) ($_POST['status'] ?? 'Todo'));
+        $tag              = trim((string) ($_POST['tag'] ?? '#Personal'));
+        $theme            = trim((string) ($_POST['theme'] ?? 'theme-green'));
+        $color            = trim((string) ($_POST['color'] ?? '#217346'));
+        $isPinned         = !empty($_POST['is_pinned']) ? 1 : 0;
+        $emailReminder    = !empty($_POST['email_reminder']) ? 1 : 0;
+        $reminderFreq     = trim((string) ($_POST['reminder_freq'] ?? 'once'));
+        $reminderLead     = trim((string) ($_POST['reminder_lead'] ?? '1h'));
+        $reminderSendTime = trim((string) ($_POST['reminder_send_time'] ?? '08:00'));
+        $reminderDays     = trim((string) ($_POST['reminder_days'] ?? ''));
+        $rawEmails        = $_POST['reminder_emails'] ?? '[]';
 
         if ($title === '') {
-            $msg = 'Judul task tidak boleh kosong.';
+            $msg = 'Judul agenda / catatan tidak boleh kosong.';
             if ($this->isJsonRequest()) {
                 $this->jsonResponse(['success' => false, 'message' => $msg], 400);
             }
@@ -102,29 +116,46 @@ class NotebookController
             $dueDate = date('Y-m-d');
         }
 
-        $validPriorities = ['Low', 'Medium', 'High'];
-        if (!in_array($priority, $validPriorities, true)) {
+        if (!in_array($priority, ['Low', 'Medium', 'High'], true)) {
             $priority = 'Medium';
         }
-
-        $validStatuses = ['Todo', 'In Progress', 'Done'];
-        if (!in_array($status, $validStatuses, true)) {
+        if (!in_array($status, ['Todo', 'In Progress', 'Done'], true)) {
             $status = 'Todo';
         }
+        if (!in_array($reminderFreq, ['once', 'workdays', 'daily', 'custom'], true)) {
+            $reminderFreq = 'once';
+        }
+
+        $emailsArr = is_string($rawEmails) ? json_decode($rawEmails, true) : (is_array($rawEmails) ? $rawEmails : []);
+        if (!is_array($emailsArr)) {
+            $emailsArr = [];
+        }
+        $emailsArr = array_values(array_filter(array_map('trim', $emailsArr), static function ($em) {
+            return filter_var($em, FILTER_VALIDATE_EMAIL) !== false;
+        }));
 
         $data = [
-            'user_id'  => $userId,
-            'title'    => $title,
-            'notes'    => $notes !== '' ? $notes : null,
-            'due_date' => $dueDate,
-            'due_time' => $dueTime !== '' ? $dueTime : null,
-            'priority' => $priority,
-            'status'   => $status,
-            'color'    => $color,
+            'user_id'            => $userId,
+            'title'              => $title,
+            'notes'              => $notes !== '' ? $notes : null,
+            'due_date'           => $dueDate,
+            'due_time'           => $dueTime !== '' ? $dueTime : null,
+            'duration_minutes'   => $duration,
+            'priority'           => $priority,
+            'status'             => $status,
+            'tag'                => $tag !== '' ? $tag : '#Personal',
+            'theme'              => $theme !== '' ? $theme : 'theme-green',
+            'color'              => $color,
+            'is_pinned'          => $isPinned,
+            'email_reminder'     => $emailReminder,
+            'reminder_freq'      => $reminderFreq,
+            'reminder_lead'      => $reminderLead,
+            'reminder_send_time' => $reminderSendTime !== '' ? $reminderSendTime : null,
+            'reminder_days'      => $reminderDays !== '' ? $reminderDays : null,
+            'reminder_emails'    => json_encode($emailsArr, JSON_UNESCAPED_UNICODE),
         ];
 
         if ($id > 0) {
-            // Check ownership
             $existing = NotebookTask::findByUser($id, $userId);
             if (!$existing) {
                 if ($this->isJsonRequest()) {
@@ -137,10 +168,10 @@ class NotebookController
             }
             NotebookTask::update($id, $userId, $data);
             $savedId = $id;
-            $msg = 'Task berhasil diperbarui.';
+            $msg = 'Agenda berhasil diperbarui.';
         } else {
             $savedId = NotebookTask::create($data);
-            $msg = 'Task baru berhasil ditambahkan.';
+            $msg = 'Agenda baru berhasil disimpan.';
         }
 
         if ($this->isJsonRequest()) {
@@ -155,12 +186,12 @@ class NotebookController
     }
 
     /**
-     * API: Toggle Task Status (Todo <-> Done)
+     * API: Toggle / Update Task Status (Todo / In Progress / Done)
      */
     public function toggleStatus(): void
     {
         $userId = $this->getCurrentUserId();
-        $id = (int) ($_POST['id'] ?? 0);
+        $id     = (int) ($_POST['id'] ?? 0);
         $status = trim((string) ($_POST['status'] ?? ''));
 
         $existing = NotebookTask::findByUser($id, $userId);
@@ -182,7 +213,7 @@ class NotebookController
     public function delete(): void
     {
         $userId = $this->getCurrentUserId();
-        $id = (int) ($_POST['id'] ?? $_GET['id'] ?? 0);
+        $id     = (int) ($_POST['id'] ?? $_GET['id'] ?? 0);
 
         $existing = NotebookTask::findByUser($id, $userId);
         if (!$existing) {
@@ -196,7 +227,7 @@ class NotebookController
         }
 
         NotebookTask::delete($id, $userId);
-        $msg = 'Task berhasil dihapus.';
+        $msg = 'Agenda berhasil dihapus.';
 
         if ($this->isJsonRequest()) {
             $this->jsonResponse(['success' => true, 'message' => $msg]);
@@ -207,5 +238,85 @@ class NotebookController
         header('Location: index.php?page=notebook');
         exit;
     }
-}
 
+    /**
+     * API: Save User Email Reminder Settings
+     */
+    public function saveSettings(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $rawEmails = $_POST['emails'] ?? '[]';
+        $emailsArr = is_string($rawEmails) ? json_decode($rawEmails, true) : (is_array($rawEmails) ? $rawEmails : []);
+        if (!is_array($emailsArr)) {
+            $emailsArr = [];
+        }
+        $emailsArr = array_values(array_filter(array_map('trim', $emailsArr), static function ($em) {
+            return filter_var($em, FILTER_VALIDATE_EMAIL) !== false;
+        }));
+
+        $daysRaw = trim((string) ($_POST['digest_days'] ?? 'Sen,Sel,Rab,Kam,Jum'));
+        $daysArr = array_values(array_filter(array_map('trim', explode(',', $daysRaw))));
+
+        NotebookTask::saveSettings($userId, [
+            'emails'         => $emailsArr,
+            'digest_enabled' => !empty($_POST['digest_enabled']),
+            'digest_freq'    => trim((string) ($_POST['digest_freq'] ?? 'workdays')),
+            'digest_days'    => $daysArr,
+            'digest_time'    => trim((string) ($_POST['digest_time'] ?? '07:30')),
+        ]);
+
+        $settings = NotebookTask::getSettings($userId);
+        $this->jsonResponse(['success' => true, 'message' => 'Pengaturan Email Reminder disimpan.', 'settings' => $settings]);
+    }
+
+    /**
+     * API: Send Test Email Briefing to configured recipients
+     */
+    public function sendTestEmail(): void
+    {
+        $userId   = $this->getCurrentUserId();
+        $user     = AuthService::user();
+        $settings = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
+
+        $recipients = $settings['emails'];
+        if (empty($recipients)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Tambahkan minimal 1 alamat email penerima terlebih dahulu.'], 400);
+        }
+
+        $today = date('Y-m-d');
+        $tasks = array_values(array_filter(NotebookTask::allByUser($userId), static function ($t) use ($today) {
+            return ($t['due_date'] ?? '') <= $today && ($t['status'] ?? '') !== 'Done';
+        }));
+
+        $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+        $itemsHtml = '';
+        if (empty($tasks)) {
+            $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada agenda tertunda untuk hari ini.</p>';
+        } else {
+            foreach ($tasks as $t) {
+                $tTitle = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
+                $tTime  = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
+                $tPrio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
+                $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
+                    . "<strong>{$tTitle}</strong> <span style='font-size:12px;color:#6b7280;'>[{$tPrio}]</span>"
+                    . "<div style='font-size:12px;color:#6b7280;'>{$tTime}</div></div>";
+            }
+        }
+
+        $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,sans-serif;color:#111827;">'
+            . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
+            . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;">Personal Notebook Assistant</div>'
+            . "<div style='font-size:19px;font-weight:bold;margin-top:4px;'>Halo {$userName}, ini ringkasan agenda Anda</div></td></tr>"
+            . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.6;'>{$itemsHtml}"
+            . '<div style="margin-top:18px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
+            . '</td></tr></table></body></html>';
+
+        try {
+            $mail = new MailService();
+            $res  = $mail->send($recipients, '[Personal Notebook] Ringkasan Agenda Anda', $html);
+            $this->jsonResponse($res, $res['success'] ? 200 : 500);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+}

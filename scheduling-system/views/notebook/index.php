@@ -1,358 +1,717 @@
 <?php
 /**
- * View: Personal Notebook — Task Timeline, Calendar & Notes
+ * View: Personal Notebook — Minimalist Calendar, Kanban & Assistant (Excel Green)
  */
+$userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
 ?>
 <style>
-/* Notebook Layout Styles */
-.notebook-hero {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    color: #fff;
-    border-radius: 14px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.2);
-}
+    :root {
+        --excel-green: #217346;
+        --excel-green-hover: #185c37;
+        --excel-green-soft: #eaf5ee;
+        --excel-green-border: #b7dfc7;
+        --nb-border: #e5e7eb;
+        --nb-text: #111827;
+        --nb-muted: #6b7280;
+        --nb-sidebar-w: 260px;
+    }
 
-.calendar-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
+    body.page-notebook {
+        background: #ffffff !important;
+        color: var(--nb-text);
+    }
 
-.calendar-header {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 12px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
+    body.page-notebook #mainContent > .container-fluid {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background: #cbd5e1;
-    gap: 1px;
-}
+    .nb-app-shell {
+        display: flex;
+        min-height: calc(100vh - 110px);
+        background: #ffffff;
+    }
 
-.cal-day-name {
-    background: #f1f5f9;
-    padding: 8px 4px;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
+    /* Sidebar */
+    .nb-sidebar {
+        width: var(--nb-sidebar-w);
+        flex-shrink: 0;
+        background: #ffffff;
+        border-right: 1px solid var(--nb-border);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 14px 12px;
+        transition: margin-left 0.2s ease, opacity 0.2s ease;
+    }
 
-.cal-cell {
-    background: #fff;
-    min-height: 95px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    transition: background 0.15s ease;
-    cursor: pointer;
-    position: relative;
-}
+    .nb-sidebar.is-collapsed {
+        margin-left: calc(var(--nb-sidebar-w) * -1);
+        opacity: 0;
+        pointer-events: none;
+    }
 
-.cal-cell:hover {
-    background: #f8fafc;
-}
+    @media (max-width: 991px) {
+        .nb-sidebar {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            z-index: 1040;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+    }
 
-.cal-cell.other-month {
-    background: #fafafa;
-    opacity: 0.45;
-}
+    .sidebar-search {
+        position: relative;
+        margin-bottom: 16px;
+    }
 
-.cal-cell.is-today {
-    background: #eff6ff;
-}
+    .sidebar-search i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 0.85rem;
+    }
 
-.cal-cell.is-today .cal-num {
-    background: #2563eb;
-    color: #fff;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-}
+    .sidebar-search input {
+        width: 100%;
+        border: 1px solid var(--nb-border);
+        border-radius: 9px;
+        padding: 7px 10px 7px 32px;
+        font-size: 0.83rem;
+        outline: none;
+        background: #fff;
+        color: var(--nb-text);
+    }
 
-.cal-cell.is-selected {
-    outline: 2px solid #2563eb;
-    outline-offset: -2px;
-    z-index: 2;
-}
+    .sidebar-search input:focus {
+        border-color: var(--excel-green);
+        box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.12);
+    }
 
-.cal-num {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 4px;
-    line-height: 1;
-}
+    .sidebar-section-label {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--nb-muted);
+        padding: 4px 10px;
+        margin-top: 6px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 
-.cal-task-pill {
-    font-size: 0.68rem;
-    line-height: 1.25;
-    padding: 2px 5px;
-    border-radius: 4px;
-    color: #fff;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    transition: transform 0.1s ease;
-}
+    .sidebar-nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        color: #374151;
+        cursor: pointer;
+        margin-bottom: 2px;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        transition: background 0.12s, color 0.12s;
+    }
 
-.cal-task-pill:hover {
-    transform: scale(1.02);
-}
+    .sidebar-nav-item:hover { background: #f3f4f6; color: var(--nb-text); }
+    .sidebar-nav-item.active {
+        background: var(--excel-green-soft);
+        color: var(--excel-green);
+        font-weight: 600;
+    }
 
-.cal-task-pill.is-done {
-    text-decoration: line-through;
-    opacity: 0.65;
-}
+    .sidebar-nav-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .sidebar-nav-left i { font-size: 0.92rem; color: #6b7280; width: 16px; text-align: center; }
+    .sidebar-nav-item.active .sidebar-nav-left i { color: var(--excel-green); }
+    .sidebar-count { font-size: 0.76rem; color: var(--nb-muted); font-weight: 500; }
+    .sidebar-footer { border-top: 1px solid var(--nb-border); padding-top: 12px; margin-top: 12px; }
 
-/* Timeline Cards */
-.timeline-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    transition: all 0.18s ease;
-    border-left: 4px solid #cbd5e1;
-}
+    /* Main Content */
+    .nb-main { flex: 1; min-width: 0; background: #ffffff; display: flex; flex-direction: column; }
 
-.timeline-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06);
-    transform: translateY(-1px);
-}
+    .nb-topbar {
+        height: 50px;
+        border-bottom: 1px solid var(--nb-border);
+        padding: 0 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+    }
 
-.timeline-card.prio-High { border-left-color: #ef4444; }
-.timeline-card.prio-Medium { border-left-color: #f59e0b; }
-.timeline-card.prio-Low { border-left-color: #10b981; }
+    .nb-content {
+        padding: 18px 24px 36px;
+        max-width: 1380px;
+        width: 100%;
+        margin: 0 auto;
+    }
 
-.timeline-card.is-done {
-    opacity: 0.6;
-    background: #f8fafc;
-}
+    /* Buttons */
+    .btn-excel {
+        background: var(--excel-green);
+        border: 1px solid var(--excel-green);
+        color: #fff;
+        font-size: 0.83rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+    }
+    .btn-excel:hover { background: var(--excel-green-hover); border-color: var(--excel-green-hover); color: #fff; }
 
-.timeline-card.is-done .task-title {
-    text-decoration: line-through;
-    color: #64748b;
-}
+    .btn-cal-ghost {
+        background: #fff;
+        border: 1px solid transparent;
+        color: var(--nb-text);
+        font-size: 0.83rem;
+        font-weight: 500;
+        padding: 6px 10px;
+        border-radius: 8px;
+    }
+    .btn-cal-ghost:hover { background: #f3f4f6; }
 
-.task-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    border-radius: 4px;
-}
+    .btn-cal-outline {
+        background: #fff;
+        border: 1px solid var(--nb-border);
+        color: var(--nb-text);
+        font-size: 0.83rem;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-cal-outline:hover { background: #f9fafb; border-color: #d1d5db; }
+    .btn-cal-outline.active {
+        background: var(--excel-green-soft);
+        border-color: var(--excel-green-border);
+        color: var(--excel-green);
+        font-weight: 600;
+    }
+
+    /* Assistant Strip */
+    .assistant-card {
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+
+    .assistant-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: var(--excel-green-soft);
+        color: var(--excel-green);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    /* Calendar Shell */
+    .cal-shell {
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .cal-toolbar {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--nb-border);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: #ffffff;
+    }
+
+    .cal-title-text { font-size: 0.98rem; font-weight: 600; color: var(--nb-text); margin-left: 4px; }
+
+    /* Month Grid */
+    .month-grid-head {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-bottom: 1px solid var(--nb-border);
+        background: #fff;
+    }
+    .month-head-cell { padding: 8px 12px; font-size: 0.75rem; font-weight: 500; color: var(--nb-muted); }
+    .month-grid-body { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--nb-border); gap: 1px; }
+
+    .month-cell {
+        background: #fff;
+        min-height: 108px;
+        padding: 6px 6px 26px 6px;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .month-cell:hover { background: #fafafa; }
+    .month-cell.is-today { background: #f4fbf7; border-bottom: 2px solid var(--excel-green); }
+    .month-cell.other-month .month-day-num { color: #9ca3af; }
+    .month-day-num {
+        position: absolute;
+        bottom: 6px;
+        right: 8px;
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: #374151;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .month-cell.is-today .month-day-num {
+        background: var(--excel-green);
+        color: #fff;
+        border-radius: 50%;
+        font-weight: 600;
+    }
+
+    /* Pastel Pills */
+    .m-pill {
+        font-size: 0.74rem;
+        padding: 3px 7px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .m-pill.is-done { opacity: 0.55; text-decoration: line-through; }
+    .m-pill-left { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; }
+    .m-pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .m-pill-title { font-weight: 500; color: #111827; overflow: hidden; text-overflow: ellipsis; }
+    .m-pill-time { font-size: 0.69rem; color: #6b7280; flex-shrink: 0; }
+
+    .theme-green  { background: #eaf5ee; border-color: #b7dfc7; }
+    .theme-green .m-pill-dot  { background: #217346; }
+    .theme-slate  { background: #f3f4f6; border-color: #e5e7eb; }
+    .theme-slate .m-pill-dot  { background: #374151; }
+    .theme-purple { background: #ede9fe; border-color: #ddd6fe; }
+    .theme-purple .m-pill-dot { background: #7c3aed; }
+    .theme-pink   { background: #fce7f3; border-color: #fbcfe8; }
+    .theme-pink .m-pill-dot   { background: #ec4899; }
+    .theme-amber  { background: #fef3c7; border-color: #fde68a; }
+    .theme-amber .m-pill-dot  { background: #d97706; }
+    .theme-blue   { background: #dbeafe; border-color: #bfdbfe; }
+    .theme-blue .m-pill-dot   { background: #2563eb; }
+    .theme-cyan   { background: #cffafe; border-color: #a5f3fc; }
+    .theme-cyan .m-pill-dot   { background: #0891b2; }
+
+    /* Time Grid Views */
+    .time-grid-wrapper { overflow-x: auto; }
+    .time-grid-header { display: grid; border-bottom: 1px solid var(--nb-border); background: #fff; }
+    .time-axis-spacer { width: 70px; flex-shrink: 0; border-right: 1px solid var(--nb-border); }
+    .time-col-header { padding: 10px 12px; text-align: center; font-size: 0.82rem; font-weight: 500; border-right: 1px solid var(--nb-border); }
+    .time-col-header:last-child { border-right: none; }
+    .all-day-row { display: flex; border-bottom: 1px solid var(--nb-border); min-height: 36px; background: #fff; }
+    .all-day-label { width: 70px; flex-shrink: 0; border-right: 1px solid var(--nb-border); font-size: 0.73rem; color: var(--nb-muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
+    .all-day-cols { flex: 1; display: grid; }
+    .all-day-cell { border-right: 1px solid var(--nb-border); padding: 4px 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .all-day-cell:last-child { border-right: none; }
+    .time-body { display: flex; position: relative; max-height: 500px; overflow-y: auto; }
+    .time-axis { width: 70px; flex-shrink: 0; border-right: 1px solid var(--nb-border); background: #fff; }
+    .time-slot-label { height: 56px; font-size: 0.71rem; color: var(--nb-muted); padding-right: 10px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-7px); }
+    .time-columns { flex: 1; display: grid; position: relative; }
+    .time-col { border-right: 1px solid var(--nb-border); position: relative; }
+    .time-col:last-child { border-right: none; }
+    .time-hour-cell { height: 56px; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
+    .time-hour-cell:hover { background: #f9fafb; }
+    .time-hour-cell.is-half { height: 28px; }
+    .time-block { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 6px 10px; border: 1px solid transparent; cursor: pointer; overflow: hidden; z-index: 2; }
+    .time-block.is-done { opacity: 0.55; text-decoration: line-through; }
+    .cal-footer-bar { padding: 10px 16px; border-top: 1px solid var(--nb-border); background: #fff; font-size: 0.77rem; color: var(--nb-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+    /* Kanban Board */
+    .kanban-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+    @media (max-width: 991px) { .kanban-board { grid-template-columns: 1fr; } }
+    .kanban-col { background: #ffffff; border: 1px solid var(--nb-border); border-radius: 12px; padding: 14px; min-height: 220px; }
+    .kanban-col.drag-over { background: #f4fbf7; border-color: var(--excel-green); }
+    .kanban-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .kanban-col-title { font-size: 0.9rem; font-weight: 600; }
+    .kanban-count { font-size: 0.72rem; font-weight: 600; color: var(--nb-muted); background: #f3f4f6; border: 1px solid var(--nb-border); border-radius: 6px; padding: 1px 7px; }
+    .kanban-card { background: #ffffff; border: 1px solid var(--nb-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: grab; transition: border-color 0.15s, box-shadow 0.15s; }
+    .kanban-card:last-child { margin-bottom: 0; }
+    .kanban-card:hover { border-color: var(--excel-green-border); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
+    .prio-pill { font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--nb-border); flex-shrink: 0; }
+    .prio-High   { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+    .prio-Medium { color: #374151; border-color: #e5e7eb; background: #f9fafb; }
+    .prio-Low    { color: #217346; border-color: #b7dfc7; background: #eaf5ee; }
+    .kanban-avatar { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+
+    /* Agenda Drawer */
+    .agenda-drawer { background: #fff; border: 1px solid var(--nb-border); border-radius: 12px; padding: 16px; height: 100%; }
+    .agenda-item-row { border: 1px solid var(--nb-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
+    .agenda-item-row:hover { border-color: var(--excel-green); }
 </style>
 
-<!-- Top Hero & Stats -->
-<div class="notebook-hero d-flex flex-wrap justify-content-between align-items-center gap-3">
-    <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="badge bg-primary px-2.5 py-1 text-uppercase" style="letter-spacing:0.05em; font-size:0.68rem;">
-                <i class="bi bi-shield-lock"></i> 100% Private Notebook
-            </span>
-            <span class="text-white-50 small">&middot; Khusus Akun Anda</span>
+<div class="nb-app-shell">
+    <!-- LEFT SIDEBAR -->
+    <aside class="nb-sidebar" id="nbSidebar">
+        <div>
+            <div class="sidebar-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="sidebarSearch" placeholder="Filter notes &amp; tasks" oninput="renderAll()">
+            </div>
+
+            <div class="sidebar-section-label">Pinned</div>
+            <div id="sidebarPinnedList">
+                <div class="px-2 py-1 text-muted" style="font-size:0.78rem;">Belum ada yang disematkan</div>
+            </div>
+
+            <div class="sidebar-section-label mt-3">
+                <span>All notebooks</span>
+                <i class="bi bi-arrow-repeat" style="cursor:pointer;" title="Reset Filter" onclick="selectFilter('ALL', 'Personal Notebook')"></i>
+            </div>
+
+            <button type="button" class="sidebar-nav-item active" id="nav-ALL" onclick="selectFilter('ALL', 'Personal Notebook')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-journals"></i>
+                    <span>Semua Catatan</span>
+                </span>
+                <span class="sidebar-count" id="cnt-ALL">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Meeting" onclick="selectFilter('#Meeting', 'Meeting &amp; Sync')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-chat-square-text"></i>
+                    <span>Meeting &amp; Sync</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Meeting">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Personal" onclick="selectFilter('#Personal', 'Personal Notes')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Personal Notes</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Personal">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Kanban" onclick="switchView('kanban')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-kanban"></i>
+                    <span>Kanban Board</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Kanban">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Email" onclick="openSettingsModal(this)">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-envelope-check"></i>
+                    <span>Email Reminder</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Email">0</span>
+            </button>
         </div>
-        <h2 class="h4 mb-1 fw-bold text-white d-flex align-items-center gap-2">
-            <i class="bi bi-journal-bookmark-fill text-primary"></i> Personal Notebook &amp; Task Timeline
-        </h2>
-        <p class="text-white-50 small mb-0">
-            Kelola jadwal deadline kerja, timeline personal, dan catatan operasional tanpa terlihat user lain.
-        </p>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <button type="button" class="btn btn-primary shadow-sm" onclick="openTaskModal()">
-            <i class="bi bi-plus-circle me-1"></i> Tambah Task Baru
-        </button>
-    </div>
+
+        <div class="sidebar-footer">
+            <div class="small text-muted mb-2 px-1" id="sidebarStatusText">
+                Email reminder aktif · 0 akun
+            </div>
+            <button type="button" class="btn-cal-outline w-100 justify-content-center" onclick="openSettingsModal()">
+                <i class="bi bi-bell"></i> Atur Email Reminder
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <section class="nb-main">
+        <header class="nb-topbar">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-cal-ghost px-2" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <i class="bi bi-layout-sidebar"></i>
+                </button>
+                <span class="fw-semibold" style="font-size:0.95rem;" id="topbarTitle">Personal Notebook</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge rounded-pill" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.72rem;">
+                    <i class="bi bi-shield-lock me-1"></i>Private · <?= $userName ?>
+                </span>
+            </div>
+        </header>
+
+        <div class="nb-content">
+            <!-- Compact Assistant Greeting Strip -->
+            <div class="assistant-card d-flex align-items-center gap-3">
+                <div class="assistant-icon"><i class="bi bi-stars"></i></div>
+                <div>
+                    <div class="fw-semibold small" id="heroGreeting">Halo, <?= $userName ?>!</div>
+                    <div class="text-muted" style="font-size:0.78rem;" id="heroBriefing">Memuat ringkasan...</div>
+                </div>
+            </div>
+
+            <!-- Main Calendar & Kanban Card -->
+            <div class="row g-3">
+                <div id="mainShellCol" class="col-lg-12">
+                    <div class="cal-shell">
+                        <div class="cal-toolbar">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn-cal-ghost" onclick="jumpToToday()">Today</button>
+                                <div class="dropdown">
+                                    <button class="btn-cal-ghost dropdown-toggle" type="button" data-bs-toggle="dropdown" id="currentViewLabel">
+                                        Month
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border">
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('month')"><i class="bi bi-calendar3 me-2"></i>Month (Bulanan)</a></li>
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('day')"><i class="bi bi-clock me-2"></i>Day (Time-Block)</a></li>
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('category')"><i class="bi bi-columns-gap me-2"></i>Category Grid (Kolom)</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('kanban')"><i class="bi bi-kanban me-2"></i>Kanban Notes (Board)</a></li>
+                                    </ul>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn-cal-ghost px-2" onclick="navigatePrev()"><i class="bi bi-chevron-left"></i></button>
+                                    <button type="button" class="btn-cal-ghost px-2" onclick="navigateNext()"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <span class="cal-title-text" id="toolbarDateTitle">Bulan Tahun</span>
+                            </div>
+
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn-cal-outline" id="btnToggleAgenda" onclick="toggleAgendaPanel()">
+                                    <i class="bi bi-list-ul"></i> Agenda
+                                </button>
+                                <button type="button" class="btn-cal-outline" onclick="openSettingsModal()">
+                                    <i class="bi bi-sliders"></i> Settings
+                                </button>
+                                <button type="button" class="btn-excel" onclick="openTaskModal()">
+                                    <i class="bi bi-plus-lg"></i> New event
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- VIEW 1: MONTH -->
+                        <div id="view-month">
+                            <div class="month-grid-head">
+                                <div class="month-head-cell">Sun</div>
+                                <div class="month-head-cell">Mon</div>
+                                <div class="month-head-cell">Tue</div>
+                                <div class="month-head-cell">Wed</div>
+                                <div class="month-head-cell">Thu</div>
+                                <div class="month-head-cell">Fri</div>
+                                <div class="month-head-cell">Sat</div>
+                            </div>
+                            <div class="month-grid-body" id="monthGridBody"></div>
+                        </div>
+
+                        <!-- VIEW 2: CATEGORY GRID -->
+                        <div id="view-category" class="d-none">
+                            <div class="time-grid-wrapper">
+                                <div class="time-grid-header d-flex">
+                                    <div class="time-axis-spacer"></div>
+                                    <div class="flex-grow-1 d-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                        <div class="time-col-header">#Meeting · Sync</div>
+                                        <div class="time-col-header">#Personal · Notes</div>
+                                    </div>
+                                </div>
+                                <div class="all-day-row">
+                                    <div class="all-day-label">All day</div>
+                                    <div class="all-day-cols" style="grid-template-columns: repeat(2, 1fr);" id="catAllDayRow"></div>
+                                </div>
+                                <div class="time-body">
+                                    <div class="time-axis" id="catTimeAxis"></div>
+                                    <div class="time-columns" style="grid-template-columns: repeat(2, 1fr);" id="catTimeCols"></div>
+                                </div>
+                            </div>
+                            <div class="cal-footer-bar">
+                                <span><span class="legend-dot" style="background:#7c3aed;"></span>#Meeting</span>
+                                <span><span class="legend-dot" style="background:#217346;"></span>#Personal</span>
+                            </div>
+                        </div>
+
+                        <!-- VIEW 3: DAY TIME-BLOCK -->
+                        <div id="view-day" class="d-none">
+                            <div class="time-grid-wrapper">
+                                <div class="time-grid-header d-flex">
+                                    <div class="time-axis-spacer"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="time-col-header text-start ps-3" id="dayViewColHeader">Sun 22</div>
+                                    </div>
+                                </div>
+                                <div class="all-day-row">
+                                    <div class="all-day-label">All day</div>
+                                    <div class="all-day-cols" style="grid-template-columns: 1fr;" id="dayAllDayRow"></div>
+                                </div>
+                                <div class="time-body">
+                                    <div class="time-axis" id="dayTimeAxis"></div>
+                                    <div class="time-columns" style="grid-template-columns: 1fr;" id="dayTimeCols"></div>
+                                </div>
+                            </div>
+                            <div class="cal-footer-bar">
+                                <span>Klik pada slot waktu kosong untuk menjadwalkan task atau reminder baru.</span>
+                            </div>
+                        </div>
+
+                        <!-- VIEW 4: KANBAN BOARD -->
+                        <div id="view-kanban" class="d-none p-3" style="background:#ffffff;">
+                            <div class="kanban-board" id="kanbanBoard"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AGENDA SIDEBAR DRAWER -->
+                <div id="agendaCol" class="col-lg-4 d-none">
+                    <div class="agenda-drawer">
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-list-check me-1" style="color:var(--excel-green);"></i> Agenda &amp; Reminder</h6>
+                            <button type="button" class="btn-close btn-sm" onclick="toggleAgendaPanel()"></button>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" id="agendaSearch" class="form-control form-control-sm" placeholder="Cari agenda..." oninput="renderAgendaDrawer()">
+                        </div>
+                        <div id="agendaDrawerList" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-<!-- Main Content Grid -->
-<div class="row g-3">
-    
-    <!-- LEFT: Calendar View -->
-    <div class="col-lg-7 col-xl-8">
-        <div class="calendar-card">
-            <div class="calendar-header">
-                <div class="d-flex align-items-center gap-2">
-                    <h5 class="mb-0 fw-bold text-dark" id="calMonthYear">Bulan Tahun</h5>
-                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="jumpToToday()" title="Lompat ke Hari Ini" style="font-size:0.75rem;">
-                        Hari Ini
-                    </button>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <button class="btn btn-sm btn-outline-secondary px-2.5" onclick="prevMonth()" title="Bulan Sebelumnya">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary px-2.5" onclick="nextMonth()" title="Bulan Berikutnya">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Calendar Days Header -->
-            <div class="calendar-grid">
-                <div class="cal-day-name text-danger">Min</div>
-                <div class="cal-day-name">Sen</div>
-                <div class="cal-day-name">Sel</div>
-                <div class="cal-day-name">Rab</div>
-                <div class="cal-day-name">Kam</div>
-                <div class="cal-day-name">Jum</div>
-                <div class="cal-day-name text-primary">Sab</div>
-            </div>
-
-            <!-- Calendar Body Cells -->
-            <div class="calendar-grid" id="calendarCells">
-                <!-- Rendered dynamically by JS -->
-            </div>
-            
-            <div class="p-2.5 bg-light border-top d-flex flex-wrap align-items-center justify-content-between text-muted" style="font-size:0.75rem;">
-                <div class="d-flex align-items-center gap-3">
-                    <span><i class="bi bi-cursor text-primary"></i> Klik kotak tanggal untuk menambah task di hari tersebut</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-danger">High</span>
-                    <span class="badge bg-warning text-dark">Medium</span>
-                    <span class="badge bg-success">Low</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- RIGHT: Timeline & Notes Sidebar -->
-    <div class="col-lg-5 col-xl-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-bottom pt-3 pb-2">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold"><i class="bi bi-list-check text-primary"></i> Timeline Task &amp; Notes</h6>
-                    <span class="badge bg-light text-dark border" id="taskTotalCount">0 Task</span>
-                </div>
-                
-                <!-- Filter Tabs -->
-                <ul class="nav nav-pills nav-fill" style="font-size:0.75rem;" id="timelineTabs">
-                    <li class="nav-item">
-                        <button class="nav-link active py-1" onclick="setTimelineFilter('all', this)">Semua</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link py-1" onclick="setTimelineFilter('today', this)">Hari Ini</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link py-1" onclick="setTimelineFilter('upcoming', this)">Upcoming</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link py-1" onclick="setTimelineFilter('done', this)">Done</button>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Search box in timeline -->
-            <div class="p-2 border-bottom bg-light">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" id="timelineSearch" oninput="renderTimeline()" class="form-control border-start-0" placeholder="Cari task atau catatan...">
-                </div>
-            </div>
-
-            <div class="card-body p-2.5 overflow-auto" id="timelineList" style="max-height: 520px;">
-                <!-- Rendered dynamically by JS -->
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!-- MODAL: Tambah / Edit Task -->
-<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+<!-- MODAL: NEW / EDIT EVENT -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold" id="taskModalLabel">
-                    <i class="bi bi-pencil-square text-primary me-1"></i> Tambah Task &amp; Note
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h6 class="modal-title fw-bold" id="taskModalLabel">New event</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="taskForm" onsubmit="handleTaskSubmit(event)">
-                <input type="hidden" name="id" id="taskId" value="0">
+            <form onsubmit="handleTaskSubmit(event)">
+                <input type="hidden" id="taskId" value="0">
                 <div class="modal-body p-3">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small mb-1">Judul Task / Deadline <span class="text-danger">*</span></label>
-                        <input type="text" name="title" id="taskTitle" required class="form-control" placeholder="Contoh: Audit BAK Bulan Oktober, Rilis Schedule W4...">
+                        <label class="form-label small fw-semibold">Judul Agenda / Catatan <span class="text-danger">*</span></label>
+                        <input type="text" id="taskTitle" required class="form-control" placeholder="Tuliskan judul agenda atau catatan...">
                     </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-7">
-                            <label class="form-label fw-semibold small mb-1">Tanggal Deadline <span class="text-danger">*</span></label>
-                            <input type="date" name="due_date" id="taskDueDate" required class="form-control">
-                        </div>
-                        <div class="col-5">
-                            <label class="form-label fw-semibold small mb-1">Jam (Opsional)</label>
-                            <input type="time" name="due_time" id="taskDueTime" class="form-control">
-                        </div>
-                    </div>
-
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-semibold small mb-1">Prioritas</label>
-                            <select name="priority" id="taskPriority" class="form-select">
-                                <option value="Low">Low (Rendah)</option>
-                                <option value="Medium" selected>Medium (Sedang)</option>
-                                <option value="High">High (Mendesak)</option>
+                            <label class="form-label small fw-semibold">Tanggal</label>
+                            <input type="date" id="taskDate" required class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">Mulai</label>
+                            <input type="time" id="taskTime" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">Durasi (mnt)</label>
+                            <input type="number" id="taskDuration" class="form-control form-control-sm" value="60" min="15" step="15">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Prioritas</label>
+                            <select id="taskPriority" class="form-select form-select-sm">
+                                <option value="High">High</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="Low">Low</option>
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label fw-semibold small mb-1">Status</label>
-                            <select name="status" id="taskStatus" class="form-select">
-                                <option value="Todo" selected>Todo (Belum)</option>
-                                <option value="In Progress">In Progress (Proses)</option>
-                                <option value="Done">Done (Selesai)</option>
+                            <label class="form-label small fw-semibold">Warna</label>
+                            <select id="taskTheme" class="form-select form-select-sm">
+                                <option value="theme-green" selected>Hijau Excel</option>
+                                <option value="theme-slate">Abu Netral</option>
+                                <option value="theme-purple">Ungu Lembut</option>
+                                <option value="theme-pink">Merah Muda</option>
+                                <option value="theme-amber">Kuning Hangat</option>
+                                <option value="theme-blue">Biru Langit</option>
+                                <option value="theme-cyan">Cyan</option>
                             </select>
                         </div>
                     </div>
-
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small mb-1">Warna Penanda di Kalender</label>
-                        <div class="d-flex gap-2 align-items-center">
-                            <input type="color" name="color" id="taskColor" class="form-control form-control-color p-1 rounded-3" value="#2563eb" style="width: 44px; height: 36px;">
-                            <span class="small text-muted">Pilih warna sorot badge di grid kalender</span>
-                        </div>
+                        <label class="form-label small fw-semibold">Catatan</label>
+                        <textarea id="taskNotes" rows="3" class="form-control form-control-sm" placeholder="Tulis detail catatan atau checklist..."></textarea>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="taskPinned">
+                        <label class="form-check-label small fw-semibold" for="taskPinned">
+                            <i class="bi bi-bookmark me-1" style="color:var(--excel-green);"></i> Sematkan (Pinned) di Sidebar
+                        </label>
                     </div>
 
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold small mb-1">Catatan / Detail Note (Personal)</label>
-                        <textarea name="notes" id="taskNotes" rows="4" class="form-control" placeholder="Tuliskan rincian langkah, link dokumen, poin checklist, atau catatan penting di sini..."></textarea>
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="taskEmailReminder" checked onchange="toggleTaskReminderBox()">
+                            <label class="form-check-label small fw-semibold" for="taskEmailReminder">
+                                <i class="bi bi-envelope-check me-1" style="color:var(--excel-green);"></i> Kirim Email Reminder
+                            </label>
+                        </div>
+                        <div id="taskReminderBox">
+                            <div class="row g-2 mb-2">
+                                <div class="col-7">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Frekuensi / Pola Hari</label>
+                                    <select id="taskReminderFreq" class="form-select form-select-sm" onchange="toggleTaskFreqFields()">
+                                        <option value="once">Sekali (sebelum deadline)</option>
+                                        <option value="workdays">Setiap Hari Kerja (Senin–Jumat)</option>
+                                        <option value="daily">Setiap Hari (Senin–Minggu)</option>
+                                        <option value="custom">Pilih Hari Tertentu</option>
+                                    </select>
+                                </div>
+                                <div class="col-5" id="taskLeadCol">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Waktu</label>
+                                    <select id="taskReminderLead" class="form-select form-select-sm">
+                                        <option value="15m">15 menit sblm</option>
+                                        <option value="1h" selected>1 jam sblm</option>
+                                        <option value="1d">1 hari sblm</option>
+                                    </select>
+                                </div>
+                                <div class="col-5 d-none" id="taskSendTimeCol">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Kirim Setiap Jam</label>
+                                    <input type="time" id="taskReminderSendTime" class="form-control form-control-sm" value="08:00">
+                                </div>
+                            </div>
+
+                            <div id="taskCustomDaysWrap" class="d-none mb-2">
+                                <div class="d-flex flex-wrap gap-1">
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Sen" checked>Sen</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Sel" checked>Sel</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Rab" checked>Rab</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Kam" checked>Kam</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Jum" checked>Jum</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Sab">Sab</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="task-day-cb me-1" value="Min">Min</label>
+                                </div>
+                            </div>
+
+                            <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Kirim ke Email (bisa lebih dari 1 akun)</label>
+                            <div id="taskEmailChips" class="d-flex flex-wrap gap-1 mb-1"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="email" id="taskEmailInput" class="form-control" placeholder="Ketik email lalu tekan Enter..." onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addEmailChip('task');}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="addEmailChip('task')">+ Tambah</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top py-2 px-3 d-flex justify-content-between">
-                    <div>
-                        <button type="button" id="btnDeleteTask" class="btn btn-outline-danger btn-sm" onclick="handleDeleteTask()" style="display:none;">
-                            <i class="bi bi-trash"></i> Hapus
-                        </button>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary btn-sm px-3" id="btnSaveTask">
-                            <i class="bi bi-check2"></i> Simpan Task
-                        </button>
+                <div class="modal-footer border-top d-flex justify-content-between">
+                    <button type="button" id="btnDeleteTask" class="btn btn-outline-danger btn-sm d-none" onclick="deleteTask()">Hapus</button>
+                    <div class="ms-auto d-flex gap-2">
+                        <button type="button" class="btn-cal-outline" onclick="toggleDoneFromModal()" id="btnDoneModal">Tandai Selesai</button>
+                        <button type="submit" class="btn-excel" id="btnSaveTask">Simpan</button>
                     </div>
                 </div>
             </form>
@@ -360,380 +719,713 @@
     </div>
 </div>
 
-<!-- Initial Data from Controller -->
+<!-- MODAL: SETTINGS (EMAIL REMINDER & DAILY BRIEFING) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold"><i class="bi bi-sliders me-2" style="color:var(--excel-green);"></i>Settings — Email Reminder &amp; Asisten</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Daftar Email Penerima (Multi-Akun)</label>
+                            <div id="cfgEmailChips" class="d-flex flex-wrap gap-1 mb-2"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="email" id="cfgEmailInput" class="form-control" placeholder="Tambah email lain lalu Enter..." onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addEmailChip('cfg');}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="addEmailChip('cfg')">+ Tambah</button>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-3 bg-light border mb-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="cfgDigest" checked onchange="syncSettingsPreview()">
+                                <label class="form-check-label small fw-semibold" for="cfgDigest">Jadwal Pengiriman Rutin (Briefing)</label>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-size:0.75rem; color:#4b5563;">Pilih Hari Pengiriman</label>
+                                <select id="cfgDigestFreq" class="form-select form-select-sm" onchange="syncSettingsPreview()">
+                                    <option value="workdays" selected>Setiap Hari Kerja (Senin – Jumat)</option>
+                                    <option value="daily">Setiap Hari (Senin – Minggu)</option>
+                                    <option value="custom">Hari Tertentu</option>
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 small text-muted">
+                                <span>Kirim setiap jam:</span>
+                                <input type="time" id="cfgDigestTime" class="form-control form-control-sm w-auto" value="07:30" oninput="syncSettingsPreview()">
+                                <span>WIB</span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn-excel flex-grow-1 justify-content-center" onclick="saveSettingsToServer()">
+                                Simpan Pengaturan
+                            </button>
+                            <button type="button" class="btn-cal-outline" id="btnSendTestEmail" onclick="sendTestEmail()">
+                                <i class="bi bi-send"></i> Test Kirim
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded-3 p-3 bg-light h-100">
+                            <div class="small fw-bold mb-2 text-muted">PREVIEW EMAIL BRIEFING</div>
+                            <div class="bg-white border rounded-3 p-3 small">
+                                <div class="text-muted mb-1">Kepada: <strong id="prevEmailTo">(Belum ada email)</strong></div>
+                                <div class="text-muted mb-2" style="font-size:0.74rem;">Jadwal: <span id="prevEmailSchedule">Senin – Jumat, pukul 07:30 WIB</span></div>
+                                <div class="fw-bold mb-2" style="color:var(--excel-green);">Agenda Anda Hari Ini:</div>
+                                <div id="prevEmailList" class="text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
+
 <script>
-window.NOTEBOOK_DATA = <?= json_encode($tasks, JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_DATA     = <?= json_encode($tasks, JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_SETTINGS = <?= json_encode($settings, JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_USER     = <?= json_encode((string) ($user['full_name'] ?? $user['username'] ?? 'User'), JSON_UNESCAPED_UNICODE) ?>;
 </script>
 
 <script>
-let allTasks = Array.isArray(window.NOTEBOOK_DATA) ? window.NOTEBOOK_DATA : [];
-let currentCalDate = new Date();
-let currentFilter = 'all';
-let selectedDateStr = null;
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const CATEGORIES = ['#Meeting', '#Personal'];
 
-const MONTH_NAMES = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
+function relDate(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+let events = Array.isArray(window.NOTEBOOK_DATA) ? window.NOTEBOOK_DATA : [];
+let cfgSettings = window.NOTEBOOK_SETTINGS || { emails: [], digest_enabled: true, digest_freq: 'workdays', digest_time: '07:30' };
+let cfgEmails = Array.isArray(cfgSettings.emails) ? [...cfgSettings.emails] : [];
+let taskEmails = [];
+
+let currentView = 'month';
+let currentDate = new Date();
+let activeTagFilter = 'ALL';
+let agendaOpen = false;
 
 function initNotebook() {
-    renderCalendar();
-    renderTimeline();
+    const h = new Date().getHours();
+    const greetPrefix = h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 18 ? 'Selamat Sore' : 'Selamat Malam';
+    document.getElementById('heroGreeting').textContent = `${greetPrefix}, ${window.NOTEBOOK_USER || 'Bes'}!`;
+
+    document.getElementById('cfgDigest').checked = !!cfgSettings.digest_enabled;
+    document.getElementById('cfgDigestFreq').value = cfgSettings.digest_freq || 'workdays';
+    document.getElementById('cfgDigestTime').value = cfgSettings.digest_time || '07:30';
+
+    renderAll();
 }
 
-// Format YYYY-MM-DD
-function formatDate(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+function toggleSidebar() {
+    document.getElementById('nbSidebar').classList.toggle('is-collapsed');
 }
 
-function prevMonth() {
-    currentCalDate.setMonth(currentCalDate.getMonth() - 1);
-    renderCalendar();
+function setActiveSidebarNav(navId, title) {
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    const el = document.getElementById(navId);
+    if (el) el.classList.add('active');
+    if (title) document.getElementById('topbarTitle').textContent = title;
 }
 
-function nextMonth() {
-    currentCalDate.setMonth(currentCalDate.getMonth() + 1);
-    renderCalendar();
+function selectFilter(tag, title) {
+    activeTagFilter = tag;
+    const navId = tag === '#Meeting' ? 'nav-Meeting' : (tag === '#Personal' ? 'nav-Personal' : 'nav-ALL');
+    setActiveSidebarNav(navId, title || 'Personal Notebook');
+    if (currentView === 'kanban') {
+        switchView('month');
+        return;
+    }
+    renderAll();
 }
 
-function jumpToToday() {
-    currentCalDate = new Date();
-    selectedDateStr = formatDate(currentCalDate);
-    renderCalendar();
-    setTimelineFilter('today');
+function getFilteredEvents() {
+    const q = (document.getElementById('sidebarSearch').value || '').toLowerCase().trim();
+    return events.filter(ev => {
+        if (activeTagFilter !== 'ALL' && ev.tag !== activeTagFilter) return false;
+        if (q && !`${ev.title} ${ev.notes || ''} ${ev.tag || ''}`.toLowerCase().includes(q)) return false;
+        return true;
+    });
 }
 
-function renderCalendar() {
-    const year = currentCalDate.getFullYear();
-    const month = currentCalDate.getMonth();
+function renderAll() {
+    updateSidebarCounts();
+    renderPinnedSidebar();
+    renderBriefing();
+    updateToolbarTitle();
+    if (currentView === 'month') renderMonthView();
+    if (currentView === 'category') renderCategoryView();
+    if (currentView === 'day') renderDayView();
+    if (currentView === 'kanban') renderKanbanView();
+    if (agendaOpen) renderAgendaDrawer();
+}
 
-    document.getElementById('calMonthYear').textContent = `${MONTH_NAMES[month]} ${year}`;
+function updateSidebarCounts() {
+    document.getElementById('cnt-ALL').textContent = events.length;
+    document.getElementById('cnt-Meeting').textContent = events.filter(e => e.tag === '#Meeting').length;
+    document.getElementById('cnt-Personal').textContent = events.filter(e => e.tag === '#Personal').length;
+    const emailCnt = events.filter(e => e.email_reminder && e.status !== 'Done').length;
+    document.getElementById('cnt-Email').textContent = emailCnt;
+    document.getElementById('cnt-Kanban').textContent = events.length;
+    document.getElementById('sidebarStatusText').textContent = `Email reminder aktif · ${cfgEmails.length} akun`;
+}
 
-    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const prevLastDay = new Date(year, month, 0).getDate();
+function renderPinnedSidebar() {
+    const pinned = events.filter(e => e.is_pinned);
+    const el = document.getElementById('sidebarPinnedList');
+    el.innerHTML = pinned.length
+        ? pinned.map(ev => `
+            <button type="button" class="sidebar-nav-item" onclick="openTaskModal(${ev.id})">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-bookmark-fill" style="color:var(--excel-green);"></i>
+                    <span class="text-truncate">${esc(ev.title)}</span>
+                </span>
+            </button>
+        `).join('')
+        : '<div class="px-2 py-1 text-muted" style="font-size:0.78rem;">Belum ada yang disematkan</div>';
+}
 
-    const todayStr = formatDate(new Date());
+function renderBriefing() {
+    const today = relDate(0);
+    const todayCount = events.filter(e => e.due_date === today && e.status !== 'Done').length;
+    const emailCount = events.filter(e => e.email_reminder && e.status !== 'Done').length;
+    document.getElementById('heroBriefing').innerHTML = (todayCount || emailCount)
+        ? `Hari ini ada <strong>${todayCount} agenda</strong> dan <strong>${emailCount} email reminder</strong> aktif.`
+        : 'Belum ada agenda hari ini. Klik <strong>+ New event</strong> untuk mulai mencatat.';
+}
 
-    const container = document.getElementById('calendarCells');
-    container.innerHTML = '';
-
-    // Task Lookup Map: date -> Array of tasks
-    const taskMap = {};
-    allTasks.forEach(t => {
-        if (!taskMap[t.due_date]) taskMap[t.due_date] = [];
-        taskMap[t.due_date].push(t);
+function switchView(view) {
+    currentView = view;
+    const labels = { month: 'Month', day: 'Day', category: 'Category', kanban: 'Kanban' };
+    document.getElementById('currentViewLabel').textContent = labels[view];
+    ['month', 'day', 'category', 'kanban'].forEach(v => {
+        document.getElementById('view-' + v).classList.toggle('d-none', v !== view);
     });
 
-    // Previous month filler days
-    for (let x = firstDayIndex; x > 0; x--) {
-        const d = prevLastDay - x + 1;
-        const prevMonthDate = new Date(year, month - 1, d);
-        const dateStr = formatDate(prevMonthDate);
-        container.appendChild(createCell(d, dateStr, true, todayStr, taskMap[dateStr]));
+    if (view === 'kanban') {
+        setActiveSidebarNav('nav-Kanban', 'Kanban Board');
+    } else {
+        const navMap = { 'ALL': ['nav-ALL', 'Personal Notebook'], '#Meeting': ['nav-Meeting', 'Meeting & Sync'], '#Personal': ['nav-Personal', 'Personal Notes'] };
+        const [navId, title] = navMap[activeTagFilter] || ['nav-ALL', 'Personal Notebook'];
+        setActiveSidebarNav(navId, title);
     }
-
-    // Current month days
-    for (let i = 1; i <= lastDay; i++) {
-        const thisDate = new Date(year, month, i);
-        const dateStr = formatDate(thisDate);
-        container.appendChild(createCell(i, dateStr, false, todayStr, taskMap[dateStr]));
-    }
-
-    // Next month filler days (to make 35 or 42 cells)
-    const totalCells = firstDayIndex + lastDay;
-    const nextDays = (totalCells > 35 ? 42 : 35) - totalCells;
-    for (let j = 1; j <= nextDays; j++) {
-        const nextMonthDate = new Date(year, month + 1, j);
-        const dateStr = formatDate(nextMonthDate);
-        container.appendChild(createCell(j, dateStr, true, todayStr, taskMap[dateStr]));
-    }
+    renderAll();
 }
 
-function createCell(dayNum, dateStr, isOtherMonth, todayStr, tasksForDay) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell' + (isOtherMonth ? ' other-month' : '') + (dateStr === todayStr ? ' is-today' : '') + (dateStr === selectedDateStr ? ' is-selected' : '');
-    cell.onclick = (e) => {
-        // If clicking on cell background, open add task modal for this date
-        if (e.target.closest('.cal-task-pill')) return;
-        selectedDateStr = dateStr;
-        renderCalendar();
-        openTaskModal(null, dateStr);
-    };
+function updateToolbarTitle() {
+    const el = document.getElementById('toolbarDateTitle');
+    if (currentView === 'month') el.textContent = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    else if (currentView === 'kanban') el.textContent = 'Notes & Task Board';
+    else el.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
 
-    const numSpan = document.createElement('div');
-    numSpan.className = 'cal-num';
-    numSpan.textContent = dayNum;
-    cell.appendChild(numSpan);
+function jumpToToday() { currentDate = new Date(); renderAll(); }
+function navigatePrev() {
+    if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() - 1);
+    else currentDate.setDate(currentDate.getDate() - 1);
+    renderAll();
+}
+function navigateNext() {
+    if (currentView === 'month') currentDate.setMonth(currentDate.getMonth() + 1);
+    else currentDate.setDate(currentDate.getDate() + 1);
+    renderAll();
+}
 
-    if (tasksForDay && tasksForDay.length > 0) {
-        // Show max 3 pills
-        const displayLimit = 3;
-        tasksForDay.slice(0, displayLimit).forEach(task => {
+function dateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatShortTime(t) {
+    if (!t) return '';
+    const [hh, mm] = t.split(':').map(Number);
+    return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh >= 12 ? 'PM' : 'AM'}`;
+}
+
+/* MONTH VIEW */
+function renderMonthView() {
+    const y = currentDate.getFullYear(), m = currentDate.getMonth();
+    const firstIdx = new Date(y, m, 1).getDay();
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const prevLast = new Date(y, m, 0).getDate();
+    const todayStr = relDate(0);
+    const list = getFilteredEvents();
+
+    const grid = document.getElementById('monthGridBody');
+    grid.innerHTML = '';
+
+    const cells = [];
+    for (let x = firstIdx; x > 0; x--) cells.push({ d: new Date(y, m - 1, prevLast - x + 1), other: true });
+    for (let i = 1; i <= lastDay; i++) cells.push({ d: new Date(y, m, i), other: false });
+    const rem = (cells.length > 35 ? 42 : 35) - cells.length;
+    for (let j = 1; j <= rem; j++) cells.push({ d: new Date(y, m + 1, j), other: true });
+
+    cells.forEach(c => {
+        const ds = dateStr(c.d);
+        const cell = document.createElement('div');
+        cell.className = 'month-cell' + (c.other ? ' other-month' : '') + (ds === todayStr ? ' is-today' : '');
+        cell.onclick = () => openTaskModal(null, ds);
+
+        list.filter(e => e.due_date === ds).slice(0, 3).forEach(ev => {
             const pill = document.createElement('div');
-            pill.className = 'cal-task-pill' + (task.status === 'Done' ? ' is-done' : '');
-            pill.style.backgroundColor = task.color || '#2563eb';
-            pill.title = `${task.title} (${task.status})`;
-            pill.onclick = (e) => {
-                e.stopPropagation();
-                openTaskModal(task);
-            };
-
-            const icon = document.createElement('i');
-            icon.className = task.status === 'Done' ? 'bi bi-check2' : 'bi bi-dot';
-            pill.appendChild(icon);
-
-            const titleText = document.createTextNode(task.title);
-            pill.appendChild(titleText);
-
+            pill.className = `m-pill ${ev.theme || 'theme-green'} ${ev.status === 'Done' ? 'is-done' : ''}`;
+            pill.onclick = (e) => { e.stopPropagation(); openTaskModal(ev.id); };
+            pill.innerHTML = `
+                <span class="m-pill-left">
+                    <span class="m-pill-dot"></span>
+                    <span class="m-pill-title">${esc(ev.title)}</span>
+                </span>
+                <span class="m-pill-time">${ev.duration_minutes === 30 ? '30m' : formatShortTime(ev.due_time)}</span>
+            `;
             cell.appendChild(pill);
         });
 
-        if (tasksForDay.length > displayLimit) {
-            const more = document.createElement('div');
-            more.className = 'text-muted';
-            more.style.fontSize = '0.65rem';
-            more.style.fontWeight = '600';
-            more.textContent = `+${tasksForDay.length - displayLimit} lainnya`;
-            cell.appendChild(more);
-        }
-    }
-
-    return cell;
+        const num = document.createElement('div');
+        num.className = 'month-day-num';
+        num.textContent = c.d.getDate();
+        cell.appendChild(num);
+        grid.appendChild(cell);
+    });
 }
 
-function setTimelineFilter(filter, el) {
-    currentFilter = filter;
-    if (el) {
-        document.querySelectorAll('#timelineTabs .nav-link').forEach(btn => btn.classList.remove('active'));
-        el.classList.add('active');
-    }
-    renderTimeline();
+/* CATEGORY GRID VIEW */
+function renderCategoryView() {
+    const ds = dateStr(currentDate);
+    document.getElementById('catTimeAxis').innerHTML = HOURS.map(h => `<div class="time-slot-label">${h > 12 ? h - 12 + ' PM' : h === 12 ? '12 PM' : h + ' AM'}</div>`).join('');
+    const dayEvents = getFilteredEvents().filter(e => e.due_date === ds);
+
+    document.getElementById('catAllDayRow').innerHTML = CATEGORIES.map(cat => {
+        const allDay = dayEvents.filter(e => e.tag === cat && !e.due_time);
+        return `<div class="all-day-cell">${allDay.map(e => `<span class="m-pill ${e.theme || 'theme-green'}" onclick="openTaskModal(${e.id})">${esc(e.title)}</span>`).join('')}</div>`;
+    }).join('');
+
+    const colsEl = document.getElementById('catTimeCols');
+    colsEl.innerHTML = '';
+    CATEGORIES.forEach(cat => {
+        const col = document.createElement('div');
+        col.className = 'time-col';
+        HOURS.forEach(h => {
+            const slot = document.createElement('div');
+            slot.className = 'time-hour-cell';
+            slot.onclick = () => openTaskModal(null, ds, `${String(h).padStart(2, '0')}:00`);
+            col.appendChild(slot);
+        });
+        dayEvents.filter(e => e.tag === cat && e.due_time).forEach(ev => {
+            const block = createTimeBlockEl(ev, true);
+            if (block) col.appendChild(block);
+        });
+        colsEl.appendChild(col);
+    });
 }
 
-function renderTimeline() {
-    const list = document.getElementById('timelineList');
-    const query = (document.getElementById('timelineSearch').value || '').toLowerCase().trim();
-    const todayStr = formatDate(new Date());
-
-    let filtered = allTasks.filter(t => {
-        // Text filter
-        if (query) {
-            const inTitle = (t.title || '').toLowerCase().includes(query);
-            const inNotes = (t.notes || '').toLowerCase().includes(query);
-            if (!inTitle && !inNotes) return false;
-        }
-
-        // Tab filter
-        if (currentFilter === 'today') {
-            return t.due_date === todayStr;
-        } else if (currentFilter === 'upcoming') {
-            return t.due_date >= todayStr && t.status !== 'Done';
-        } else if (currentFilter === 'done') {
-            return t.status === 'Done';
-        }
-        return true;
+/* DAY TIME-BLOCK VIEW */
+function renderDayView() {
+    const ds = dateStr(currentDate);
+    document.getElementById('dayViewColHeader').textContent = `${DAYS_SHORT[currentDate.getDay()]} ${currentDate.getDate()}`;
+    const axis = document.getElementById('dayTimeAxis');
+    axis.innerHTML = '';
+    HOURS.forEach(h => {
+        axis.innerHTML += `<div class="time-slot-label" style="height:28px;">${h > 12 ? h - 12 + ' PM' : h === 12 ? '12 PM' : h + ' AM'}</div>`;
+        axis.innerHTML += `<div class="time-slot-label" style="height:28px;">${h > 12 ? h - 12 : h}:30 ${h >= 12 ? 'PM' : 'AM'}</div>`;
     });
 
-    document.getElementById('taskTotalCount').textContent = `${allTasks.length} Task`;
+    const dayEvents = getFilteredEvents().filter(e => e.due_date === ds);
+    document.getElementById('dayAllDayRow').innerHTML = `<div class="all-day-cell">${dayEvents.filter(e => !e.due_time).map(e => `<span class="m-pill ${e.theme || 'theme-green'}" onclick="openTaskModal(${e.id})">${esc(e.title)}</span>`).join('')}</div>`;
 
-    if (filtered.length === 0) {
-        list.innerHTML = `
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-journal-check" style="font-size: 2.2rem; opacity: 0.35;"></i>
-                <p class="small mt-2 mb-0">Tidak ada task yang cocok.</p>
-            </div>
-        `;
-        return;
-    }
+    const cols = document.getElementById('dayTimeCols');
+    cols.innerHTML = '';
+    const col = document.createElement('div');
+    col.className = 'time-col';
+    HOURS.forEach(h => {
+        ['00', '30'].forEach(mm => {
+            const slot = document.createElement('div');
+            slot.className = 'time-hour-cell is-half';
+            slot.onclick = () => openTaskModal(null, ds, `${String(h).padStart(2, '0')}:${mm}`);
+            col.appendChild(slot);
+        });
+    });
+    dayEvents.filter(e => e.due_time).forEach(ev => {
+        const block = createTimeBlockEl(ev, false);
+        if (block) col.appendChild(block);
+    });
+    cols.appendChild(col);
+}
 
-    list.innerHTML = filtered.map(t => {
-        const isDone = t.status === 'Done';
-        const isOverdue = t.due_date < todayStr && !isDone;
-        const prioBadgeClass = t.priority === 'High' ? 'bg-danger' : (t.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success');
-        
-        let dueLabel = t.due_date;
-        if (t.due_date === todayStr) {
-            dueLabel = 'Hari ini' + (t.due_time ? ', ' + t.due_time.substring(0, 5) : '');
-        } else {
-            const parts = t.due_date.split('-');
-            if (parts.length === 3) dueLabel = `${parts[2]}/${parts[1]}/${parts[0]}` + (t.due_time ? ' ' + t.due_time.substring(0, 5) : '');
-        }
+function createTimeBlockEl(ev, compact) {
+    const [hh, mm] = ev.due_time.split(':').map(Number);
+    if (hh < 8 || hh > 17) return null;
+    const topPx = ((hh - 8) * 60 + mm) * (56 / 60);
+    const heightPx = Math.max(36, (ev.duration_minutes || 60) * (56 / 60));
 
+    const el = document.createElement('div');
+    el.className = `time-block ${ev.theme || 'theme-green'} ${ev.status === 'Done' ? 'is-done' : ''}`;
+    el.style.top = topPx + 'px';
+    el.style.height = heightPx + 'px';
+    el.onclick = (e) => { e.stopPropagation(); openTaskModal(ev.id); };
+
+    el.innerHTML = compact
+        ? `<div class="fw-semibold small text-truncate">${esc(ev.title)}</div><div class="text-muted" style="font-size:0.72rem;">${formatShortTime(ev.due_time)}</div>`
+        : `<div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-semibold small">${esc(ev.title)}</div>
+                    <div style="font-size:0.74rem; opacity:0.8;">${formatShortTime(ev.due_time)} (${ev.duration_minutes || 60}m)</div>
+                </div>
+                ${ev.email_reminder ? '<span class="badge bg-white text-dark border" style="font-size:0.68rem;"><i class="bi bi-bell-fill me-1" style="color:var(--excel-green);"></i>Email</span>' : ''}
+           </div>`;
+    return el;
+}
+
+/* KANBAN BOARD */
+function formatKanbanDate(ds) {
+    if (!ds) return '';
+    const [y, m, d] = ds.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderKanbanView() {
+    const cols = [
+        { status: 'Todo', label: 'Backlog' },
+        { status: 'In Progress', label: 'In Progress' },
+        { status: 'Done', label: 'Done' }
+    ];
+    const list = getFilteredEvents();
+
+    document.getElementById('kanbanBoard').innerHTML = cols.map(c => {
+        const items = list.filter(e => e.status === c.status);
         return `
-            <div class="timeline-card prio-${t.priority} ${isDone ? 'is-done' : ''}" onclick="openTaskModalById(${t.id})">
-                <div class="d-flex align-items-start gap-2">
-                    <input type="checkbox" class="task-checkbox mt-1" ${isDone ? 'checked' : ''} onclick="handleToggleDone(event, ${t.id}, '${isDone ? 'Todo' : 'Done'}')">
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
-                            <span class="task-title fw-bold text-dark small text-truncate d-block">${escapeHtml(t.title)}</span>
-                            <span class="badge ${prioBadgeClass} py-0 px-1.5" style="font-size:0.65rem;">${t.priority}</span>
-                        </div>
-                        <div class="d-flex flex-wrap align-items-center gap-2 text-muted" style="font-size: 0.72rem;">
-                            <span class="${isOverdue ? 'text-danger fw-bold' : ''}">
-                                <i class="bi bi-calendar-event me-0.5"></i> ${dueLabel}
-                                ${isOverdue ? '<span class="badge bg-danger-subtle text-danger ms-1">Overdue</span>' : ''}
-                            </span>
-                            <span class="badge bg-secondary-subtle text-secondary py-0">${t.status}</span>
-                        </div>
-                        ${t.notes ? `<div class="text-muted small mt-1.5 text-truncate" style="font-size: 0.75rem;"><i class="bi bi-sticky me-1"></i>${escapeHtml(t.notes)}</div>` : ''}
-                    </div>
+            <div class="kanban-col"
+                 ondragover="event.preventDefault(); this.classList.add('drag-over');"
+                 ondragleave="this.classList.remove('drag-over');"
+                 ondrop="handleKanbanDrop(event, '${c.status}')">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">${c.label}</span>
+                    <span class="kanban-count">${items.length}</span>
+                </div>
+                <div>
+                    ${items.length ? items.map(ev => {
+                        const prio = ev.priority || 'Medium';
+                        return `
+                            <div class="kanban-card" draggable="true"
+                                 ondragstart="event.dataTransfer.setData('text/plain', '${ev.id}')"
+                                 onclick="openTaskModal(${ev.id})">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                    <span class="fw-semibold" style="font-size:0.87rem;">${esc(ev.title)}</span>
+                                    <span class="prio-pill prio-${prio}">${prio}</span>
+                                </div>
+                                ${ev.notes ? `<div class="text-muted text-truncate mb-2" style="font-size:0.75rem;">${esc(ev.notes)}</div>` : ''}
+                                <div class="d-flex align-items-center justify-content-between pt-1">
+                                    <span class="text-muted" style="font-size:0.75rem;">${ev.email_reminder ? '<i class="bi bi-envelope-check me-1" style="color:var(--excel-green);"></i>Reminder' : ''}</span>
+                                    <span class="text-muted" style="font-size:0.75rem;">${formatKanbanDate(ev.due_date)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('') : `<div class="text-center text-muted py-4" style="font-size:0.78rem; border:1px dashed var(--nb-border); border-radius:10px;">Kosong</div>`}
                 </div>
             </div>
         `;
     }).join('');
 }
 
-function openTaskModal(task = null, defaultDate = null) {
-    const modalEl = document.getElementById('taskModal');
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+async function handleKanbanDrop(e, newStatus) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const id = Number(e.dataTransfer.getData('text/plain'));
+    const ev = events.find(x => x.id === id);
+    if (!ev || ev.status === newStatus) return;
 
-    if (task) {
-        document.getElementById('taskModalLabel').innerHTML = '<i class="bi bi-pencil-square text-primary me-1"></i> Edit Task &amp; Note';
-        document.getElementById('taskId').value = task.id;
-        document.getElementById('taskTitle').value = task.title || '';
-        document.getElementById('taskDueDate').value = task.due_date || '';
-        document.getElementById('taskDueTime').value = task.due_time ? task.due_time.substring(0, 5) : '';
-        document.getElementById('taskPriority').value = task.priority || 'Medium';
-        document.getElementById('taskStatus').value = task.status || 'Todo';
-        document.getElementById('taskColor').value = task.color || '#2563eb';
-        document.getElementById('taskNotes').value = task.notes || '';
-        document.getElementById('btnDeleteTask').style.display = 'inline-block';
-    } else {
-        document.getElementById('taskModalLabel').innerHTML = '<i class="bi bi-plus-circle text-primary me-1"></i> Tambah Task &amp; Note';
-        document.getElementById('taskId').value = '0';
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskDueDate').value = defaultDate || formatDate(new Date());
-        document.getElementById('taskDueTime').value = '';
-        document.getElementById('taskPriority').value = 'Medium';
-        document.getElementById('taskStatus').value = 'Todo';
-        document.getElementById('taskColor').value = '#2563eb';
-        document.getElementById('taskNotes').value = '';
-        document.getElementById('btnDeleteTask').style.display = 'none';
+    const prevStatus = ev.status;
+    ev.status = newStatus;
+    renderAll();
+
+    try {
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('status', newStatus);
+        const res = await fetch('index.php?page=notebook&action=toggleStatus', {
+            method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+        });
+        const json = await res.json();
+        if (!json.success) {
+            ev.status = prevStatus;
+            renderAll();
+        } else {
+            showToast(`"${ev.title}" dipindah ke ${newStatus === 'Todo' ? 'Backlog' : newStatus}.`);
+        }
+    } catch (err) {
+        ev.status = prevStatus;
+        renderAll();
     }
-
-    modal.show();
 }
 
-function openTaskModalById(id) {
-    const task = allTasks.find(t => t.id == id);
-    if (task) openTaskModal(task);
+/* AGENDA DRAWER */
+function toggleAgendaPanel() {
+    agendaOpen = !agendaOpen;
+    document.getElementById('mainShellCol').className = agendaOpen ? 'col-lg-8' : 'col-lg-12';
+    document.getElementById('agendaCol').classList.toggle('d-none', !agendaOpen);
+    document.getElementById('btnToggleAgenda').classList.toggle('active', agendaOpen);
+    if (agendaOpen) renderAgendaDrawer();
+}
+
+function renderAgendaDrawer() {
+    const q = (document.getElementById('agendaSearch').value || '').toLowerCase();
+    const list = getFilteredEvents().filter(e => !q || `${e.title} ${e.notes || ''}`.toLowerCase().includes(q)).sort((a, b) => a.due_date.localeCompare(b.due_date));
+    document.getElementById('agendaDrawerList').innerHTML = list.length
+        ? list.map(ev => `
+            <div class="agenda-item-row ${ev.status === 'Done' ? 'opacity-50' : ''}" onclick="openTaskModal(${ev.id})">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold small ${ev.status === 'Done' ? 'text-decoration-line-through' : ''}">${esc(ev.title)}</span>
+                    <span class="prio-pill prio-${ev.priority || 'Medium'}">${ev.priority || 'Medium'}</span>
+                </div>
+                <div class="text-muted" style="font-size:0.74rem;">
+                    ${ev.due_date} ${ev.due_time ? '· ' + formatShortTime(ev.due_time) : ''}
+                    ${ev.email_reminder ? ' · <i class="bi bi-envelope" style="color:var(--excel-green);"></i> Reminder' : ''}
+                </div>
+            </div>
+        `).join('')
+        : '<div class="text-center text-muted py-4 small">Belum ada agenda tercatat.</div>';
+}
+
+/* EMAIL CHIPS & REMINDER OPTIONS */
+function toggleTaskReminderBox() {
+    document.getElementById('taskReminderBox').classList.toggle('d-none', !document.getElementById('taskEmailReminder').checked);
+}
+
+function toggleTaskFreqFields() {
+    const freq = document.getElementById('taskReminderFreq').value;
+    document.getElementById('taskLeadCol').classList.toggle('d-none', freq !== 'once');
+    document.getElementById('taskSendTimeCol').classList.toggle('d-none', freq === 'once');
+    document.getElementById('taskCustomDaysWrap').classList.toggle('d-none', freq !== 'custom');
+}
+
+function addEmailChip(target) {
+    const input = document.getElementById(target === 'cfg' ? 'cfgEmailInput' : 'taskEmailInput');
+    const val = input.value.replace(/,/g, '').trim();
+    if (!val || !val.includes('@')) return;
+    const arr = target === 'cfg' ? cfgEmails : taskEmails;
+    if (!arr.includes(val)) arr.push(val);
+    input.value = '';
+    renderEmailChips(target);
+    if (target === 'cfg') { syncSettingsPreview(); updateSidebarCounts(); }
+}
+
+function removeEmailChip(target, idx) {
+    const arr = target === 'cfg' ? cfgEmails : taskEmails;
+    arr.splice(idx, 1);
+    renderEmailChips(target);
+    if (target === 'cfg') { syncSettingsPreview(); updateSidebarCounts(); }
+}
+
+function renderEmailChips(target) {
+    const arr = target === 'cfg' ? cfgEmails : taskEmails;
+    const container = document.getElementById(target === 'cfg' ? 'cfgEmailChips' : 'taskEmailChips');
+    container.innerHTML = arr.map((em, i) => `
+        <span class="badge d-inline-flex align-items-center gap-1 fw-normal" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.74rem; padding:4px 8px;">
+            ${esc(em)}
+            <i class="bi bi-x" style="cursor:pointer;" onclick="removeEmailChip('${target}', ${i})"></i>
+        </span>
+    `).join('');
+}
+
+/* TASK MODAL CRUD */
+function openTaskModal(id = null, defDate = null, defTime = null) {
+    const ev = id ? events.find(x => x.id === id) : null;
+    document.getElementById('taskModalLabel').textContent = ev ? 'Edit event' : 'New event';
+    document.getElementById('taskId').value = ev ? ev.id : 0;
+    document.getElementById('taskTitle').value = ev ? ev.title : '';
+    document.getElementById('taskDate').value = ev ? ev.due_date : (defDate || dateStr(currentDate));
+    document.getElementById('taskTime').value = ev ? (ev.due_time || '') : (defTime || '09:00');
+    document.getElementById('taskDuration').value = ev ? (ev.duration_minutes || 60) : 60;
+    document.getElementById('taskPriority').value = ev ? (ev.priority || 'Medium') : 'Medium';
+    document.getElementById('taskTheme').value = ev ? (ev.theme || 'theme-green') : 'theme-green';
+    document.getElementById('taskNotes').value = ev ? (ev.notes || '') : '';
+    document.getElementById('taskPinned').checked = ev ? !!ev.is_pinned : false;
+    document.getElementById('taskEmailReminder').checked = ev ? !!ev.email_reminder : true;
+    document.getElementById('taskReminderFreq').value = ev ? (ev.reminder_freq || 'once') : 'once';
+    document.getElementById('taskReminderLead').value = ev ? (ev.reminder_lead || '1h') : '1h';
+    document.getElementById('taskReminderSendTime').value = ev ? (ev.reminder_send_time || '08:00') : '08:00';
+
+    const savedDays = ev && Array.isArray(ev.reminder_days_arr) ? ev.reminder_days_arr : ['Sen','Sel','Rab','Kam','Jum'];
+    document.querySelectorAll('.task-day-cb').forEach(cb => { cb.checked = savedDays.includes(cb.value); });
+
+    taskEmails = ev && Array.isArray(ev.reminder_emails) ? [...ev.reminder_emails] : [...cfgEmails];
+    renderEmailChips('task');
+    toggleTaskReminderBox();
+    toggleTaskFreqFields();
+
+    document.getElementById('btnDeleteTask').classList.toggle('d-none', !ev);
+    document.getElementById('btnDoneModal').classList.toggle('d-none', !ev);
+    if (ev) {
+        document.getElementById('btnDoneModal').textContent = ev.status === 'Done' ? 'Buka Kembali' : 'Tandai Selesai';
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('taskModal')).show();
 }
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('btnSaveTask');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
 
-    const form = document.getElementById('taskForm');
-    const formData = new FormData(form);
+    const id = Number(document.getElementById('taskId').value);
+    const existing = id ? events.find(x => x.id === id) : null;
+    const customDays = Array.from(document.querySelectorAll('.task-day-cb:checked')).map(c => c.value).join(',');
+
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('title', document.getElementById('taskTitle').value.trim());
+    fd.append('due_date', document.getElementById('taskDate').value);
+    fd.append('due_time', document.getElementById('taskTime').value);
+    fd.append('duration_minutes', document.getElementById('taskDuration').value);
+    fd.append('priority', document.getElementById('taskPriority').value);
+    fd.append('status', existing ? existing.status : 'Todo');
+    fd.append('tag', existing ? (existing.tag || '#Personal') : '#Personal');
+    fd.append('theme', document.getElementById('taskTheme').value);
+    fd.append('notes', document.getElementById('taskNotes').value.trim());
+    if (document.getElementById('taskPinned').checked) fd.append('is_pinned', '1');
+    if (document.getElementById('taskEmailReminder').checked) fd.append('email_reminder', '1');
+    fd.append('reminder_freq', document.getElementById('taskReminderFreq').value);
+    fd.append('reminder_lead', document.getElementById('taskReminderLead').value);
+    fd.append('reminder_send_time', document.getElementById('taskReminderSendTime').value);
+    fd.append('reminder_days', customDays);
+    fd.append('reminder_emails', JSON.stringify(taskEmails));
 
     try {
         const res = await fetch('index.php?page=notebook&action=save', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
+            method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
         });
         const json = await res.json();
         if (json.success && json.task) {
-            const idx = allTasks.findIndex(t => t.id == json.task.id);
-            if (idx >= 0) {
-                allTasks[idx] = json.task;
-            } else {
-                allTasks.push(json.task);
-            }
-            renderCalendar();
-            renderTimeline();
+            const idx = events.findIndex(x => x.id == json.task.id);
+            if (idx >= 0) events[idx] = json.task;
+            else events.push(json.task);
             bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+            renderAll();
+            showToast(json.message || 'Agenda tersimpan.');
         } else {
-            alert(json.message || 'Gagal menyimpan task.');
+            alert(json.message || 'Gagal menyimpan agenda.');
         }
     } catch (err) {
-        console.error(err);
-        // Fallback to form submit
-        form.submit();
+        alert('Terjadi kesalahan jaringan saat menyimpan.');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check2"></i> Simpan Task';
     }
 }
 
-async function handleToggleDone(e, id, newStatus) {
-    e.stopPropagation();
-    const task = allTasks.find(t => t.id == id);
-    if (!task) return;
+async function toggleDoneFromModal() {
+    const id = Number(document.getElementById('taskId').value);
+    const ev = events.find(x => x.id === id);
+    if (!ev) return;
 
-    // Optimistic UI update
-    task.status = newStatus;
-    renderCalendar();
-    renderTimeline();
+    const newStatus = ev.status === 'Done' ? 'Todo' : 'Done';
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('status', newStatus);
 
+    const res = await fetch('index.php?page=notebook&action=toggleStatus', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        ev.status = newStatus;
+        bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+        renderAll();
+    }
+}
+
+async function deleteTask() {
+    const id = Number(document.getElementById('taskId').value);
+    if (!id || !confirm('Hapus agenda ini dari notebook Anda?')) return;
+
+    const fd = new FormData();
+    fd.append('id', id);
+    const res = await fetch('index.php?page=notebook&action=delete', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        events = events.filter(x => x.id !== id);
+        bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+        renderAll();
+        showToast('Agenda dihapus.');
+    }
+}
+
+/* SETTINGS MODAL */
+function openSettingsModal(btnEl = null) {
+    if (btnEl) setActiveSidebarNav('nav-Email', 'Email Reminder');
+    renderEmailChips('cfg');
+    syncSettingsPreview();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();
+}
+
+function syncSettingsPreview() {
+    document.getElementById('prevEmailTo').textContent = cfgEmails.length ? cfgEmails.join(', ') : '(Belum ada email)';
+    const freqMap = { workdays: 'Senin – Jumat', daily: 'Setiap Hari', custom: 'Hari Tertentu' };
+    const freq = document.getElementById('cfgDigestFreq').value;
+    const time = document.getElementById('cfgDigestTime').value || '07:30';
+    const enabled = document.getElementById('cfgDigest').checked;
+    document.getElementById('prevEmailSchedule').textContent = enabled ? `${freqMap[freq]}, pukul ${time} WIB` : 'Nonaktif';
+
+    const todayItems = events.filter(e => e.due_date === relDate(0) && e.status !== 'Done');
+    document.getElementById('prevEmailList').innerHTML = todayItems.length
+        ? todayItems.map(e => `<div class="py-1 border-bottom">• ${esc(e.title)} (${formatShortTime(e.due_time)})</div>`).join('')
+        : 'Tidak ada agenda hari ini.';
+}
+
+async function saveSettingsToServer() {
+    const fd = new FormData();
+    fd.append('emails', JSON.stringify(cfgEmails));
+    if (document.getElementById('cfgDigest').checked) fd.append('digest_enabled', '1');
+    fd.append('digest_freq', document.getElementById('cfgDigestFreq').value);
+    fd.append('digest_time', document.getElementById('cfgDigestTime').value);
+
+    const res = await fetch('index.php?page=notebook&action=saveSettings', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        cfgSettings = json.settings;
+        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+        updateSidebarCounts();
+        showToast(json.message || 'Pengaturan disimpan.');
+    }
+}
+
+async function sendTestEmail() {
+    const btn = document.getElementById('btnSendTestEmail');
+    btn.disabled = true;
     try {
-        const formData = new FormData();
-        formData.append('id', id);
-        formData.append('status', newStatus);
-
-        const res = await fetch('index.php?page=notebook&action=toggleStatus', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
+        await saveSettingsToServer();
+        const res = await fetch('index.php?page=notebook&action=sendTestEmail', {
+            method: 'POST', headers: { 'Accept': 'application/json' }
         });
         const json = await res.json();
-        if (!json.success) {
-            // Revert on failure
-            task.status = (newStatus === 'Done') ? 'Todo' : 'Done';
-            renderCalendar();
-            renderTimeline();
-        }
+        showToast(json.message || (json.success ? 'Email terkirim.' : 'Gagal mengirim email.'));
     } catch (err) {
-        console.error(err);
+        showToast('Gagal menghubungi server.');
+    } finally {
+        btn.disabled = false;
     }
 }
 
-async function handleDeleteTask() {
-    const id = document.getElementById('taskId').value;
-    if (!id || id === '0') return;
-
-    if (!confirm('Hapus task ini dari notebook Anda?')) return;
-
-    try {
-        const formData = new FormData();
-        formData.append('id', id);
-
-        const res = await fetch('index.php?page=notebook&action=delete', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
-        });
-        const json = await res.json();
-        if (json.success) {
-            allTasks = allTasks.filter(t => t.id != id);
-            renderCalendar();
-            renderTimeline();
-            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
-        } else {
-            alert(json.message || 'Gagal menghapus task.');
-        }
-    } catch (err) {
-        console.error(err);
-    }
+function esc(s) {
+    return String(s || '').replace(/[&<>'"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m]));
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-    }[tag] || tag));
+function showToast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 show mb-2 text-white';
+    el.style.background = '#217346';
+    el.innerHTML = `<div class="d-flex"><div class="toast-body small">${esc(msg)}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button></div>`;
+    document.getElementById('toastBox').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
 }
 
 document.addEventListener('DOMContentLoaded', initNotebook);
 </script>
-

@@ -16,21 +16,21 @@ class NotebookTask
             'SELECT * FROM notebook_tasks WHERE user_id = ? ORDER BY due_date ASC, (due_time IS NULL), due_time ASC, id DESC'
         );
         $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map([self::class, 'hydrateRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
-     * Get tasks for a specific user within a date range (for calendar view).
+     * Get tasks for a specific user within a date range.
      */
     public static function getByUserAndRange(int $userId, string $startDate, string $endDate): array
     {
         $stmt = Database::getInstance()->prepare(
-            'SELECT * FROM notebook_tasks 
-             WHERE user_id = ? AND due_date BETWEEN ? AND ? 
+            'SELECT * FROM notebook_tasks
+             WHERE user_id = ? AND due_date BETWEEN ? AND ?
              ORDER BY due_date ASC, (due_time IS NULL), due_time ASC'
         );
         $stmt->execute([$userId, $startDate, $endDate]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map([self::class, 'hydrateRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -43,7 +43,7 @@ class NotebookTask
         );
         $stmt->execute([$id, $userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        return $row ? self::hydrateRow($row) : null;
     }
 
     /**
@@ -53,8 +53,11 @@ class NotebookTask
     {
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            'INSERT INTO notebook_tasks (user_id, title, notes, due_date, due_time, priority, status, color)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO notebook_tasks (
+                user_id, title, notes, due_date, due_time, duration_minutes,
+                priority, status, tag, theme, color, is_pinned,
+                email_reminder, reminder_freq, reminder_lead, reminder_send_time, reminder_days, reminder_emails
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['user_id'],
@@ -62,9 +65,19 @@ class NotebookTask
             $data['notes'] ?? null,
             $data['due_date'],
             !empty($data['due_time']) ? $data['due_time'] : null,
+            (int) ($data['duration_minutes'] ?? 60),
             $data['priority'] ?? 'Medium',
             $data['status'] ?? 'Todo',
-            $data['color'] ?? '#2563eb',
+            $data['tag'] ?? '#Personal',
+            $data['theme'] ?? 'theme-green',
+            $data['color'] ?? '#217346',
+            !empty($data['is_pinned']) ? 1 : 0,
+            !empty($data['email_reminder']) ? 1 : 0,
+            $data['reminder_freq'] ?? 'once',
+            $data['reminder_lead'] ?? '1h',
+            !empty($data['reminder_send_time']) ? $data['reminder_send_time'] : null,
+            $data['reminder_days'] ?? null,
+            $data['reminder_emails'] ?? null,
         ]);
         return (int) $db->lastInsertId();
     }
@@ -75,8 +88,11 @@ class NotebookTask
     public static function update(int $id, int $userId, array $data): bool
     {
         $stmt = Database::getInstance()->prepare(
-            'UPDATE notebook_tasks 
-             SET title = ?, notes = ?, due_date = ?, due_time = ?, priority = ?, status = ?, color = ?
+            'UPDATE notebook_tasks
+             SET title = ?, notes = ?, due_date = ?, due_time = ?, duration_minutes = ?,
+                 priority = ?, status = ?, tag = ?, theme = ?, color = ?, is_pinned = ?,
+                 email_reminder = ?, reminder_freq = ?, reminder_lead = ?,
+                 reminder_send_time = ?, reminder_days = ?, reminder_emails = ?
              WHERE id = ? AND user_id = ?'
         );
         return $stmt->execute([
@@ -84,9 +100,19 @@ class NotebookTask
             $data['notes'] ?? null,
             $data['due_date'],
             !empty($data['due_time']) ? $data['due_time'] : null,
+            (int) ($data['duration_minutes'] ?? 60),
             $data['priority'] ?? 'Medium',
             $data['status'] ?? 'Todo',
-            $data['color'] ?? '#2563eb',
+            $data['tag'] ?? '#Personal',
+            $data['theme'] ?? 'theme-green',
+            $data['color'] ?? '#217346',
+            !empty($data['is_pinned']) ? 1 : 0,
+            !empty($data['email_reminder']) ? 1 : 0,
+            $data['reminder_freq'] ?? 'once',
+            $data['reminder_lead'] ?? '1h',
+            !empty($data['reminder_send_time']) ? $data['reminder_send_time'] : null,
+            $data['reminder_days'] ?? null,
+            $data['reminder_emails'] ?? null,
             $id,
             $userId,
         ]);
@@ -113,5 +139,89 @@ class NotebookTask
         );
         return $stmt->execute([$id, $userId]);
     }
-}
 
+    /**
+     * Get notebook email/digest settings for a user.
+     */
+    public static function getSettings(int $userId, string $fallbackEmail = ''): array
+    {
+        $stmt = Database::getInstance()->prepare(
+            'SELECT * FROM notebook_settings WHERE user_id = ? LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $defaultEmails = filter_var($fallbackEmail, FILTER_VALIDATE_EMAIL) ? [$fallbackEmail] : [];
+            return [
+                'user_id'        => $userId,
+                'emails'         => $defaultEmails,
+                'digest_enabled' => true,
+                'digest_freq'    => 'workdays',
+                'digest_days'    => ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'],
+                'digest_time'    => '07:30',
+            ];
+        }
+
+        $emails = json_decode((string) ($row['emails'] ?? '[]'), true);
+        if (!is_array($emails)) {
+            $emails = [];
+        }
+        $days = array_values(array_filter(array_map('trim', explode(',', (string) ($row['digest_days'] ?? 'Sen,Sel,Rab,Kam,Jum')))));
+
+        return [
+            'user_id'        => $userId,
+            'emails'         => $emails,
+            'digest_enabled' => !empty($row['digest_enabled']),
+            'digest_freq'    => $row['digest_freq'] ?? 'workdays',
+            'digest_days'    => $days,
+            'digest_time'    => substr((string) ($row['digest_time'] ?? '07:30:00'), 0, 5),
+        ];
+    }
+
+    /**
+     * Save notebook email/digest settings for a user.
+     */
+    public static function saveSettings(int $userId, array $data): bool
+    {
+        $emailsJson = json_encode(array_values($data['emails'] ?? []), JSON_UNESCAPED_UNICODE);
+        $daysCsv    = implode(',', $data['digest_days'] ?? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum']);
+        $time       = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time'] ?? '')) ? substr((string) $data['digest_time'], 0, 5) . ':00' : '07:30:00';
+        $freq       = in_array($data['digest_freq'] ?? '', ['workdays', 'daily', 'custom'], true) ? $data['digest_freq'] : 'workdays';
+        $enabled    = !empty($data['digest_enabled']) ? 1 : 0;
+
+        $stmt = Database::getInstance()->prepare(
+            'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                emails = VALUES(emails),
+                digest_enabled = VALUES(digest_enabled),
+                digest_freq = VALUES(digest_freq),
+                digest_days = VALUES(digest_days),
+                digest_time = VALUES(digest_time)'
+        );
+
+        return $stmt->execute([$userId, $emailsJson, $enabled, $freq, $daysCsv, $time]);
+    }
+
+    private static function hydrateRow(array $row): array
+    {
+        $emails = json_decode((string) ($row['reminder_emails'] ?? '[]'), true);
+        if (!is_array($emails)) {
+            $emails = [];
+        }
+        $days = array_values(array_filter(array_map('trim', explode(',', (string) ($row['reminder_days'] ?? '')))));
+
+        $row['id']                 = (int) $row['id'];
+        $row['user_id']            = (int) $row['user_id'];
+        $row['duration_minutes']   = (int) ($row['duration_minutes'] ?? 60);
+        $row['is_pinned']          = !empty($row['is_pinned']);
+        $row['email_reminder']     = !empty($row['email_reminder']);
+        $row['reminder_emails']    = $emails;
+        $row['reminder_days_arr']  = $days;
+        $row['due_time']           = $row['due_time'] ? substr((string) $row['due_time'], 0, 5) : '';
+        $row['reminder_send_time'] = !empty($row['reminder_send_time']) ? substr((string) $row['reminder_send_time'], 0, 5) : '08:00';
+
+        return $row;
+    }
+}
