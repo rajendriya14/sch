@@ -54,11 +54,8 @@
         $jam      = $now->format('H:i');
     ?>
     <?php
-        // Opsi layout — dipakai modul yang tampil beda dari Workforce Scheduler
-        // (mis. Family Financial Report, Portal): tanpa sidebar, tanpa label
-        // aplikasi, brand sendiri, atau tanpa brand sama sekali.
-        // Semua punya nilai default.
         $hideSidebar  = $hideSidebar  ?? false;
+        $hideNavbar   = $hideNavbar   ?? false;
         $hideAppLabel = $hideAppLabel ?? false;
         $hideBrand    = $hideBrand    ?? false;
         $brandTitle   = $brandTitle   ?? 'Workforce Scheduler';
@@ -70,6 +67,7 @@
         // memakai nama modul yang dikirim controller ($brandTitle).
         $navTitle = (($pageName ?? '') === 'portal') ? 'Pradiya Portal' : $brandTitle;
     ?>
+    <?php if (empty($hideNavbar)): ?>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" style="z-index: 1020;">
         <div class="container-fluid position-relative">
             <?php if (empty($hideSidebar)): ?>
@@ -132,6 +130,7 @@
             <?php endif; ?>
         </div>
     </nav>
+    <?php endif; ?>
 
     <!-- Sidebar (independent fixed component NOT inside wrapper) -->
     <?php if (empty($hideSidebar)): ?>

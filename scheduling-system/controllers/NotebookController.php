@@ -48,6 +48,7 @@ class NotebookController
         $userId      = $this->getCurrentUserId();
         $user        = AuthService::user();
         $hideSidebar = true;
+        $hideNavbar  = true;
         $brandTitle  = 'Personal Notebook';
         $brandIcon   = 'bi-journal-bookmark';
         $brandUrl    = 'index.php?page=portal';

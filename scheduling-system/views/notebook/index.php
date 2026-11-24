@@ -2,7 +2,8 @@
 /**
  * View: Personal Notebook — Minimalist Calendar, Kanban & Assistant (Excel Green)
  */
-$userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+$userDisplayName = (string) ($user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User');
+$userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 ?>
 <style>
     :root {
@@ -19,6 +20,12 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
     body.page-notebook {
         background: #ffffff !important;
         color: var(--nb-text);
+        padding-top: 0 !important;
+    }
+
+    body.page-notebook #wrapper {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
     }
 
     body.page-notebook #mainContent > .container-fluid {
@@ -28,8 +35,21 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
 
     .nb-app-shell {
         display: flex;
-        min-height: calc(100vh - 110px);
+        min-height: calc(100vh - 54px);
         background: #ffffff;
+        position: relative;
+    }
+
+    .nb-sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        z-index: 1035;
+    }
+
+    .nb-sidebar-backdrop.is-open {
+        display: block;
     }
 
     /* Sidebar */
@@ -54,11 +74,62 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
     @media (max-width: 991px) {
         .nb-sidebar {
             position: fixed;
-            top: 56px;
+            top: 0;
             bottom: 0;
             left: 0;
             z-index: 1040;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+        }
+        .nb-content {
+            padding: 14px 14px 32px;
+        }
+        .nb-topbar {
+            padding: 0 14px;
+        }
+        .month-cell {
+            min-height: 82px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .nb-content {
+            padding: 12px 10px 28px;
+        }
+        .cal-toolbar {
+            padding: 10px 12px;
+            gap: 8px;
+        }
+        .cal-title-text {
+            font-size: 0.9rem;
+            width: 100%;
+            margin-left: 0;
+        }
+        .month-head-cell {
+            padding: 6px 4px;
+            font-size: 0.68rem;
+            text-align: center;
+        }
+        .month-cell {
+            min-height: 64px;
+            padding: 4px 3px 22px 3px;
+        }
+        .month-day-num {
+            bottom: 3px;
+            right: 4px;
+            font-size: 0.68rem;
+            width: 20px;
+            height: 20px;
+        }
+        .m-pill {
+            font-size: 0.65rem;
+            padding: 2px 4px;
+        }
+        .m-pill-time {
+            display: none;
+        }
+        .btn-cal-outline, .btn-excel, .btn-cal-ghost {
+            font-size: 0.78rem;
+            padding: 5px 9px;
         }
     }
 
@@ -370,6 +441,7 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
     .agenda-item-row:hover { border-color: var(--excel-green); }
 </style>
 
+<div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
 <div class="nb-app-shell">
     <!-- LEFT SIDEBAR -->
     <aside class="nb-sidebar" id="nbSidebar">
@@ -449,10 +521,41 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
                 </button>
                 <span class="fw-semibold" style="font-size:0.95rem;" id="topbarTitle">Personal Notebook</span>
             </div>
-            <div class="d-flex align-items-center gap-3">
-                <span class="badge rounded-pill" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.72rem;">
-                    <i class="bi bi-shield-lock me-1"></i>Private · <?= $userName ?>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill d-none d-sm-inline-flex align-items-center" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.72rem;">
+                    <i class="bi bi-shield-lock me-1"></i>Private
                 </span>
+                <?php if (!empty($user)): ?>
+                <div class="dropdown">
+                    <button class="btn-cal-outline dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle" style="color:var(--excel-green);"></i>
+                        <span class="d-none d-sm-inline"><?= htmlspecialchars((string) ($user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8') ?></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border">
+                        <li>
+                            <span class="dropdown-item-text small text-muted">
+                                @<?= htmlspecialchars((string) ($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item small" href="index.php?page=portal">
+                                <i class="bi bi-grid me-2"></i>Kembali ke Portal
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item small" href="index.php?page=auth&action=changePassword">
+                                <i class="bi bi-key me-2"></i>Ganti Password
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item small text-danger" href="index.php?page=auth&action=logout" data-confirm="Logout dari sistem sekarang?">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <?php endif; ?>
             </div>
         </header>
 
@@ -633,7 +736,7 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Warna</label>
                             <select id="taskTheme" class="form-select form-select-sm">
-                                <option value="theme-green" selected>Hijau Excel</option>
+                                <option value="theme-green" selected>Hijau Segar</option>
                                 <option value="theme-slate">Abu Netral</option>
                                 <option value="theme-purple">Ungu Lembut</option>
                                 <option value="theme-pink">Merah Muda</option>
@@ -788,7 +891,7 @@ $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?
 <script>
 window.NOTEBOOK_DATA     = <?= json_encode($tasks, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_SETTINGS = <?= json_encode($settings, JSON_UNESCAPED_UNICODE) ?>;
-window.NOTEBOOK_USER     = <?= json_encode((string) ($user['full_name'] ?? $user['username'] ?? 'User'), JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_USER     = <?= json_encode($userDisplayName, JSON_UNESCAPED_UNICODE) ?>;
 </script>
 
 <script>
@@ -822,11 +925,23 @@ function initNotebook() {
     document.getElementById('cfgDigestFreq').value = cfgSettings.digest_freq || 'workdays';
     document.getElementById('cfgDigestTime').value = cfgSettings.digest_time || '07:30';
 
+    if (window.innerWidth < 992) {
+        document.getElementById('nbSidebar').classList.add('is-collapsed');
+    }
+
     renderAll();
 }
 
-function toggleSidebar() {
-    document.getElementById('nbSidebar').classList.toggle('is-collapsed');
+function toggleSidebar(forceOpen = null) {
+    const sb = document.getElementById('nbSidebar');
+    const bd = document.getElementById('nbSidebarBackdrop');
+    const shouldCollapse = forceOpen === null ? !sb.classList.contains('is-collapsed') : !forceOpen;
+    sb.classList.toggle('is-collapsed', shouldCollapse);
+    if (window.innerWidth < 992) {
+        bd.classList.toggle('is-open', !shouldCollapse);
+    } else {
+        bd.classList.remove('is-open');
+    }
 }
 
 function setActiveSidebarNav(navId, title) {
@@ -834,6 +949,7 @@ function setActiveSidebarNav(navId, title) {
     const el = document.getElementById(navId);
     if (el) el.classList.add('active');
     if (title) document.getElementById('topbarTitle').textContent = title;
+    if (window.innerWidth < 992) toggleSidebar(false);
 }
 
 function selectFilter(tag, title) {
