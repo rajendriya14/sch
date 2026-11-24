@@ -25,6 +25,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         color: var(--nb-text);
         padding: 0 !important;
         margin: 0 !important;
+        overflow-x: hidden;
     }
 
     body.page-notebook #wrapper,
@@ -102,52 +103,95 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             padding: 14px 14px 32px;
         }
         .nb-topbar {
-            padding: 0 14px;
+            padding: 8px 14px;
+            min-height: 50px;
+            height: auto;
+            gap: 8px;
+        }
+        .nb-breadcrumb {
+            font-size: 0.8rem;
+            gap: 5px;
         }
         .month-cell {
             min-height: 82px;
+        }
+        .kanban-board {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
     @media (max-width: 575px) {
         .nb-content {
-            padding: 12px 10px 28px;
+            padding: 10px 8px 28px;
+        }
+        .nb-topbar {
+            padding: 8px 10px;
+        }
+        .nb-breadcrumb {
+            font-size: 0.76rem;
+            gap: 4px;
+            max-width: calc(100vw - 120px);
+        }
+        .assistant-card {
+            padding: 10px 12px;
+            margin-bottom: 12px;
         }
         .cal-toolbar {
-            padding: 10px 12px;
+            padding: 10px;
             gap: 8px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .cal-toolbar > div {
+            width: 100%;
+            justify-content: space-between;
         }
         .cal-title-text {
-            font-size: 0.9rem;
-            width: 100%;
-            margin-left: 0;
+            font-size: 0.88rem;
+            margin-left: auto;
         }
         .month-head-cell {
-            padding: 6px 4px;
+            padding: 6px 2px;
             font-size: 0.68rem;
             text-align: center;
         }
         .month-cell {
-            min-height: 64px;
-            padding: 4px 3px 22px 3px;
+            min-height: 62px;
+            padding: 3px 2px 20px 2px;
+            gap: 2px;
         }
         .month-day-num {
-            bottom: 3px;
-            right: 4px;
-            font-size: 0.68rem;
-            width: 20px;
-            height: 20px;
+            bottom: 2px;
+            right: 3px;
+            font-size: 0.66rem;
+            width: 18px;
+            height: 18px;
         }
         .m-pill {
-            font-size: 0.65rem;
-            padding: 2px 4px;
+            font-size: 0.62rem;
+            padding: 1px 4px;
+            border-radius: 4px;
+            gap: 3px;
+        }
+        .m-pill-dot {
+            width: 5px;
+            height: 5px;
         }
         .m-pill-time {
             display: none;
         }
         .btn-cal-outline, .btn-excel, .btn-cal-ghost {
-            font-size: 0.78rem;
-            padding: 5px 9px;
+            font-size: 0.76rem;
+            padding: 5px 8px;
+        }
+        .kanban-board {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .time-axis-spacer, .time-axis, .all-day-label {
+            width: 52px;
+            font-size: 0.65rem;
+            padding-right: 6px;
         }
     }
 
@@ -367,16 +411,18 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     /* Month Grid */
     .month-grid-head {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         border-bottom: 1px solid var(--nb-border);
         background: #fff;
     }
-    .month-head-cell { padding: 8px 12px; font-size: 0.75rem; font-weight: 500; color: var(--nb-muted); }
-    .month-grid-body { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--nb-border); gap: 1px; }
+    .month-head-cell { padding: 8px 12px; font-size: 0.75rem; font-weight: 500; color: var(--nb-muted); min-width: 0; }
+    .month-grid-body { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--nb-border); gap: 1px; }
 
     .month-cell {
         background: #fff;
         min-height: 108px;
+        min-width: 0;
+        overflow: hidden;
         padding: 6px 6px 26px 6px;
         position: relative;
         cursor: pointer;
@@ -775,7 +821,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
 <!-- MODAL: NEW / EDIT EVENT -->
 <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header border-bottom py-3">
                 <h6 class="modal-title fw-bold" id="taskModalLabel">New event</h6>
@@ -908,7 +954,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
 <!-- MODAL: SETTINGS (PREFERENSI NOTES & EMAIL REMINDER) -->
 <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header border-bottom py-3">
                 <h6 class="modal-title fw-bold"><i class="bi bi-sliders me-2" style="color:var(--excel-green);"></i>Settings — Personal Notebook</h6>
