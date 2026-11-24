@@ -534,6 +534,27 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     .agenda-drawer { background: #fff; border: 1px solid var(--nb-border); border-radius: 12px; padding: 16px; height: 100%; }
     .agenda-item-row { border: 1px solid var(--nb-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
     .agenda-item-row:hover { border-color: var(--excel-green); }
+
+    /* Sticky Notes */
+    .sticky-card {
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid rgba(17, 24, 39, 0.08);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+    .sticky-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -6px rgba(17, 24, 39, 0.12);
+    }
+    .sticky-yellow { background: #fef9c3; }
+    .sticky-green  { background: #eaf5ee; border-color: #b7dfc7; }
+    .sticky-blue   { background: #dbeafe; }
+    .sticky-pink   { background: #fce7f3; }
+    .sticky-purple { background: #ede9fe; }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -595,6 +616,14 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <span>Kanban Board</span>
                 </span>
                 <span class="sidebar-count" id="cnt-Kanban">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Sticky" onclick="switchView('sticky')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-sticky"></i>
+                    <span>Sticky Notes</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Sticky">0</span>
             </button>
 
             <button type="button" class="sidebar-nav-item" id="nav-Settings"
@@ -710,6 +739,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                         <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('category')"><i class="bi bi-columns-gap me-2"></i>Category Grid (Kolom)</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('kanban')"><i class="bi bi-kanban me-2"></i>Kanban Notes (Board)</a></li>
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('sticky')"><i class="bi bi-sticky me-2"></i>Sticky Notes</a></li>
                                     </ul>
                                 </div>
                                 <div class="d-flex align-items-center">
@@ -798,6 +828,20 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <div id="view-kanban" class="d-none p-3" style="background:#ffffff;">
                             <div class="kanban-board" id="kanbanBoard"></div>
                         </div>
+
+                        <!-- VIEW 5: STICKY NOTES -->
+                        <div id="view-sticky" class="d-none p-3" style="background:#ffffff;">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-0">Sticky Notes &amp; Pengingat Harian</h6>
+                                    <span class="text-muted small">Catat cepat dan pilih jam reminder harian (atau pilih tidak di-reminder).</span>
+                                </div>
+                                <button type="button" class="btn-excel" onclick="openStickyModal()">
+                                    <i class="bi bi-plus-lg"></i> Tulis Sticky Note
+                                </button>
+                            </div>
+                            <div class="row g-3" id="stickyNotesGrid"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -817,6 +861,63 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             </div>
         </div>
     </section>
+</div>
+
+<!-- MODAL: STICKY NOTE -->
+<div class="modal fade" id="stickyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold" id="stickyModalLabel">Tulis Sticky Note</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleStickySubmit(event)">
+                <input type="hidden" id="stickyId" value="0">
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Judul Catatan <span class="text-danger">*</span></label>
+                        <input type="text" id="stickyTitle" required class="form-control" placeholder="Misal: Follow up tim, Checklist harian...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Isi Catatan <span class="text-danger">*</span></label>
+                        <textarea id="stickyContent" rows="4" required class="form-control" placeholder="Tulis catatan Anda di sini..."></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Warna Sticky</label>
+                            <select id="stickyTheme" class="form-select form-select-sm">
+                                <option value="sticky-yellow">Kuning Hangat</option>
+                                <option value="sticky-green">Hijau Segar</option>
+                                <option value="sticky-blue">Biru Langit</option>
+                                <option value="sticky-pink">Merah Muda</option>
+                                <option value="sticky-purple">Ungu Lembut</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Reminder Setiap Hari</label>
+                            <select id="stickyReminderTime" class="form-select form-select-sm">
+                                <option value="">Tidak di-reminder</option>
+                                <option value="07:00">Setiap hari jam 07:00</option>
+                                <option value="08:00">Setiap hari jam 08:00</option>
+                                <option value="09:00">Setiap hari jam 09:00</option>
+                                <option value="12:00">Setiap hari jam 12:00</option>
+                                <option value="15:00">Setiap hari jam 15:00</option>
+                                <option value="18:00">Setiap hari jam 18:00</option>
+                                <option value="20:00">Setiap hari jam 20:00</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top d-flex justify-content-between">
+                    <button type="button" id="btnDeleteSticky" class="btn btn-outline-danger btn-sm d-none" onclick="deleteStickyFromModal()">Hapus</button>
+                    <div class="ms-auto d-flex gap-2">
+                        <button type="button" class="btn-cal-outline" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn-excel" id="btnSaveSticky">Simpan</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL: NEW / EDIT EVENT -->
@@ -1102,6 +1203,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
 <script>
 window.NOTEBOOK_DATA     = <?= json_encode($tasks, JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_STICKIES = <?= json_encode($stickies, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_SETTINGS = <?= json_encode($settings, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_USER     = <?= json_encode($userDisplayName, JSON_UNESCAPED_UNICODE) ?>;
 </script>
@@ -1119,6 +1221,7 @@ function relDate(offset) {
 }
 
 let events = Array.isArray(window.NOTEBOOK_DATA) ? window.NOTEBOOK_DATA : [];
+let stickies = Array.isArray(window.NOTEBOOK_STICKIES) ? window.NOTEBOOK_STICKIES : [];
 let cfgSettings = window.NOTEBOOK_SETTINGS || { emails: [], digest_enabled: true, digest_freq: 'workdays', digest_time: '07:30', preferences: {} };
 let cfgPrefs = Object.assign({
     default_view: 'month',
@@ -1186,6 +1289,7 @@ function renderBreadcrumb(navId) {
         'nav-Meeting':  [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes', onclick: "selectFilter('ALL', 'All Notes')" }, { label: 'Meeting & Sync' }],
         'nav-Personal': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes', onclick: "selectFilter('ALL', 'All Notes')" }, { label: 'Personal Notes' }],
         'nav-Kanban':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Kanban Board' }],
+        'nav-Sticky':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Sticky Notes' }],
         'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
         'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }]
     };
@@ -1236,6 +1340,7 @@ function renderAll() {
     if (currentView === 'category') renderCategoryView();
     if (currentView === 'day') renderDayView();
     if (currentView === 'kanban') renderKanbanView();
+    if (currentView === 'sticky') renderStickyView();
     if (agendaOpen) renderAgendaDrawer();
 }
 
@@ -1246,6 +1351,7 @@ function updateSidebarCounts() {
     const emailCnt = events.filter(e => e.email_reminder && e.status !== 'Done').length;
     document.getElementById('cnt-Email').textContent = emailCnt;
     document.getElementById('cnt-Kanban').textContent = events.length;
+    document.getElementById('cnt-Sticky').textContent = stickies.length;
     document.getElementById('sidebarStatusText').textContent = `Email reminder aktif · ${cfgEmails.length} akun`;
 }
 
@@ -1275,14 +1381,16 @@ function renderBriefing() {
 
 function switchView(view) {
     currentView = view;
-    const labels = { month: 'Month', day: 'Day', category: 'Category', kanban: 'Kanban' };
-    document.getElementById('currentViewLabel').textContent = labels[view];
-    ['month', 'day', 'category', 'kanban'].forEach(v => {
+    const labels = { month: 'Month', day: 'Day', category: 'Category', kanban: 'Kanban', sticky: 'Sticky Notes' };
+    document.getElementById('currentViewLabel').textContent = labels[view] || 'Month';
+    ['month', 'day', 'category', 'kanban', 'sticky'].forEach(v => {
         document.getElementById('view-' + v).classList.toggle('d-none', v !== view);
     });
 
     if (view === 'kanban') {
         setActiveSidebarNav('nav-Kanban', 'Kanban Board');
+    } else if (view === 'sticky') {
+        setActiveSidebarNav('nav-Sticky', 'Sticky Notes');
     } else {
         const navMap = { 'ALL': ['nav-ALL', 'All Notes'], '#Meeting': ['nav-Meeting', 'Meeting & Sync'], '#Personal': ['nav-Personal', 'Personal Notes'] };
         const [navId, title] = navMap[activeTagFilter] || ['nav-ALL', 'All Notes'];
@@ -1295,6 +1403,7 @@ function updateToolbarTitle() {
     const el = document.getElementById('toolbarDateTitle');
     if (currentView === 'month') el.textContent = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
     else if (currentView === 'kanban') el.textContent = 'Notes & Task Board';
+    else if (currentView === 'sticky') el.textContent = 'Sticky Notes';
     else el.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
@@ -1544,6 +1653,133 @@ async function handleKanbanDrop(e, newStatus) {
         ev.status = prevStatus;
         renderAll();
     }
+}
+
+/* STICKY NOTES */
+const STICKY_TIME_OPTS = [
+    { val: '', label: 'Tidak di-reminder' },
+    { val: '07:00', label: 'Setiap hari jam 07:00' },
+    { val: '08:00', label: 'Setiap hari jam 08:00' },
+    { val: '09:00', label: 'Setiap hari jam 09:00' },
+    { val: '12:00', label: 'Setiap hari jam 12:00' },
+    { val: '15:00', label: 'Setiap hari jam 15:00' },
+    { val: '18:00', label: 'Setiap hari jam 18:00' },
+    { val: '20:00', label: 'Setiap hari jam 20:00' }
+];
+
+function renderStickyView() {
+    const q = (document.getElementById('sidebarSearch').value || '').toLowerCase().trim();
+    const list = stickies.filter(s => !q || `${s.title} ${s.content}`.toLowerCase().includes(q));
+    const grid = document.getElementById('stickyNotesGrid');
+
+    if (!list.length) {
+        grid.innerHTML = `<div class="col-12"><div class="text-center text-muted py-5 border rounded-3" style="border-style:dashed !important;">Belum ada sticky note. Klik <strong>+ Tulis Sticky Note</strong> untuk mencatat.</div></div>`;
+        return;
+    }
+
+    grid.innerHTML = list.map(s => `
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="sticky-card ${s.theme || 'sticky-yellow'}">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <h6 class="fw-bold mb-0">${esc(s.title)}</h6>
+                        <div class="d-flex gap-1 flex-shrink-0">
+                            <button type="button" class="btn btn-sm btn-light py-0 px-2" onclick="openStickyModal(${s.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+                            <button type="button" class="btn btn-sm btn-light py-0 px-2 text-danger" onclick="deleteSticky(${s.id})" title="Hapus"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                    <p class="small mb-3" style="white-space: pre-line;">${esc(s.content)}</p>
+                </div>
+                <div class="pt-2 border-top border-dark border-opacity-10">
+                    <label class="d-block text-muted mb-1" style="font-size:0.7rem;"><i class="bi bi-bell me-1"></i>Pengingat Email Harian</label>
+                    <select class="form-select form-select-sm bg-white" onchange="changeStickyReminder(${s.id}, this.value)">
+                        ${STICKY_TIME_OPTS.map(o => `<option value="${o.val}" ${(s.reminder_time || '') === o.val ? 'selected' : ''}>${o.label}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openStickyModal(id = null) {
+    const s = id ? stickies.find(x => x.id === id) : null;
+    document.getElementById('stickyModalLabel').textContent = s ? 'Edit Sticky Note' : 'Tulis Sticky Note';
+    document.getElementById('stickyId').value = s ? s.id : 0;
+    document.getElementById('stickyTitle').value = s ? s.title : '';
+    document.getElementById('stickyContent').value = s ? s.content : '';
+    document.getElementById('stickyTheme').value = s ? (s.theme || 'sticky-yellow') : 'sticky-yellow';
+    document.getElementById('stickyReminderTime').value = s ? (s.reminder_time || '') : '';
+    document.getElementById('btnDeleteSticky').classList.toggle('d-none', !s);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('stickyModal')).show();
+}
+
+async function handleStickySubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveSticky');
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append('id', document.getElementById('stickyId').value);
+    fd.append('title', document.getElementById('stickyTitle').value.trim());
+    fd.append('content', document.getElementById('stickyContent').value.trim());
+    fd.append('theme', document.getElementById('stickyTheme').value);
+    fd.append('reminder_time', document.getElementById('stickyReminderTime').value);
+    fd.append('reminder_emails', JSON.stringify(cfgEmails));
+
+    try {
+        const res = await fetch('index.php?page=notebook&action=saveSticky', {
+            method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+        });
+        const json = await res.json();
+        if (json.success && json.sticky) {
+            const idx = stickies.findIndex(x => x.id == json.sticky.id);
+            if (idx >= 0) stickies[idx] = json.sticky;
+            else stickies.unshift(json.sticky);
+            bootstrap.Modal.getInstance(document.getElementById('stickyModal')).hide();
+            renderAll();
+            showToast(json.message || 'Sticky note disimpan.');
+        } else {
+            alert(json.message || 'Gagal menyimpan sticky note.');
+        }
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function changeStickyReminder(id, timeVal) {
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('reminder_time', timeVal);
+    const res = await fetch('index.php?page=notebook&action=updateStickyReminder', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        const s = stickies.find(x => x.id === id);
+        if (s) s.reminder_time = timeVal;
+        showToast(json.message);
+    }
+}
+
+async function deleteSticky(id) {
+    if (!confirm('Hapus sticky note ini?')) return;
+    const fd = new FormData();
+    fd.append('id', id);
+    const res = await fetch('index.php?page=notebook&action=deleteSticky', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        stickies = stickies.filter(x => x.id !== id);
+        renderAll();
+        showToast('Sticky note dihapus.');
+    }
+}
+
+function deleteStickyFromModal() {
+    const id = Number(document.getElementById('stickyId').value);
+    if (!id) return;
+    bootstrap.Modal.getInstance(document.getElementById('stickyModal')).hide();
+    deleteSticky(id);
 }
 
 /* AGENDA DRAWER */

@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Models\NotebookStickyNote;
 use Models\NotebookTask;
 use Services\AuthService;
 use Services\MailService;
@@ -56,6 +57,7 @@ class NotebookController
         $pageName    = 'notebook';
 
         $tasks    = NotebookTask::allByUser($userId);
+        $stickies = NotebookStickyNote::allByUser($userId);
         $settings = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
 
         require_once __DIR__ . '/../views/layouts/header.php';
@@ -331,5 +333,100 @@ class NotebookController
         } catch (\Throwable $e) {
             $this->jsonResponse(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * API: Save Sticky Note (Create or Update)
+     */
+    public function saveSticky(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $id     = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
+        $title  = trim((string) ($_POST['title'] ?? ''));
+        $content = trim((string) ($_POST['content'] ?? ''));
+        $theme  = trim((string) ($_POST['theme'] ?? 'sticky-yellow'));
+        $remTime = trim((string) ($_POST['reminder_time'] ?? ''));
+        $rawEmails = $_POST['reminder_emails'] ?? '[]';
+
+        if ($title === '' || $content === '') {
+            $this->jsonResponse(['success' => false, 'message' => 'Judul dan isi sticky note tidak boleh kosong.'], 400);
+        }
+
+        if ($remTime !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime)) {
+            $remTime = '';
+        }
+
+        $emailsArr = is_string($rawEmails) ? json_decode($rawEmails, true) : (is_array($rawEmails) ? $rawEmails : []);
+        if (!is_array($emailsArr)) {
+            $emailsArr = [];
+        }
+        $emailsArr = array_values(array_filter(array_map('trim', $emailsArr), static function ($em) {
+            return filter_var($em, FILTER_VALIDATE_EMAIL) !== false;
+        }));
+
+        $data = [
+            'user_id'         => $userId,
+            'title'           => $title,
+            'content'         => $content,
+            'theme'           => $theme,
+            'reminder_time'   => $remTime,
+            'reminder_emails' => json_encode($emailsArr, JSON_UNESCAPED_UNICODE),
+        ];
+
+        if ($id > 0) {
+            $existing = NotebookStickyNote::findByUser($id, $userId);
+            if (!$existing) {
+                $this->jsonResponse(['success' => false, 'message' => 'Sticky note tidak ditemukan.'], 404);
+            }
+            NotebookStickyNote::update($id, $userId, $data);
+            $savedId = $id;
+            $msg = 'Sticky note diperbarui.';
+        } else {
+            $savedId = NotebookStickyNote::create($data);
+            $msg = 'Sticky note disimpan.';
+        }
+
+        $note = NotebookStickyNote::findByUser($savedId, $userId);
+        $this->jsonResponse(['success' => true, 'message' => $msg, 'sticky' => $note]);
+    }
+
+    /**
+     * API: Update only reminder time from sticky note card dropdown
+     */
+    public function updateStickyReminder(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $id     = (int) ($_POST['id'] ?? 0);
+        $time   = trim((string) ($_POST['reminder_time'] ?? ''));
+
+        if ($time !== '' && !preg_match('/^\d{2}:\d{2}$/', $time)) {
+            $time = '';
+        }
+
+        $existing = NotebookStickyNote::findByUser($id, $userId);
+        if (!$existing) {
+            $this->jsonResponse(['success' => false, 'message' => 'Sticky note tidak ditemukan.'], 404);
+        }
+
+        NotebookStickyNote::updateReminderTime($id, $userId, $time);
+        $msg = $time !== '' ? "Reminder diatur setiap hari pukul {$time} WIB." : 'Reminder dimatikan untuk catatan ini.';
+        $this->jsonResponse(['success' => true, 'message' => $msg, 'reminder_time' => $time]);
+    }
+
+    /**
+     * API: Delete Sticky Note
+     */
+    public function deleteSticky(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $id     = (int) ($_POST['id'] ?? 0);
+
+        $existing = NotebookStickyNote::findByUser($id, $userId);
+        if (!$existing) {
+            $this->jsonResponse(['success' => false, 'message' => 'Sticky note tidak ditemukan.'], 404);
+        }
+
+        NotebookStickyNote::delete($id, $userId);
+        $this->jsonResponse(['success' => true, 'message' => 'Sticky note dihapus.']);
     }
 }

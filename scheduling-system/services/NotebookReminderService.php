@@ -148,6 +148,56 @@ class NotebookReminderService
             }
         }
 
+        // 3. Daily Sticky Note Reminders
+        $stStmt = $db->query(
+            "SELECT sn.*, u.email AS user_email, ns.emails AS settings_emails
+             FROM notebook_sticky_notes sn
+             LEFT JOIN users u ON u.id = sn.user_id
+             LEFT JOIN notebook_settings ns ON ns.user_id = sn.user_id
+             WHERE sn.reminder_time IS NOT NULL AND sn.reminder_time <> ''"
+        );
+        $stickies = $stStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($stickies as $sn) {
+            if (($sn['last_reminder_sent_date'] ?? '') === $today) {
+                continue;
+            }
+            if ($nowTime < substr((string) $sn['reminder_time'], 0, 5)) {
+                continue;
+            }
+            $recipients = json_decode((string) ($sn['reminder_emails'] ?? '[]'), true);
+            if (!is_array($recipients) || empty($recipients)) {
+                $recipients = json_decode((string) ($sn['settings_emails'] ?? '[]'), true);
+            }
+            if (!is_array($recipients) || empty($recipients)) {
+                if (!empty($sn['user_email']) && filter_var($sn['user_email'], FILTER_VALIDATE_EMAIL)) {
+                    $recipients = [$sn['user_email']];
+                } else {
+                    continue;
+                }
+            }
+
+            $sTitle = htmlspecialchars((string) $sn['title'], ENT_QUOTES, 'UTF-8');
+            $sBody  = nl2br(htmlspecialchars((string) $sn['content'], ENT_QUOTES, 'UTF-8'));
+            $sTime  = htmlspecialchars((string) $sn['reminder_time'], ENT_QUOTES, 'UTF-8');
+            $html   = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
+                . '<div style="background:#217346;color:#fff;padding:16px 20px;"><strong>Sticky Note Reminder (' . $sTime . ' WIB)</strong></div>'
+                . '<div style="padding:20px;font-size:14px;color:#111827;">'
+                . "<h3 style='margin:0 0 10px 0;'>{$sTitle}</h3>"
+                . "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:16px;'>{$sBody}</div>"
+                . '<a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a>'
+                . '</div></div>';
+
+            $sendRes = $mail->send($recipients, '[Sticky Note Reminder] ' . $sn['title'], $html);
+            if ($sendRes['success']) {
+                $upd = $db->prepare('UPDATE notebook_sticky_notes SET last_reminder_sent_date = ? WHERE id = ?');
+                $upd->execute([$today, $sn['id']]);
+                $result['tasks_sent']++;
+            } else {
+                $result['errors'][] = "Sticky #{$sn['id']}: " . $sendRes['message'];
+            }
+        }
+
         return $result;
     }
 

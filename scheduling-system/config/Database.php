@@ -394,6 +394,22 @@ class Database
             } catch (\PDOException $e) {
                 // Column already exists
             }
+
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS notebook_sticky_notes (
+                    id                      INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id                 INT NOT NULL,
+                    title                   VARCHAR(255) NOT NULL,
+                    content                 TEXT NOT NULL,
+                    theme                   VARCHAR(30) NOT NULL DEFAULT "sticky-yellow",
+                    reminder_time           VARCHAR(10) DEFAULT NULL,
+                    reminder_emails         TEXT DEFAULT NULL,
+                    last_reminder_sent_date DATE DEFAULT NULL,
+                    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_sticky_user (user_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }
