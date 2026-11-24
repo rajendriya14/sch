@@ -18,14 +18,19 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     }
 
     body.page-notebook {
+        --navbar-height: 0px;
+        --content-pad-top: 0px;
+        --content-pad-x: 0px;
         background: #ffffff !important;
         color: var(--nb-text);
-        padding-top: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
-    body.page-notebook #wrapper {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
+    body.page-notebook #wrapper,
+    body.page-notebook #mainContent {
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
     body.page-notebook #mainContent > .container-fluid {
@@ -35,7 +40,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
     .nb-app-shell {
         display: flex;
-        min-height: calc(100vh - 54px);
+        min-height: 100vh;
         background: #ffffff;
         position: relative;
     }
@@ -517,13 +522,29 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                 <span class="sidebar-count" id="cnt-Kanban">0</span>
             </button>
 
-            <button type="button" class="sidebar-nav-item" id="nav-Email" onclick="openSettingsModal(this)">
+            <button type="button" class="sidebar-nav-item" id="nav-Settings"
+                    data-bs-toggle="collapse" data-bs-target="#settingsSubmenu" aria-expanded="true">
                 <span class="sidebar-nav-left">
-                    <i class="bi bi-envelope-check"></i>
-                    <span>Email Reminder</span>
+                    <i class="bi bi-sliders"></i>
+                    <span>Settings</span>
                 </span>
-                <span class="sidebar-count" id="cnt-Email">0</span>
+                <i class="bi bi-chevron-down" style="font-size:0.72rem; color:#9ca3af;"></i>
             </button>
+            <div class="collapse show ps-3" id="settingsSubmenu">
+                <button type="button" class="sidebar-nav-item" id="nav-Prefs" onclick="openSettingsModal(this, 'prefs')">
+                    <span class="sidebar-nav-left">
+                        <i class="bi bi-toggles"></i>
+                        <span>Preferensi Notes</span>
+                    </span>
+                </button>
+                <button type="button" class="sidebar-nav-item" id="nav-Email" onclick="openSettingsModal(this, 'email')">
+                    <span class="sidebar-nav-left">
+                        <i class="bi bi-envelope-check"></i>
+                        <span>Email Reminder</span>
+                    </span>
+                    <span class="sidebar-count" id="cnt-Email">0</span>
+                </button>
+            </div>
         </div>
 
         <div class="sidebar-footer">
@@ -846,61 +867,143 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     </div>
 </div>
 
-<!-- MODAL: SETTINGS (EMAIL REMINDER & DAILY BRIEFING) -->
+<!-- MODAL: SETTINGS (PREFERENSI NOTES & EMAIL REMINDER) -->
 <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold"><i class="bi bi-sliders me-2" style="color:var(--excel-green);"></i>Settings — Email Reminder &amp; Asisten</h6>
+                <h6 class="modal-title fw-bold"><i class="bi bi-sliders me-2" style="color:var(--excel-green);"></i>Settings — Personal Notebook</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Daftar Email Penerima (Multi-Akun)</label>
-                            <div id="cfgEmailChips" class="d-flex flex-wrap gap-1 mb-2"></div>
-                            <div class="input-group input-group-sm">
-                                <input type="email" id="cfgEmailInput" class="form-control" placeholder="Tambah email lain lalu Enter..." onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addEmailChip('cfg');}">
-                                <button type="button" class="btn btn-outline-secondary" onclick="addEmailChip('cfg')">+ Tambah</button>
-                            </div>
-                        </div>
-                        <div class="p-3 rounded-3 bg-light border mb-3">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="cfgDigest" checked onchange="syncSettingsPreview()">
-                                <label class="form-check-label small fw-semibold" for="cfgDigest">Jadwal Pengiriman Rutin (Briefing)</label>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label mb-1" style="font-size:0.75rem; color:#4b5563;">Pilih Hari Pengiriman</label>
-                                <select id="cfgDigestFreq" class="form-select form-select-sm" onchange="syncSettingsPreview()">
-                                    <option value="workdays" selected>Setiap Hari Kerja (Senin – Jumat)</option>
-                                    <option value="daily">Setiap Hari (Senin – Minggu)</option>
-                                    <option value="custom">Hari Tertentu</option>
+                <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active small fw-semibold" id="tabBtnPrefs" data-bs-toggle="tab" data-bs-target="#tabPanePrefs" type="button" role="tab">
+                            <i class="bi bi-toggles me-1"></i> Preferensi Notes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link small fw-semibold" id="tabBtnEmail" data-bs-toggle="tab" data-bs-target="#tabPaneEmail" type="button" role="tab">
+                            <i class="bi bi-envelope-check me-1"></i> Email Reminder
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- TAB 1: PREFERENSI NOTES -->
+                    <div class="tab-pane fade show active" id="tabPanePrefs" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Tampilan Awal Saat Dibuka</label>
+                                <select id="prefDefaultView" class="form-select form-select-sm">
+                                    <option value="month">Month (Kalender Bulanan)</option>
+                                    <option value="day">Day (Time-Block Harian)</option>
+                                    <option value="category">Category Grid</option>
+                                    <option value="kanban">Kanban Board</option>
                                 </select>
                             </div>
-                            <div class="d-flex align-items-center gap-2 small text-muted">
-                                <span>Kirim setiap jam:</span>
-                                <input type="time" id="cfgDigestTime" class="form-control form-control-sm w-auto" value="07:30" oninput="syncSettingsPreview()">
-                                <span>WIB</span>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Hari Pertama Kalender</label>
+                                <select id="prefWeekStart" class="form-select form-select-sm">
+                                    <option value="sun">Minggu (Sun)</option>
+                                    <option value="mon">Senin (Mon)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Durasi Default (menit)</label>
+                                <select id="prefDefaultDuration" class="form-select form-select-sm">
+                                    <option value="30">30 menit</option>
+                                    <option value="60">60 menit</option>
+                                    <option value="90">90 menit</option>
+                                    <option value="120">120 menit</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Prioritas Default</label>
+                                <select id="prefDefaultPriority" class="form-select form-select-sm">
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Warna Default</label>
+                                <select id="prefDefaultTheme" class="form-select form-select-sm">
+                                    <option value="theme-green">Hijau Segar</option>
+                                    <option value="theme-slate">Abu Netral</option>
+                                    <option value="theme-purple">Ungu Lembut</option>
+                                    <option value="theme-pink">Merah Muda</option>
+                                    <option value="theme-amber">Kuning Hangat</option>
+                                    <option value="theme-blue">Biru Langit</option>
+                                    <option value="theme-cyan">Cyan</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="prefShowGreeting" checked>
+                                    <label class="form-check-label small fw-semibold" for="prefShowGreeting">
+                                        Tampilkan Bar Salam &amp; Ringkasan Asisten di Atas Kalender
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn-excel flex-grow-1 justify-content-center" onclick="saveSettingsToServer()">
-                                Simpan Pengaturan
-                            </button>
-                            <button type="button" class="btn-cal-outline" id="btnSendTestEmail" onclick="sendTestEmail()">
-                                <i class="bi bi-send"></i> Test Kirim
+                        <div class="mt-4 d-flex justify-content-end">
+                            <button type="button" class="btn-excel" onclick="saveSettingsToServer()">
+                                <i class="bi bi-check2"></i> Simpan Preferensi
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="border rounded-3 p-3 bg-light h-100">
-                            <div class="small fw-bold mb-2 text-muted">PREVIEW EMAIL BRIEFING</div>
-                            <div class="bg-white border rounded-3 p-3 small">
-                                <div class="text-muted mb-1">Kepada: <strong id="prevEmailTo">(Belum ada email)</strong></div>
-                                <div class="text-muted mb-2" style="font-size:0.74rem;">Jadwal: <span id="prevEmailSchedule">Senin – Jumat, pukul 07:30 WIB</span></div>
-                                <div class="fw-bold mb-2" style="color:var(--excel-green);">Agenda Anda Hari Ini:</div>
-                                <div id="prevEmailList" class="text-muted"></div>
+
+                    <!-- TAB 2: EMAIL REMINDER -->
+                    <div class="tab-pane fade" id="tabPaneEmail" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Daftar Email Penerima (Multi-Akun)</label>
+                                    <div id="cfgEmailChips" class="d-flex flex-wrap gap-1 mb-2"></div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="email" id="cfgEmailInput" class="form-control" placeholder="Tambah email lain lalu Enter..." onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addEmailChip('cfg');}">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="addEmailChip('cfg')">+ Tambah</button>
+                                    </div>
+                                </div>
+                                <div class="p-3 rounded-3 bg-light border mb-3">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="cfgDigest" checked onchange="syncSettingsPreview()">
+                                        <label class="form-check-label small fw-semibold" for="cfgDigest">Jadwal Pengiriman Rutin (Briefing)</label>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" style="font-size:0.75rem; color:#4b5563;">Pilih Hari Pengiriman</label>
+                                        <select id="cfgDigestFreq" class="form-select form-select-sm" onchange="syncSettingsPreview()">
+                                            <option value="workdays" selected>Setiap Hari Kerja (Senin – Jumat)</option>
+                                            <option value="daily">Setiap Hari (Senin – Minggu)</option>
+                                            <option value="custom">Hari Tertentu</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 small text-muted">
+                                        <span>Kirim setiap jam:</span>
+                                        <input type="time" id="cfgDigestTime" class="form-control form-control-sm w-auto" value="07:30" oninput="syncSettingsPreview()">
+                                        <span>WIB</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn-excel flex-grow-1 justify-content-center" onclick="saveSettingsToServer()">
+                                        Simpan Pengaturan
+                                    </button>
+                                    <button type="button" class="btn-cal-outline" id="btnSendTestEmail" onclick="sendTestEmail()">
+                                        <i class="bi bi-send"></i> Test Kirim
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded-3 p-3 bg-light h-100">
+                                    <div class="small fw-bold mb-2 text-muted">PREVIEW EMAIL BRIEFING</div>
+                                    <div class="bg-white border rounded-3 p-3 small">
+                                        <div class="text-muted mb-1">Kepada: <strong id="prevEmailTo">(Belum ada email)</strong></div>
+                                        <div class="text-muted mb-2" style="font-size:0.74rem;">Jadwal: <span id="prevEmailSchedule">Senin – Jumat, pukul 07:30 WIB</span></div>
+                                        <div class="fw-bold mb-2" style="color:var(--excel-green);">Agenda Anda Hari Ini:</div>
+                                        <div id="prevEmailList" class="text-muted"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -931,14 +1034,34 @@ function relDate(offset) {
 }
 
 let events = Array.isArray(window.NOTEBOOK_DATA) ? window.NOTEBOOK_DATA : [];
-let cfgSettings = window.NOTEBOOK_SETTINGS || { emails: [], digest_enabled: true, digest_freq: 'workdays', digest_time: '07:30' };
+let cfgSettings = window.NOTEBOOK_SETTINGS || { emails: [], digest_enabled: true, digest_freq: 'workdays', digest_time: '07:30', preferences: {} };
+let cfgPrefs = Object.assign({
+    default_view: 'month',
+    default_duration: 60,
+    default_priority: 'Medium',
+    default_theme: 'theme-green',
+    week_start: 'sun',
+    show_greeting: true
+}, cfgSettings.preferences || {});
 let cfgEmails = Array.isArray(cfgSettings.emails) ? [...cfgSettings.emails] : [];
 let taskEmails = [];
 
-let currentView = 'month';
+let currentView = cfgPrefs.default_view || 'month';
 let currentDate = new Date();
 let activeTagFilter = 'ALL';
 let agendaOpen = false;
+
+function applyNotePreferences() {
+    document.getElementById('prefDefaultView').value = cfgPrefs.default_view || 'month';
+    document.getElementById('prefWeekStart').value = cfgPrefs.week_start || 'sun';
+    document.getElementById('prefDefaultDuration').value = String(cfgPrefs.default_duration || 60);
+    document.getElementById('prefDefaultPriority').value = cfgPrefs.default_priority || 'Medium';
+    document.getElementById('prefDefaultTheme').value = cfgPrefs.default_theme || 'theme-green';
+    document.getElementById('prefShowGreeting').checked = cfgPrefs.show_greeting !== false;
+
+    const greetingCard = document.querySelector('.assistant-card');
+    if (greetingCard) greetingCard.classList.toggle('d-none', cfgPrefs.show_greeting === false);
+}
 
 function initNotebook() {
     const h = new Date().getHours();
@@ -948,12 +1071,13 @@ function initNotebook() {
     document.getElementById('cfgDigest').checked = !!cfgSettings.digest_enabled;
     document.getElementById('cfgDigestFreq').value = cfgSettings.digest_freq || 'workdays';
     document.getElementById('cfgDigestTime').value = cfgSettings.digest_time || '07:30';
+    applyNotePreferences();
 
     if (window.innerWidth < 992) {
         document.getElementById('nbSidebar').classList.add('is-collapsed');
     }
 
-    renderAll();
+    switchView(currentView);
 }
 
 function toggleSidebar(forceOpen = null) {
@@ -1092,7 +1216,18 @@ function formatShortTime(t) {
 /* MONTH VIEW */
 function renderMonthView() {
     const y = currentDate.getFullYear(), m = currentDate.getMonth();
-    const firstIdx = new Date(y, m, 1).getDay();
+    const weekStartMon = (cfgPrefs.week_start === 'mon');
+    const headLabels = weekStartMon
+        ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const headRow = document.querySelector('.month-grid-head');
+    if (headRow) {
+        headRow.innerHTML = headLabels.map(d => `<div class="month-head-cell">${d}</div>`).join('');
+    }
+
+    let firstIdx = new Date(y, m, 1).getDay();
+    if (weekStartMon) firstIdx = (firstIdx + 6) % 7;
+
     const lastDay = new Date(y, m + 1, 0).getDate();
     const prevLast = new Date(y, m, 0).getDate();
     const todayStr = relDate(0);
@@ -1381,9 +1516,9 @@ function openTaskModal(id = null, defDate = null, defTime = null) {
     document.getElementById('taskTitle').value = ev ? ev.title : '';
     document.getElementById('taskDate').value = ev ? ev.due_date : (defDate || dateStr(currentDate));
     document.getElementById('taskTime').value = ev ? (ev.due_time || '') : (defTime || '09:00');
-    document.getElementById('taskDuration').value = ev ? (ev.duration_minutes || 60) : 60;
-    document.getElementById('taskPriority').value = ev ? (ev.priority || 'Medium') : 'Medium';
-    document.getElementById('taskTheme').value = ev ? (ev.theme || 'theme-green') : 'theme-green';
+    document.getElementById('taskDuration').value = ev ? (ev.duration_minutes || 60) : (cfgPrefs.default_duration || 60);
+    document.getElementById('taskPriority').value = ev ? (ev.priority || 'Medium') : (cfgPrefs.default_priority || 'Medium');
+    document.getElementById('taskTheme').value = ev ? (ev.theme || 'theme-green') : (cfgPrefs.default_theme || 'theme-green');
     document.getElementById('taskNotes').value = ev ? (ev.notes || '') : '';
     document.getElementById('taskPinned').checked = ev ? !!ev.is_pinned : false;
     document.getElementById('taskEmailReminder').checked = ev ? !!ev.email_reminder : true;
@@ -1497,10 +1632,15 @@ async function deleteTask() {
 }
 
 /* SETTINGS MODAL */
-function openSettingsModal(btnEl = null) {
-    if (btnEl) setActiveSidebarNav('nav-Email', 'Email Reminder');
+function openSettingsModal(btnEl = null, tab = 'prefs') {
+    if (btnEl) {
+        setActiveSidebarNav(tab === 'email' ? 'nav-Email' : 'nav-Prefs', tab === 'email' ? 'Email Reminder' : 'Preferensi Notes');
+    }
+    applyNotePreferences();
     renderEmailChips('cfg');
     syncSettingsPreview();
+    const tabBtn = document.getElementById(tab === 'email' ? 'tabBtnEmail' : 'tabBtnPrefs');
+    if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();
 }
 
@@ -1519,11 +1659,21 @@ function syncSettingsPreview() {
 }
 
 async function saveSettingsToServer() {
+    cfgPrefs = {
+        default_view: document.getElementById('prefDefaultView').value,
+        week_start: document.getElementById('prefWeekStart').value,
+        default_duration: Number(document.getElementById('prefDefaultDuration').value) || 60,
+        default_priority: document.getElementById('prefDefaultPriority').value,
+        default_theme: document.getElementById('prefDefaultTheme').value,
+        show_greeting: document.getElementById('prefShowGreeting').checked
+    };
+
     const fd = new FormData();
     fd.append('emails', JSON.stringify(cfgEmails));
     if (document.getElementById('cfgDigest').checked) fd.append('digest_enabled', '1');
     fd.append('digest_freq', document.getElementById('cfgDigestFreq').value);
     fd.append('digest_time', document.getElementById('cfgDigestTime').value);
+    fd.append('preferences', JSON.stringify(cfgPrefs));
 
     const res = await fetch('index.php?page=notebook&action=saveSettings', {
         method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
@@ -1531,8 +1681,9 @@ async function saveSettingsToServer() {
     const json = await res.json();
     if (json.success) {
         cfgSettings = json.settings;
+        applyNotePreferences();
         bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-        updateSidebarCounts();
+        renderAll();
         showToast(json.message || 'Pengaturan disimpan.');
     }
 }

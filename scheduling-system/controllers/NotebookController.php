@@ -258,12 +258,19 @@ class NotebookController
         $daysRaw = trim((string) ($_POST['digest_days'] ?? 'Sen,Sel,Rab,Kam,Jum'));
         $daysArr = array_values(array_filter(array_map('trim', explode(',', $daysRaw))));
 
+        $rawPrefs = $_POST['preferences'] ?? '{}';
+        $prefsArr = is_string($rawPrefs) ? json_decode($rawPrefs, true) : (is_array($rawPrefs) ? $rawPrefs : []);
+        if (!is_array($prefsArr)) {
+            $prefsArr = [];
+        }
+
         NotebookTask::saveSettings($userId, [
             'emails'         => $emailsArr,
             'digest_enabled' => !empty($_POST['digest_enabled']),
             'digest_freq'    => trim((string) ($_POST['digest_freq'] ?? 'workdays')),
             'digest_days'    => $daysArr,
             'digest_time'    => trim((string) ($_POST['digest_time'] ?? '07:30')),
+            'preferences'    => $prefsArr,
         ]);
 
         $settings = NotebookTask::getSettings($userId);

@@ -151,6 +151,15 @@ class NotebookTask
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        $defaultPrefs = [
+            'default_view'     => 'month',
+            'default_duration' => 60,
+            'default_priority' => 'Medium',
+            'default_theme'    => 'theme-green',
+            'week_start'       => 'sun',
+            'show_greeting'    => true,
+        ];
+
         if (!$row) {
             $defaultEmails = filter_var($fallbackEmail, FILTER_VALIDATE_EMAIL) ? [$fallbackEmail] : [];
             return [
@@ -160,6 +169,7 @@ class NotebookTask
                 'digest_freq'    => 'workdays',
                 'digest_days'    => ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'],
                 'digest_time'    => '07:30',
+                'preferences'    => $defaultPrefs,
             ];
         }
 
@@ -168,6 +178,10 @@ class NotebookTask
             $emails = [];
         }
         $days = array_values(array_filter(array_map('trim', explode(',', (string) ($row['digest_days'] ?? 'Sen,Sel,Rab,Kam,Jum')))));
+        $prefs = json_decode((string) ($row['preferences'] ?? '{}'), true);
+        if (!is_array($prefs)) {
+            $prefs = [];
+        }
 
         return [
             'user_id'        => $userId,
@@ -176,11 +190,12 @@ class NotebookTask
             'digest_freq'    => $row['digest_freq'] ?? 'workdays',
             'digest_days'    => $days,
             'digest_time'    => substr((string) ($row['digest_time'] ?? '07:30:00'), 0, 5),
+            'preferences'    => array_merge($defaultPrefs, $prefs),
         ];
     }
 
     /**
-     * Save notebook email/digest settings for a user.
+     * Save notebook email/digest settings & preferences for a user.
      */
     public static function saveSettings(int $userId, array $data): bool
     {
@@ -189,19 +204,21 @@ class NotebookTask
         $time       = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time'] ?? '')) ? substr((string) $data['digest_time'], 0, 5) . ':00' : '07:30:00';
         $freq       = in_array($data['digest_freq'] ?? '', ['workdays', 'daily', 'custom'], true) ? $data['digest_freq'] : 'workdays';
         $enabled    = !empty($data['digest_enabled']) ? 1 : 0;
+        $prefsJson  = json_encode($data['preferences'] ?? [], JSON_UNESCAPED_UNICODE);
 
         $stmt = Database::getInstance()->prepare(
-            'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time)
-             VALUES (?, ?, ?, ?, ?, ?)
+            'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time, preferences)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 emails = VALUES(emails),
                 digest_enabled = VALUES(digest_enabled),
                 digest_freq = VALUES(digest_freq),
                 digest_days = VALUES(digest_days),
-                digest_time = VALUES(digest_time)'
+                digest_time = VALUES(digest_time),
+                preferences = VALUES(preferences)'
         );
 
-        return $stmt->execute([$userId, $emailsJson, $enabled, $freq, $daysCsv, $time]);
+        return $stmt->execute([$userId, $emailsJson, $enabled, $freq, $daysCsv, $time, $prefsJson]);
     }
 
     private static function hydrateRow(array $row): array

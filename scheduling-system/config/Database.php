@@ -382,10 +382,16 @@ class Database
                     digest_freq           ENUM("workdays", "daily", "custom") NOT NULL DEFAULT "workdays",
                     digest_days           VARCHAR(60) DEFAULT "Sen,Sel,Rab,Kam,Jum",
                     digest_time           TIME NOT NULL DEFAULT "07:30:00",
+                    preferences           TEXT DEFAULT NULL,
                     last_digest_sent_date DATE DEFAULT NULL,
                     updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
+            try {
+                self::$instance->exec('ALTER TABLE notebook_settings ADD COLUMN preferences TEXT DEFAULT NULL AFTER digest_time');
+            } catch (\PDOException $e) {
+                // Column already exists
+            }
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }
