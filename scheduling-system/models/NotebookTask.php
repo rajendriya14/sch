@@ -26,10 +26,10 @@ class NotebookTask
     {
         $stmt = Database::getInstance()->prepare(
             'SELECT * FROM notebook_tasks
-             WHERE user_id = ? AND due_date BETWEEN ? AND ?
+             WHERE user_id = ? AND due_date <= ? AND COALESCE(end_date, due_date) >= ?
              ORDER BY due_date ASC, (due_time IS NULL), due_time ASC'
         );
-        $stmt->execute([$userId, $startDate, $endDate]);
+        $stmt->execute([$userId, $endDate, $startDate]);
         return array_map([self::class, 'hydrateRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
@@ -54,16 +54,17 @@ class NotebookTask
         $db = Database::getInstance();
         $stmt = $db->prepare(
             'INSERT INTO notebook_tasks (
-                user_id, title, notes, due_date, due_time, duration_minutes,
+                user_id, title, notes, due_date, end_date, due_time, duration_minutes,
                 priority, status, tag, theme, color, is_pinned,
                 email_reminder, reminder_freq, reminder_lead, reminder_send_time, reminder_days, reminder_emails
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['user_id'],
             $data['title'],
             $data['notes'] ?? null,
             $data['due_date'],
+            !empty($data['end_date']) ? $data['end_date'] : $data['due_date'],
             !empty($data['due_time']) ? $data['due_time'] : null,
             (int) ($data['duration_minutes'] ?? 60),
             $data['priority'] ?? 'Medium',
@@ -89,7 +90,7 @@ class NotebookTask
     {
         $stmt = Database::getInstance()->prepare(
             'UPDATE notebook_tasks
-             SET title = ?, notes = ?, due_date = ?, due_time = ?, duration_minutes = ?,
+             SET title = ?, notes = ?, due_date = ?, end_date = ?, due_time = ?, duration_minutes = ?,
                  priority = ?, status = ?, tag = ?, theme = ?, color = ?, is_pinned = ?,
                  email_reminder = ?, reminder_freq = ?, reminder_lead = ?,
                  reminder_send_time = ?, reminder_days = ?, reminder_emails = ?
@@ -99,6 +100,7 @@ class NotebookTask
             $data['title'],
             $data['notes'] ?? null,
             $data['due_date'],
+            !empty($data['end_date']) ? $data['end_date'] : $data['due_date'],
             !empty($data['due_time']) ? $data['due_time'] : null,
             (int) ($data['duration_minutes'] ?? 60),
             $data['priority'] ?? 'Medium',
@@ -237,6 +239,7 @@ class NotebookTask
         $row['reminder_emails']    = $emails;
         $row['reminder_days_arr']  = $days;
         $row['due_time']           = $row['due_time'] ? substr((string) $row['due_time'], 0, 5) : '';
+        $row['end_date']           = !empty($row['end_date']) ? $row['end_date'] : $row['due_date'];
         $row['reminder_send_time'] = !empty($row['reminder_send_time']) ? substr((string) $row['reminder_send_time'], 0, 5) : '08:00';
 
         return $row;

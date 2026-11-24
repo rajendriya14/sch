@@ -790,14 +790,20 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label small fw-semibold">Tanggal</label>
-                            <input type="date" id="taskDate" required class="form-control form-control-sm">
+                            <label class="form-label small fw-semibold">Dari Tanggal</label>
+                            <input type="date" id="taskDate" required class="form-control form-control-sm" onchange="syncEndDateMin()">
                         </div>
-                        <div class="col-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Sampai Tanggal</label>
+                            <input type="date" id="taskEndDate" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
                             <label class="form-label small fw-semibold">Mulai</label>
                             <input type="time" id="taskTime" class="form-control form-control-sm">
                         </div>
-                        <div class="col-3">
+                        <div class="col-6">
                             <label class="form-label small fw-semibold">Durasi (mnt)</label>
                             <input type="number" id="taskDuration" class="form-control form-control-sm" value="60" min="15" step="15">
                         </div>
@@ -1303,7 +1309,7 @@ function renderMonthView() {
         cell.className = 'month-cell' + (c.other ? ' other-month' : '') + (ds === todayStr ? ' is-today' : '');
         cell.onclick = () => openTaskModal(null, ds);
 
-        list.filter(e => e.due_date === ds).slice(0, 3).forEach(ev => {
+        list.filter(e => ds >= e.due_date && ds <= (e.end_date || e.due_date)).slice(0, 3).forEach(ev => {
             const pill = document.createElement('div');
             pill.className = `m-pill ${ev.theme || 'theme-green'} ${ev.status === 'Done' ? 'is-done' : ''}`;
             pill.onclick = (e) => { e.stopPropagation(); openTaskModal(ev.id); };
@@ -1329,7 +1335,7 @@ function renderMonthView() {
 function renderCategoryView() {
     const ds = dateStr(currentDate);
     document.getElementById('catTimeAxis').innerHTML = HOURS.map(h => `<div class="time-slot-label">${h > 12 ? h - 12 + ' PM' : h === 12 ? '12 PM' : h + ' AM'}</div>`).join('');
-    const dayEvents = getFilteredEvents().filter(e => e.due_date === ds);
+    const dayEvents = getFilteredEvents().filter(e => ds >= e.due_date && ds <= (e.end_date || e.due_date));
 
     document.getElementById('catAllDayRow').innerHTML = CATEGORIES.map(cat => {
         const allDay = dayEvents.filter(e => e.tag === cat && !e.due_time);
@@ -1366,7 +1372,7 @@ function renderDayView() {
         axis.innerHTML += `<div class="time-slot-label" style="height:28px;">${h > 12 ? h - 12 : h}:30 ${h >= 12 ? 'PM' : 'AM'}</div>`;
     });
 
-    const dayEvents = getFilteredEvents().filter(e => e.due_date === ds);
+    const dayEvents = getFilteredEvents().filter(e => ds >= e.due_date && ds <= (e.end_date || e.due_date));
     document.getElementById('dayAllDayRow').innerHTML = `<div class="all-day-cell">${dayEvents.filter(e => !e.due_time).map(e => `<span class="m-pill ${e.theme || 'theme-green'}" onclick="openTaskModal(${e.id})">${esc(e.title)}</span>`).join('')}</div>`;
 
     const cols = document.getElementById('dayTimeCols');
@@ -1452,7 +1458,7 @@ function renderKanbanView() {
                                 ${ev.notes ? `<div class="text-muted text-truncate mb-2" style="font-size:0.75rem;">${esc(ev.notes)}</div>` : ''}
                                 <div class="d-flex align-items-center justify-content-between pt-1">
                                     <span class="text-muted" style="font-size:0.75rem;">${ev.email_reminder ? '<i class="bi bi-envelope-check me-1" style="color:var(--excel-green);"></i>Reminder' : ''}</span>
-                                    <span class="text-muted" style="font-size:0.75rem;">${formatKanbanDate(ev.due_date)}</span>
+                                    <span class="text-muted" style="font-size:0.75rem;">${ev.end_date && ev.end_date !== ev.due_date ? `${formatKanbanDate(ev.due_date)} – ${formatKanbanDate(ev.end_date)}` : formatKanbanDate(ev.due_date)}</span>
                                 </div>
                             </div>
                         `;
@@ -1514,7 +1520,7 @@ function renderAgendaDrawer() {
                     <span class="prio-pill prio-${ev.priority || 'Medium'}">${ev.priority || 'Medium'}</span>
                 </div>
                 <div class="text-muted" style="font-size:0.74rem;">
-                    ${ev.due_date} ${ev.due_time ? '· ' + formatShortTime(ev.due_time) : ''}
+                    ${ev.due_date}${ev.end_date && ev.end_date !== ev.due_date ? ' s/d ' + ev.end_date : ''} ${ev.due_time ? '· ' + formatShortTime(ev.due_time) : ''}
                     ${ev.email_reminder ? ' · <i class="bi bi-envelope" style="color:var(--excel-green);"></i> Reminder' : ''}
                 </div>
             </div>
@@ -1563,13 +1569,23 @@ function renderEmailChips(target) {
     `).join('');
 }
 
+function syncEndDateMin() {
+    const start = document.getElementById('taskDate').value;
+    const endEl = document.getElementById('taskEndDate');
+    endEl.min = start;
+    if (!endEl.value || endEl.value < start) endEl.value = start;
+}
+
 /* TASK MODAL CRUD */
 function openTaskModal(id = null, defDate = null, defTime = null) {
     const ev = id ? events.find(x => x.id === id) : null;
     document.getElementById('taskModalLabel').textContent = ev ? 'Edit event' : 'New event';
     document.getElementById('taskId').value = ev ? ev.id : 0;
     document.getElementById('taskTitle').value = ev ? ev.title : '';
-    document.getElementById('taskDate').value = ev ? ev.due_date : (defDate || dateStr(currentDate));
+    const startVal = ev ? ev.due_date : (defDate || dateStr(currentDate));
+    document.getElementById('taskDate').value = startVal;
+    document.getElementById('taskEndDate').value = ev ? (ev.end_date || startVal) : startVal;
+    document.getElementById('taskEndDate').min = startVal;
     document.getElementById('taskTime').value = ev ? (ev.due_time || '') : (defTime || '09:00');
     document.getElementById('taskDuration').value = ev ? (ev.duration_minutes || 60) : (cfgPrefs.default_duration || 60);
     document.getElementById('taskPriority').value = ev ? (ev.priority || 'Medium') : (cfgPrefs.default_priority || 'Medium');
@@ -1610,6 +1626,7 @@ async function handleTaskSubmit(e) {
     fd.append('id', id);
     fd.append('title', document.getElementById('taskTitle').value.trim());
     fd.append('due_date', document.getElementById('taskDate').value);
+    fd.append('end_date', document.getElementById('taskEndDate').value || document.getElementById('taskDate').value);
     fd.append('due_time', document.getElementById('taskTime').value);
     fd.append('duration_minutes', document.getElementById('taskDuration').value);
     fd.append('priority', document.getElementById('taskPriority').value);

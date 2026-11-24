@@ -331,6 +331,7 @@ class Database
                     title                 VARCHAR(255) NOT NULL,
                     notes                 TEXT DEFAULT NULL,
                     due_date              DATE NOT NULL,
+                    end_date              DATE DEFAULT NULL,
                     due_time              TIME DEFAULT NULL,
                     duration_minutes      INT NOT NULL DEFAULT 60,
                     priority              ENUM("Low", "Medium", "High") NOT NULL DEFAULT "Medium",
@@ -354,6 +355,7 @@ class Database
             ');
 
             $extraCols = [
+                'end_date'              => 'DATE DEFAULT NULL AFTER due_date',
                 'duration_minutes'      => 'INT NOT NULL DEFAULT 60 AFTER due_time',
                 'tag'                   => 'VARCHAR(50) NOT NULL DEFAULT "#Personal" AFTER status',
                 'theme'                 => 'VARCHAR(30) NOT NULL DEFAULT "theme-green" AFTER tag',

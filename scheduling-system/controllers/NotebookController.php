@@ -87,6 +87,7 @@ class NotebookController
         $title            = trim((string) ($_POST['title'] ?? ''));
         $notes            = trim((string) ($_POST['notes'] ?? ''));
         $dueDate          = trim((string) ($_POST['due_date'] ?? ''));
+        $endDate          = trim((string) ($_POST['end_date'] ?? ''));
         $dueTime          = trim((string) ($_POST['due_time'] ?? ''));
         $duration         = max(15, (int) ($_POST['duration_minutes'] ?? 60));
         $priority         = trim((string) ($_POST['priority'] ?? 'Medium'));
@@ -116,6 +117,9 @@ class NotebookController
         if ($dueDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
             $dueDate = date('Y-m-d');
         }
+        if ($endDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate) || $endDate < $dueDate) {
+            $endDate = $dueDate;
+        }
 
         if (!in_array($priority, ['Low', 'Medium', 'High'], true)) {
             $priority = 'Medium';
@@ -140,6 +144,7 @@ class NotebookController
             'title'              => $title,
             'notes'              => $notes !== '' ? $notes : null,
             'due_date'           => $dueDate,
+            'end_date'           => $endDate,
             'due_time'           => $dueTime !== '' ? $dueTime : null,
             'duration_minutes'   => $duration,
             'priority'           => $priority,
