@@ -1025,7 +1025,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         <header class="nb-topbar">
             <div class="d-flex align-items-center gap-2">
                 <button type="button" class="btn-cal-ghost px-2" onclick="toggleSidebar()" title="Toggle Sidebar">
-                    <i class="bi bi-layout-sidebar"></i>
+                    <i class="bi bi-list" style="font-size:1.15rem;"></i>
                 </button>
                 <nav aria-label="breadcrumb" class="nb-breadcrumb" id="topbarBreadcrumb">
                     <a href="index.php?page=portal" class="nb-bc-link">Home</a>
