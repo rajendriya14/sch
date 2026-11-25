@@ -56,9 +56,10 @@ class NotebookController
         $appLabel    = 'Personal Workspace';
         $pageName    = 'notebook';
 
-        $tasks    = NotebookTask::allByUser($userId);
-        $stickies = NotebookStickyNote::allByUser($userId);
-        $settings = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
+        $tasks     = NotebookTask::allByUser($userId);
+        $stickies  = NotebookStickyNote::allByUser($userId);
+        $settings  = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
+        $smtpReady = file_exists(__DIR__ . '/../config/mail.credentials.local.php');
 
         require_once __DIR__ . '/../views/layouts/header.php';
         require_once __DIR__ . '/../views/notebook/index.php';
@@ -298,24 +299,34 @@ class NotebookController
             $this->jsonResponse(['success' => false, 'message' => 'Tambahkan minimal 1 alamat email penerima terlebih dahulu.'], 400);
         }
 
-        $today = date('Y-m-d');
+        $tz    = new \DateTimeZone('Asia/Jakarta');
+        $today = (new \DateTimeImmutable('now', $tz))->format('Y-m-d');
         $tasks = array_values(array_filter(NotebookTask::allByUser($userId), static function ($t) use ($today) {
-            return ($t['due_date'] ?? '') <= $today && ($t['status'] ?? '') !== 'Done';
+            $end = !empty($t['end_date']) ? $t['end_date'] : ($t['due_date'] ?? '');
+            return ($t['due_date'] ?? '') <= $today && $end >= $today && ($t['status'] ?? '') !== 'Done';
+        }));
+        $stickies = array_values(array_filter(NotebookStickyNote::allByUser($userId), static function ($s) {
+            return !empty($s['reminder_time']);
         }));
 
-        $userName = htmlspecialchars((string) ($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+        $userName = htmlspecialchars((string) ($user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
         $itemsHtml = '';
-        if (empty($tasks)) {
-            $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada agenda tertunda untuk hari ini.</p>';
-        } else {
-            foreach ($tasks as $t) {
-                $tTitle = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
-                $tTime  = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
-                $tPrio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
-                $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
-                    . "<strong>{$tTitle}</strong> <span style='font-size:12px;color:#6b7280;'>[{$tPrio}]</span>"
-                    . "<div style='font-size:12px;color:#6b7280;'>{$tTime}</div></div>";
-            }
+        foreach ($tasks as $t) {
+            $tTitle = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
+            $tTime  = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') . ' WIB' : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
+            $tPrio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
+            $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
+                . "<strong>{$tTitle}</strong> <span style='font-size:12px;color:#6b7280;'>[{$tPrio}]</span>"
+                . "<div style='font-size:12px;color:#6b7280;'>{$tTime}</div></div>";
+        }
+        foreach ($stickies as $s) {
+            $sTitle = htmlspecialchars((string) $s['title'], ENT_QUOTES, 'UTF-8');
+            $sTime  = htmlspecialchars((string) $s['reminder_time'], ENT_QUOTES, 'UTF-8');
+            $itemsHtml .= "<div style='border:1px solid #fde68a;background:#fef9c3;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
+                . "<strong>Sticky: {$sTitle}</strong> <span style='font-size:12px;color:#6b7280;'>(Harian {$sTime} WIB)</span></div>";
+        }
+        if ($itemsHtml === '') {
+            $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada agenda atau sticky note aktif untuk hari ini.</p>';
         }
 
         $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,sans-serif;color:#111827;">'

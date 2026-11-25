@@ -1142,6 +1142,12 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
                     <!-- TAB 2: EMAIL REMINDER -->
                     <div class="tab-pane fade" id="tabPaneEmail" role="tabpanel">
+                        <?php if (empty($smtpReady)): ?>
+                        <div class="alert alert-warning small py-2 px-3 mb-3">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>SMTP belum terpasang di server:</strong> Upload file <code>scheduling-system/config/mail.credentials.local.php</code> ke hosting agar email bisa terkirim.
+                        </div>
+                        <?php endif; ?>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -2051,7 +2057,11 @@ async function sendTestEmail() {
             method: 'POST', headers: { 'Accept': 'application/json' }
         });
         const json = await res.json();
-        showToast(json.message || (json.success ? 'Email terkirim.' : 'Gagal mengirim email.'));
+        if (!json.success) {
+            alert(json.message || 'Gagal mengirim email.');
+        } else {
+            showToast(json.message || 'Email terkirim.');
+        }
     } catch (err) {
         showToast('Gagal menghubungi server.');
     } finally {
