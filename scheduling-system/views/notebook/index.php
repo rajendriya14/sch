@@ -1004,7 +1004,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                 <button type="button" class="sidebar-nav-item" id="nav-Manage" onclick="openSettingsModal(this, 'manage')">
                     <span class="sidebar-nav-left">
                         <i class="bi bi-trash3 text-danger"></i>
-                        <span>Hapus Catatan</span>
+                        <span>Delete Notes</span>
                     </span>
                 </button>
             </div>
@@ -1523,7 +1523,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link small fw-semibold" id="tabBtnManage" data-bs-toggle="tab" data-bs-target="#tabPaneManage" type="button" role="tab" onclick="renderManageNotesTree()">
-                            <i class="bi bi-trash3 text-danger me-1"></i> Hapus Catatan
+                            <i class="bi bi-trash3 text-danger me-1"></i> Delete Notes
                         </button>
                     </li>
                 </ul>
@@ -1718,7 +1718,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         </div>
                     </div>
 
-                    <!-- TAB 4: HAPUS CATATAN (MEETING & SYNC / PERSONAL NOTES) -->
+                    <!-- TAB 4: DELETE NOTES (MEETING & SYNC / PERSONAL NOTES) -->
                     <div class="tab-pane fade" id="tabPaneManage" role="tabpanel">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                             <div class="d-flex align-items-center gap-2">
@@ -1729,12 +1729,12 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                     <i class="bi bi-square"></i> Unselect All
                                 </button>
                             </div>
-                            <span class="small text-muted" id="manageSelectedCount">0 dipilih</span>
+                            <span class="small text-muted" id="manageSelectedCount">0 selected</span>
                         </div>
                         <div id="manageNotesTree" class="border rounded-3 p-3 bg-white mb-3" style="max-height: 320px; overflow-y: auto;"></div>
                         <div class="d-flex justify-content-end">
                             <button type="button" class="btn btn-danger btn-sm px-3" id="btnDeleteSelectedNotes" onclick="deleteSelectedNotes()" disabled>
-                                <i class="bi bi-trash3 me-1"></i> Hapus Terpilih
+                                <i class="bi bi-trash3 me-1"></i> Delete Selected
                             </button>
                         </div>
                     </div>
@@ -1846,7 +1846,7 @@ function renderBreadcrumb(navId) {
         'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
         'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }],
         'nav-Holidays': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Tanggal Merah' }],
-    'nav-Manage':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Hapus Catatan' }]
+    'nav-Manage':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Delete Notes' }]
     };
 
     const items = trails[navId] || trails['nav-ALL'];
@@ -3093,7 +3093,7 @@ function removeHoliday(dateVal) {
 function openSettingsModal(btnEl = null, tab = 'prefs') {
     if (btnEl) {
         const navMap = { email: 'nav-Email', holidays: 'nav-Holidays', manage: 'nav-Manage', prefs: 'nav-Prefs' };
-        const titleMap = { email: 'Email Reminder', holidays: 'Tanggal Merah', manage: 'Hapus Catatan', prefs: 'Preferensi Notes' };
+        const titleMap = { email: 'Email Reminder', holidays: 'Tanggal Merah', manage: 'Delete Notes', prefs: 'Preferensi Notes' };
         setActiveSidebarNav(navMap[tab] || 'nav-Prefs', titleMap[tab] || 'Preferensi Notes');
     }
     applyNotePreferences();
@@ -3122,7 +3122,7 @@ function renderManageNotesTree() {
     ];
 
     if (events.length === 0) {
-        box.innerHTML = '<div class="text-muted small text-center py-3">Belum ada catatan di Meeting &amp; Sync maupun Personal Notes.</div>';
+        box.innerHTML = '<div class="text-muted small text-center py-3">No notes in Meeting &amp; Sync or Personal Notes yet.</div>';
         syncManageTreeState();
         return;
     }
@@ -3143,7 +3143,7 @@ function renderManageNotesTree() {
                     </label>
                 `;
             }).join('')
-            : '<div class="text-muted" style="font-size:0.78rem;">Tidak ada catatan</div>';
+            : '<div class="text-muted" style="font-size:0.78rem;">No notes</div>';
 
         return `
             <div class="nb-tree-group">
@@ -3201,21 +3201,21 @@ function syncManageTreeState() {
 
     const count = manageSelectedIds.size;
     const countEl = document.getElementById('manageSelectedCount');
-    if (countEl) countEl.textContent = `${count} dipilih`;
+    if (countEl) countEl.textContent = `${count} selected`;
 
     const btn = document.getElementById('btnDeleteSelectedNotes');
     if (btn) {
         btn.disabled = count === 0;
         btn.innerHTML = count > 0
-            ? `<i class="bi bi-trash3 me-1"></i> Hapus Terpilih (${count})`
-            : '<i class="bi bi-trash3 me-1"></i> Hapus Terpilih';
+            ? `<i class="bi bi-trash3 me-1"></i> Delete Selected (${count})`
+            : '<i class="bi bi-trash3 me-1"></i> Delete Selected';
     }
 }
 
 async function deleteSelectedNotes() {
     const ids = [...manageSelectedIds];
     if (ids.length === 0) return;
-    if (!confirm(`Hapus ${ids.length} catatan terpilih secara permanen?`)) return;
+    if (!confirm(`Permanently delete ${ids.length} selected note(s)?`)) return;
 
     const btn = document.getElementById('btnDeleteSelectedNotes');
     if (btn) btn.disabled = true;
@@ -3230,7 +3230,7 @@ async function deleteSelectedNotes() {
             body: fd
         });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Gagal menghapus catatan');
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to delete notes');
 
         const delSet = new Set(ids);
         events = events.filter(e => !delSet.has(Number(e.id)));
@@ -3238,7 +3238,7 @@ async function deleteSelectedNotes() {
         renderAll();
         renderBriefing();
         renderManageNotesTree();
-        showToast(data.message || `${ids.length} catatan berhasil dihapus.`, 'success');
+        showToast(data.message || `${ids.length} note(s) deleted.`, 'success');
     } catch (err) {
         showToast(err.message, 'danger');
         syncManageTreeState();

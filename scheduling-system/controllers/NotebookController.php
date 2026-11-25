@@ -267,7 +267,7 @@ class NotebookController
         $ids = array_values(array_unique(array_filter(array_map('intval', is_array($rawIds) ? $rawIds : []), static fn (int $v): bool => $v > 0)));
 
         if (empty($ids)) {
-            $this->jsonResponse(['success' => false, 'message' => 'Pilih minimal 1 catatan untuk dihapus.'], 400);
+            $this->jsonResponse(['success' => false, 'message' => 'Select at least 1 note to delete.'], 400);
         }
 
         $deleted = NotebookTask::deleteMany($ids, $userId);
@@ -275,7 +275,7 @@ class NotebookController
             'success'       => true,
             'deleted_count' => $deleted,
             'deleted_ids'   => $ids,
-            'message'       => "{$deleted} catatan berhasil dihapus.",
+            'message'       => "{$deleted} note(s) deleted.",
         ]);
     }
 
