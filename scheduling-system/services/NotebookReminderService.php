@@ -41,9 +41,10 @@ class NotebookReminderService
 
         // 1. Per-Task Reminders
         $stmt = $db->query(
-            "SELECT t.*, u.username, u.email AS user_email
+            "SELECT t.*, u.username, u.display_name AS user_name, ns.emails AS settings_emails
              FROM notebook_tasks t
              LEFT JOIN users u ON u.id = t.user_id
+             LEFT JOIN notebook_settings ns ON ns.user_id = t.user_id
              WHERE t.email_reminder = 1 AND t.status <> 'Done'"
         );
         $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -51,11 +52,10 @@ class NotebookReminderService
         foreach ($tasks as $t) {
             $recipients = json_decode((string) ($t['reminder_emails'] ?? '[]'), true);
             if (!is_array($recipients) || empty($recipients)) {
-                if (!empty($t['user_email']) && filter_var($t['user_email'], FILTER_VALIDATE_EMAIL)) {
-                    $recipients = [$t['user_email']];
-                } else {
-                    continue;
-                }
+                $recipients = json_decode((string) ($t['settings_emails'] ?? '[]'), true);
+            }
+            if (!is_array($recipients) || empty($recipients)) {
+                continue;
             }
 
             $freq     = $t['reminder_freq'] ?? 'once';
@@ -166,7 +166,7 @@ class NotebookReminderService
 
         // 3. Daily Sticky Note Reminders (up to 3 time slots + day pattern)
         $stStmt = $db->query(
-            "SELECT sn.*, u.name AS user_name, u.username, u.email AS user_email, ns.emails AS settings_emails
+            "SELECT sn.*, u.display_name AS user_name, u.username, ns.emails AS settings_emails
              FROM notebook_sticky_notes sn
              LEFT JOIN users u ON u.id = sn.user_id
              LEFT JOIN notebook_settings ns ON ns.user_id = sn.user_id
@@ -198,11 +198,7 @@ class NotebookReminderService
                 $recipients = json_decode((string) ($sn['settings_emails'] ?? '[]'), true);
             }
             if (!is_array($recipients) || empty($recipients)) {
-                if (!empty($sn['user_email']) && filter_var($sn['user_email'], FILTER_VALIDATE_EMAIL)) {
-                    $recipients = [$sn['user_email']];
-                } else {
-                    continue;
-                }
+                continue;
             }
 
             foreach ($dueSlots as $slotKey) {
@@ -288,7 +284,7 @@ class NotebookReminderService
         $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
         $sched = self::formatTaskScheduleLine($t);
         $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
-        $uName = htmlspecialchars((string) ($t['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+        $uName = htmlspecialchars((string) ($t['user_name'] ?? $t['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
         $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
 
         $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
