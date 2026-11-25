@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pradiya Portal</title>
+    <title><?= htmlspecialchars((($pageName ?? '') === 'notebook') ? 'nyatet.' : ($pageTitle ?? 'Pradiya Portal')) ?></title>
+    <?php if (($pageName ?? '') === 'notebook'): ?>
+    <link rel="icon" type="image/svg+xml" href="scheduling-system/public/assets/img/nyatet-logo.svg?v=2">
+    <?php else: ?>
     <!-- Favicon: ikon `bi-calendar-check` yang sama dengan logo di navbar,
          ditanam sebagai data URI SVG agar tidak butuh berkas tambahan.
          Latar kotak membulat #212529 (bg-dark) + glyph putih supaya tetap
          terlihat di tab browser terang maupun gelap. -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%23212529'/%3E%3Cg%20transform='translate(6,6)%20scale(1.25)'%20fill='%23fff'%3E%3Cpath%20d='M10.854,7.146a.5.5,0,0,1,0,.708l-3,3a.5.5,0,0,1-.708,0l-1.5-1.5a.5.5,0,1,1,.708-.708L7.5,9.793l2.646-2.647a.5.5,0,0,1,.708,0z'/%3E%3Cpath%20d='M3.5,0a.5.5,0,0,1,.5.5V1h8V.5a.5.5,0,0,1,1,0V1h1a2,2,0,0,1,2,2v11a2,2,0,0,1-2,2H2a2,2,0,0,1-2-2V3a2,2,0,0,1,2-2h1V.5a.5.5,0,0,1,.5-.5zM1,4v10a1,1,0,0,0,1,1h12a1,1,0,0,0,1-1V4H1z'/%3E%3C/g%3E%3C/svg%3E">
+    <?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="scheduling-system/public/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../public/assets/css/style.css') ?: '1' ?>">
