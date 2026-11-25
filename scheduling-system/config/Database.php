@@ -455,7 +455,7 @@ class Database
                     username   VARCHAR(150) NOT NULL DEFAULT "",
                     password   VARCHAR(255) NOT NULL DEFAULT "",
                     from_email VARCHAR(150) NOT NULL DEFAULT "",
-                    from_name  VARCHAR(150) NOT NULL DEFAULT "Personal Notebook Assistant",
+                    from_name  VARCHAR(150) NOT NULL DEFAULT "Ingetttt Coyyyy!",
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');

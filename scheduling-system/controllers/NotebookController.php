@@ -353,11 +353,11 @@ class NotebookController
             $mail = new MailService();
             $lastRes = ['success' => true, 'message' => 'Email terkirim.'];
             foreach ($recipients as $rcpt) {
-                $rcptSafe = htmlspecialchars((string) $rcpt, ENT_QUOTES, 'UTF-8');
+                $rcptSafe = str_replace(['@', '.'], ['&#8203;@', '&#8203;.'], htmlspecialchars((string) $rcpt, ENT_QUOTES, 'UTF-8'));
                 $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#111827;">'
                     . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
                     . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;letter-spacing:0.5px;text-transform:uppercase;">Personal Notebook &middot; Reminder Penting</div>'
-                    . "<div style='font-size:20px;font-weight:bold;margin-top:4px;'>Halo {$rcptSafe}, ini catatan pengingat Anda</div></td></tr>"
+                    . "<div style='font-size:20px;font-weight:bold;margin-top:4px;color:#ffffff;'>Halo <span style='color:#ffffff;text-decoration:none;'>{$rcptSafe}</span>, ini catatan pengingat Anda</div></td></tr>"
                     . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.5;'>{$itemsHtml}"
                     . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
                     . '</td></tr></table></body></html>';
@@ -502,9 +502,9 @@ class NotebookController
              VALUES (1, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 host = VALUES(host), port = VALUES(port), encryption = VALUES(encryption),
-                username = VALUES(username), password = VALUES(password), from_email = VALUES(from_email)'
+                username = VALUES(username), password = VALUES(password), from_email = VALUES(from_email), from_name = VALUES(from_name)'
         );
-        $stmt->execute([$host, $port, $encryption, $username, $password, $username, 'Personal Notebook Assistant']);
+        $stmt->execute([$host, $port, $encryption, $username, $password, $username, 'Ingetttt Coyyyy!']);
 
         $this->jsonResponse(['success' => true, 'message' => 'Konfigurasi SMTP berhasil disimpan!']);
     }

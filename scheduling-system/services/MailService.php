@@ -81,7 +81,10 @@ class MailService
         $username   = (string) ($this->config['username'] ?? '');
         $password   = (string) ($this->config['password'] ?? '');
         $fromEmail  = (string) ($this->config['from_email'] ?? $username);
-        $fromName   = (string) ($this->config['from_name'] ?? 'Personal Notebook');
+        $fromName   = (string) ($this->config['from_name'] ?? 'Ingetttt Coyyyy!');
+        if ($fromName === '' || $fromName === 'Personal Notebook Assistant' || $fromName === 'Personal Notebook') {
+            $fromName = 'Ingetttt Coyyyy!';
+        }
 
         $remote = ($encryption === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
         $context = stream_context_create([

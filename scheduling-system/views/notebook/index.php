@@ -729,6 +729,89 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         font-weight: 600;
         border-radius: 7px !important;
     }
+
+    /* Custom Excel-Green Time Picker Popover (frame & font matched to Date Picker) */
+    .nb-time-trigger {
+        font-variant-numeric: tabular-nums;
+    }
+    .nb-tp-popover {
+        position: fixed;
+        z-index: 1085;
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        padding: 12px 14px;
+        width: 172px;
+        display: none;
+        user-select: none;
+    }
+    .nb-tp-popover.is-open { display: block; }
+    .nb-tp-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .nb-tp-col-title {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--nb-muted);
+        text-align: center;
+        padding-bottom: 4px;
+    }
+    .nb-tp-list {
+        height: 217px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        padding-right: 2px;
+    }
+    .nb-tp-item {
+        height: 31px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--nb-text);
+        cursor: pointer;
+        border-radius: 7px;
+        transition: background 0.1s;
+    }
+    .nb-tp-item:hover { background: #f3f4f6; }
+    .nb-tp-item.is-selected {
+        background: var(--excel-green) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+    .nb-tp-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #f1f5f9;
+        margin-top: 8px;
+        padding-top: 8px;
+    }
+    .nb-tp-clear {
+        border: none;
+        background: transparent;
+        color: var(--nb-muted);
+        font-size: 0.74rem;
+        padding: 2px 6px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .nb-tp-clear:hover { background: #f3f4f6; color: var(--nb-text); }
+    .nb-tp-ok {
+        border: none;
+        background: var(--excel-green);
+        color: #ffffff;
+        font-size: 0.74rem;
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 7px;
+        cursor: pointer;
+    }
+    .nb-tp-ok:hover { filter: brightness(0.95); }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -1092,17 +1175,29 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                 </div>
                                 <div class="col-5">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 1 (Utama)</label>
-                                    <input type="time" id="stickyReminderTime" class="form-control form-control-sm" value="08:00">
+                                    <input type="hidden" id="stickyReminderTime" value="08:00">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="stickyReminderTimeBtn" onclick="openNbTimePicker('stickyReminderTime', this)">
+                                        <span id="stickyReminderTimeDisplay">08:00</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 2 (Opsional)</label>
-                                    <input type="time" id="stickyReminderTime2" class="form-control form-control-sm" value="">
+                                    <input type="hidden" id="stickyReminderTime2" value="">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="stickyReminderTime2Btn" onclick="openNbTimePicker('stickyReminderTime2', this)">
+                                        <span id="stickyReminderTime2Display">--:--</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 3 (Opsional)</label>
-                                    <input type="time" id="stickyReminderTime3" class="form-control form-control-sm" value="">
+                                    <input type="hidden" id="stickyReminderTime3" value="">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="stickyReminderTime3Btn" onclick="openNbTimePicker('stickyReminderTime3', this)">
+                                        <span id="stickyReminderTime3Display">--:--</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1175,7 +1270,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Mulai</label>
-                            <input type="time" id="taskTime" class="form-control form-control-sm">
+                            <input type="hidden" id="taskTime" value="09:00">
+                            <button type="button" class="nb-date-trigger nb-time-trigger" id="taskTimeBtn" onclick="openNbTimePicker('taskTime', this)">
+                                <span id="taskTimeDisplay">09:00</span>
+                                <i class="bi bi-clock text-muted"></i>
+                            </button>
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Durasi (mnt)</label>
@@ -1243,17 +1342,29 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                 </div>
                                 <div class="col-5 d-none" id="taskSendTimeCol">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 1 (Utama)</label>
-                                    <input type="time" id="taskReminderSendTime" class="form-control form-control-sm" value="08:00">
+                                    <input type="hidden" id="taskReminderSendTime" value="08:00">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="taskReminderSendTimeBtn" onclick="openNbTimePicker('taskReminderSendTime', this)">
+                                        <span id="taskReminderSendTimeDisplay">08:00</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div class="row g-2 mb-2 d-none" id="taskExtraTimesRow">
                                 <div class="col-6">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 2 (Opsional)</label>
-                                    <input type="time" id="taskReminderSendTime2" class="form-control form-control-sm" value="">
+                                    <input type="hidden" id="taskReminderSendTime2" value="">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="taskReminderSendTime2Btn" onclick="openNbTimePicker('taskReminderSendTime2', this)">
+                                        <span id="taskReminderSendTime2Display">--:--</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 3 (Opsional)</label>
-                                    <input type="time" id="taskReminderSendTime3" class="form-control form-control-sm" value="">
+                                    <input type="hidden" id="taskReminderSendTime3" value="">
+                                    <button type="button" class="nb-date-trigger nb-time-trigger" id="taskReminderSendTime3Btn" onclick="openNbTimePicker('taskReminderSendTime3', this)">
+                                        <span id="taskReminderSendTime3Display">--:--</span>
+                                        <i class="bi bi-clock text-muted"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1426,17 +1537,29 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 small text-muted mb-2">
                                         <span>Jam 1:</span>
-                                        <input type="time" id="cfgDigestTime" class="form-control form-control-sm w-auto" value="07:30" oninput="syncSettingsPreview()">
+                                        <input type="hidden" id="cfgDigestTime" value="07:30">
+                                        <button type="button" class="nb-date-trigger nb-time-trigger" id="cfgDigestTimeBtn" style="width:auto; min-width:104px; gap:10px;" onclick="openNbTimePicker('cfgDigestTime', this)">
+                                            <span id="cfgDigestTimeDisplay">07:30</span>
+                                            <i class="bi bi-clock text-muted"></i>
+                                        </button>
                                         <span>WIB</span>
                                     </div>
                                     <div class="row g-2 small text-muted">
                                         <div class="col-6">
                                             <label class="form-label mb-0" style="font-size:0.72rem;">Jam 2 (Opsional)</label>
-                                            <input type="time" id="cfgDigestTime2" class="form-control form-control-sm" value="" oninput="syncSettingsPreview()">
+                                            <input type="hidden" id="cfgDigestTime2" value="">
+                                            <button type="button" class="nb-date-trigger nb-time-trigger" id="cfgDigestTime2Btn" onclick="openNbTimePicker('cfgDigestTime2', this)">
+                                                <span id="cfgDigestTime2Display">--:--</span>
+                                                <i class="bi bi-clock text-muted"></i>
+                                            </button>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label mb-0" style="font-size:0.72rem;">Jam 3 (Opsional)</label>
-                                            <input type="time" id="cfgDigestTime3" class="form-control form-control-sm" value="" oninput="syncSettingsPreview()">
+                                            <input type="hidden" id="cfgDigestTime3" value="">
+                                            <button type="button" class="nb-date-trigger nb-time-trigger" id="cfgDigestTime3Btn" onclick="openNbTimePicker('cfgDigestTime3', this)">
+                                                <span id="cfgDigestTime3Display">--:--</span>
+                                                <i class="bi bi-clock text-muted"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1501,6 +1624,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 </div>
 
 <div class="nb-dp-popover" id="nbDatePickerPopover"></div>
+<div class="nb-tp-popover" id="nbTimePickerPopover"></div>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
 
 <script>
@@ -1566,6 +1690,7 @@ function initNotebook() {
     document.getElementById('cfgDigestTime').value = cfgSettings.digest_time || '07:30';
     document.getElementById('cfgDigestTime2').value = cfgSettings.digest_time_2 || '';
     document.getElementById('cfgDigestTime3').value = cfgSettings.digest_time_3 || '';
+    syncAllTimeDisplays();
     applyNotePreferences();
 
     if (window.innerWidth < 992) {
@@ -2137,6 +2262,7 @@ function openStickyModal(id = null) {
     document.getElementById('stickyReminderTime').value = s ? (s.reminder_time || '08:00') : '08:00';
     document.getElementById('stickyReminderTime2').value = s ? (s.reminder_time_2 || '') : '';
     document.getElementById('stickyReminderTime3').value = s ? (s.reminder_time_3 || '') : '';
+    syncAllTimeDisplays();
 
     const savedDays = s && Array.isArray(s.reminder_days_arr) && s.reminder_days_arr.length ? s.reminder_days_arr : ['Sen','Sel','Rab','Kam','Jum'];
     document.querySelectorAll('.sticky-day-cb').forEach(cb => { cb.checked = savedDays.includes(cb.value); });
@@ -2309,6 +2435,7 @@ function syncTaskDateDisplays() {
 let dpState = { open: false, mode: 'task-range', step: 0, baseDate: new Date(), start: '', end: '' };
 
 function openNbDatePicker(mode, triggerEl) {
+    closeNbTimePicker();
     const pop = document.getElementById('nbDatePickerPopover');
     dpState.mode = mode;
     dpState.step = 0;
@@ -2455,6 +2582,150 @@ document.addEventListener('click', (e) => {
     }
 });
 
+/* CUSTOM EXCEL-GREEN TIME PICKER */
+const NB_TIME_INPUT_IDS = [
+    'stickyReminderTime', 'stickyReminderTime2', 'stickyReminderTime3',
+    'taskTime', 'taskReminderSendTime', 'taskReminderSendTime2', 'taskReminderSendTime3',
+    'cfgDigestTime', 'cfgDigestTime2', 'cfgDigestTime3'
+];
+let tpState = { open: false, inputId: '', hour: '08', minute: '00' };
+
+function syncTimeDisplay(inputId) {
+    const inp = document.getElementById(inputId);
+    const disp = document.getElementById(inputId + 'Display');
+    if (!inp || !disp) return;
+    const val = (inp.value || '').trim();
+    disp.textContent = /^\d{2}:\d{2}$/.test(val) ? val : '--:--';
+}
+
+function syncAllTimeDisplays() {
+    NB_TIME_INPUT_IDS.forEach(syncTimeDisplay);
+}
+
+function openNbTimePicker(inputId, triggerEl) {
+    closeNbDatePicker();
+    const pop = document.getElementById('nbTimePickerPopover');
+    const inp = document.getElementById(inputId);
+    if (!pop || !inp) return;
+
+    const val = (inp.value || '').trim();
+    if (/^\d{2}:\d{2}$/.test(val)) {
+        const [hh, mm] = val.split(':');
+        tpState.hour = hh;
+        tpState.minute = mm;
+    } else {
+        tpState.hour = '08';
+        tpState.minute = '00';
+    }
+    tpState.inputId = inputId;
+
+    renderNbTimePicker(true);
+    pop.classList.add('is-open');
+
+    const rect = triggerEl.getBoundingClientRect();
+    const popW = pop.offsetWidth || 172;
+    const popH = pop.offsetHeight || 285;
+    let left = Math.min(rect.left, window.innerWidth - popW - 12);
+    if (left < 10) left = 10;
+    let top = rect.bottom + 6;
+    if (top + popH > window.innerHeight - 10) {
+        top = Math.max(10, rect.top - popH - 6);
+    }
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+    tpState.open = true;
+}
+
+function closeNbTimePicker() {
+    const pop = document.getElementById('nbTimePickerPopover');
+    if (pop) pop.classList.remove('is-open');
+    tpState.open = false;
+}
+
+function renderNbTimePicker(scrollToActive = false) {
+    const pop = document.getElementById('nbTimePickerPopover');
+    if (!pop) return;
+
+    const hoursHtml = Array.from({ length: 24 }, (_, i) => {
+        const h = String(i).padStart(2, '0');
+        const sel = h === tpState.hour ? 'is-selected' : '';
+        return `<div class="nb-tp-item ${sel}" data-tp-hour="${h}" onclick="pickNbTimePart('hour', '${h}')">${h}</div>`;
+    }).join('');
+
+    const minsHtml = Array.from({ length: 60 }, (_, i) => {
+        const m = String(i).padStart(2, '0');
+        const sel = m === tpState.minute ? 'is-selected' : '';
+        return `<div class="nb-tp-item ${sel}" data-tp-min="${m}" onclick="pickNbTimePart('minute', '${m}')">${m}</div>`;
+    }).join('');
+
+    pop.innerHTML = `
+        <div class="nb-tp-cols">
+            <div>
+                <div class="nb-tp-col-title">Jam</div>
+                <div class="nb-tp-list" id="nbTpHourList">${hoursHtml}</div>
+            </div>
+            <div>
+                <div class="nb-tp-col-title">Menit</div>
+                <div class="nb-tp-list" id="nbTpMinList">${minsHtml}</div>
+            </div>
+        </div>
+        <div class="nb-tp-footer">
+            <button type="button" class="nb-tp-clear" onclick="clearNbTime()">Hapus</button>
+            <button type="button" class="nb-tp-ok" onclick="closeNbTimePicker()">OK</button>
+        </div>
+    `;
+
+    if (scrollToActive) {
+        const hEl = pop.querySelector(`.nb-tp-item[data-tp-hour="${tpState.hour}"]`);
+        const mEl = pop.querySelector(`.nb-tp-item[data-tp-min="${tpState.minute}"]`);
+        if (hEl) hEl.scrollIntoView({ block: 'center' });
+        if (mEl) mEl.scrollIntoView({ block: 'center' });
+    }
+}
+
+function pickNbTimePart(part, val) {
+    if (part === 'hour') tpState.hour = val;
+    else tpState.minute = val;
+
+    const inp = document.getElementById(tpState.inputId);
+    if (inp) {
+        inp.value = `${tpState.hour}:${tpState.minute}`;
+        syncTimeDisplay(tpState.inputId);
+        if (tpState.inputId.startsWith('cfgDigestTime')) syncSettingsPreview();
+    }
+
+    const pop = document.getElementById('nbTimePickerPopover');
+    if (pop) {
+        if (part === 'hour') {
+            pop.querySelectorAll('[data-tp-hour]').forEach(el => {
+                el.classList.toggle('is-selected', el.dataset.tpHour === tpState.hour);
+            });
+        } else {
+            pop.querySelectorAll('[data-tp-min]').forEach(el => {
+                el.classList.toggle('is-selected', el.dataset.tpMin === tpState.minute);
+            });
+        }
+    }
+}
+
+function clearNbTime() {
+    const inp = document.getElementById(tpState.inputId);
+    if (inp) {
+        inp.value = '';
+        syncTimeDisplay(tpState.inputId);
+        if (tpState.inputId.startsWith('cfgDigestTime')) syncSettingsPreview();
+    }
+    closeNbTimePicker();
+}
+
+document.addEventListener('click', (e) => {
+    if (!tpState.open) return;
+    const pop = document.getElementById('nbTimePickerPopover');
+    if (pop && !pop.contains(e.target) && !e.target.closest('.nb-time-trigger')) {
+        closeNbTimePicker();
+    }
+});
+
 /* TASK MODAL CRUD */
 function openTaskModal(id = null, defDate = null, defTime = null) {
     const ev = id ? events.find(x => x.id === id) : null;
@@ -2477,6 +2748,7 @@ function openTaskModal(id = null, defDate = null, defTime = null) {
     document.getElementById('taskReminderSendTime').value = ev ? (ev.reminder_send_time || '08:00') : '08:00';
     document.getElementById('taskReminderSendTime2').value = ev ? (ev.reminder_send_time_2 || '') : '';
     document.getElementById('taskReminderSendTime3').value = ev ? (ev.reminder_send_time_3 || '') : '';
+    syncAllTimeDisplays();
 
     const savedDays = ev && Array.isArray(ev.reminder_days_arr) ? ev.reminder_days_arr : ['Sen','Sel','Rab','Kam','Jum'];
     document.querySelectorAll('.task-day-cb').forEach(cb => { cb.checked = savedDays.includes(cb.value); });

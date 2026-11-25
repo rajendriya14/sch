@@ -12,5 +12,5 @@ return [
     'username'   => 'noreply@iferror.web.id',
     'password'   => 'GANTI_PASSWORD_EMAIL',
     'from_email' => 'noreply@iferror.web.id',
-    'from_name'  => 'Personal Notebook Assistant',
+    'from_name'  => 'Ingetttt Coyyyy!',
 ];
