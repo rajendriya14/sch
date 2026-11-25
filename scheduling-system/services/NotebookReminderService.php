@@ -166,7 +166,7 @@ class NotebookReminderService
 
         // 3. Daily Sticky Note Reminders (up to 3 time slots + day pattern)
         $stStmt = $db->query(
-            "SELECT sn.*, u.email AS user_email, ns.emails AS settings_emails
+            "SELECT sn.*, u.name AS user_name, u.username, u.email AS user_email, ns.emails AS settings_emails
              FROM notebook_sticky_notes sn
              LEFT JOIN users u ON u.id = sn.user_id
              LEFT JOIN notebook_settings ns ON ns.user_id = sn.user_id
@@ -208,15 +208,12 @@ class NotebookReminderService
             foreach ($dueSlots as $slotKey) {
                 $matchedTime = substr($slotKey, 11, 5);
                 $sTitle = htmlspecialchars((string) $sn['title'], ENT_QUOTES, 'UTF-8');
-                $sBody  = nl2br(htmlspecialchars((string) $sn['content'], ENT_QUOTES, 'UTF-8'));
-                $sTime  = htmlspecialchars($matchedTime, ENT_QUOTES, 'UTF-8');
-                $html   = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-                    . '<div style="background:#217346;color:#fff;padding:16px 20px;"><strong>Sticky Note Reminder (' . $sTime . ' WIB)</strong></div>'
-                    . '<div style="padding:20px;font-size:14px;color:#111827;">'
-                    . "<h3 style='margin:0 0 10px 0;'>{$sTitle}</h3>"
-                    . "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:16px;'>{$sBody}</div>"
-                    . '<a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a>'
-                    . '</div></div>';
+                $sTime  = htmlspecialchars($matchedTime, ENT_QUOTES, 'UTF-8') . ' WIB';
+                $uName  = htmlspecialchars((string) ($sn['user_name'] ?? $sn['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+                $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
+                    . "<div style='font-weight:bold;color:#111827;'>1. {$sTitle}</div>"
+                    . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$sTime}</div></div>";
+                $html = self::wrapEmailLayout($uName, $itemHtml);
 
                 $sendRes = $mail->send($recipients, '[Sticky Note Reminder] ' . $sn['title'], $html);
                 if ($sendRes['success']) {
@@ -274,38 +271,47 @@ class NotebookReminderService
     private static function buildTaskEmailHtml(array $t): string
     {
         $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
-        $notes = nl2br(htmlspecialchars((string) ($t['notes'] ?? ''), ENT_QUOTES, 'UTF-8'));
-        $date  = htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
-        $end   = !empty($t['end_date']) && $t['end_date'] !== $t['due_date'] ? ' s/d ' . htmlspecialchars((string) $t['end_date'], ENT_QUOTES, 'UTF-8') : '';
-        $time  = !empty($t['due_time']) ? ' · ' . substr((string) $t['due_time'], 0, 5) . ' WIB' : '';
+        $time  = !empty($t['due_time']) ? substr((string) $t['due_time'], 0, 5) . ' WIB' : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
         $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
+        $uName = htmlspecialchars((string) ($t['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+        $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
 
-        return '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-            . '<div style="background:#217346;color:#fff;padding:16px 20px;"><strong>Personal Notebook Reminder</strong></div>'
-            . '<div style="padding:20px;font-size:14px;color:#111827;">'
-            . "<h3 style='margin:0 0 8px 0;'>{$title}</h3>"
-            . "<div style='color:#6b7280;font-size:13px;margin-bottom:12px;'>Jadwal: {$date}{$end}{$time} &middot; Prioritas: <strong>{$prio}</strong></div>"
-            . ($notes !== '' ? "<div style='background:#f9fafb;border-left:4px solid #217346;padding:10px 12px;margin-bottom:16px;'>{$notes}</div>" : '')
-            . '<a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a>'
-            . '</div></div>';
+        $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
+            . "<div style='font-weight:bold;color:#111827;'>1. {$title} <span style='color:{$prioColor};font-size:12px;'>[{$prio}]</span></div>"
+            . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$time}</div></div>";
+
+        return self::wrapEmailLayout($uName, $itemHtml);
     }
 
     private static function buildDigestEmailHtml(array $tasks, string $today): string
     {
         $items = '';
+        $num   = 1;
         foreach ($tasks as $t) {
             $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
             $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
             $time  = !empty($t['due_time']) ? substr((string) $t['due_time'], 0, 5) . ' WIB' : 'Seharian';
-            $items .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
-                . "<strong>{$title}</strong> <span style='font-size:12px;color:#6b7280;'>[{$prio}]</span>"
-                . "<div style='font-size:12px;color:#6b7280;'>{$time}</div></div>";
+            $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
+            $items .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
+                . "<div style='font-weight:bold;color:#111827;'>{$num}. {$title} <span style='color:{$prioColor};font-size:12px;'>[{$prio}]</span></div>"
+                . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$time}</div></div>";
+            $num++;
         }
 
-        return '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-            . "<div style='background:#217346;color:#fff;padding:16px 20px;'><strong>Briefing Agenda Hari Ini ({$today})</strong></div>"
-            . "<div style='padding:20px;font-size:14px;color:#111827;'>{$items}"
-            . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a></div>'
-            . '</div></div>';
+        return self::wrapEmailLayout('Anda', $items);
+    }
+
+    private static function wrapEmailLayout(string $userName, string $itemsHtml): string
+    {
+        return '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head>'
+            . '<body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#111827;">'
+            . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
+            . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;">'
+            . '<div style="font-size:12px;opacity:0.9;letter-spacing:0.5px;text-transform:uppercase;">Personal Notebook &middot; Reminder Penting</div>'
+            . "<div style='font-size:20px;font-weight:bold;margin-top:4px;'>Halo {$userName}, ini catatan pengingat Anda</div>"
+            . '</td></tr>'
+            . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.5;'>{$itemsHtml}"
+            . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
+            . '</td></tr></table></body></html>';
     }
 }

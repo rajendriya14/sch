@@ -318,30 +318,35 @@ class NotebookController
 
         $userName = htmlspecialchars((string) ($user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
         $itemsHtml = '';
+        $num = 1;
         foreach ($tasks as $t) {
             $tTitle = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
             $tTime  = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') . ' WIB' : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
             $tPrio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
-            $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
-                . "<strong>{$tTitle}</strong> <span style='font-size:12px;color:#6b7280;'>[{$tPrio}]</span>"
-                . "<div style='font-size:12px;color:#6b7280;'>{$tTime}</div></div>";
+            $prioColor = $tPrio === 'High' ? '#b91c1c' : '#374151';
+            $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
+                . "<div style='font-weight:bold;color:#111827;'>{$num}. {$tTitle} <span style='color:{$prioColor};font-size:12px;'>[{$tPrio}]</span></div>"
+                . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$tTime}</div></div>";
+            $num++;
         }
         foreach ($stickies as $s) {
             $sTitle = htmlspecialchars((string) $s['title'], ENT_QUOTES, 'UTF-8');
-            $sTime  = htmlspecialchars((string) $s['reminder_time'], ENT_QUOTES, 'UTF-8');
-            $itemsHtml .= "<div style='border:1px solid #fde68a;background:#fef9c3;border-radius:6px;padding:10px 12px;margin-bottom:8px;'>"
-                . "<strong>Sticky: {$sTitle}</strong> <span style='font-size:12px;color:#6b7280;'>(Harian {$sTime} WIB)</span></div>";
+            $sTime  = htmlspecialchars((string) $s['reminder_time'], ENT_QUOTES, 'UTF-8') . ' WIB';
+            $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
+                . "<div style='font-weight:bold;color:#111827;'>{$num}. {$sTitle}</div>"
+                . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$sTime}</div></div>";
+            $num++;
         }
         if ($itemsHtml === '') {
-            $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada agenda atau sticky note aktif untuk hari ini.</p>';
+            $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada catatan pengingat aktif hari ini.</p>';
         }
 
-        $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,sans-serif;color:#111827;">'
+        $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#111827;">'
             . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-            . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;">Personal Notebook Assistant</div>'
-            . "<div style='font-size:19px;font-weight:bold;margin-top:4px;'>Halo {$userName}, ini ringkasan agenda Anda</div></td></tr>"
-            . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.6;'>{$itemsHtml}"
-            . '<div style="margin-top:18px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
+            . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;letter-spacing:0.5px;text-transform:uppercase;">Personal Notebook &middot; Reminder Penting</div>'
+            . "<div style='font-size:20px;font-weight:bold;margin-top:4px;'>Halo {$userName}, ini catatan pengingat Anda</div></td></tr>"
+            . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.5;'>{$itemsHtml}"
+            . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
             . '</td></tr></table></body></html>';
 
         try {
