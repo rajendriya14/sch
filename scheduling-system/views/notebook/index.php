@@ -2767,9 +2767,18 @@ async function runDueRemindersSilent() {
     } catch (e) {}
 }
 
+function scheduleMinuteAlignedHeartbeat() {
+    const now = new Date();
+    const msUntilNextMin = (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
+    setTimeout(() => {
+        runDueRemindersSilent();
+        setInterval(runDueRemindersSilent, 60000);
+    }, msUntilNextMin);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initNotebook();
     runDueRemindersSilent();
-    setInterval(runDueRemindersSilent, 60000);
+    scheduleMinuteAlignedHeartbeat();
 });
 </script>

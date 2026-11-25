@@ -75,14 +75,19 @@ class NotebookReminderService
                     continue;
                 }
 
-                $html = self::buildTaskEmailHtml($t);
-                $sendRes = $mail->send($recipients, '[Notebook Reminder] ' . $t['title'], $html);
-                if ($sendRes['success']) {
+                $html = self::buildTaskEmailHtml($t, (string) $recipients[0]);
+                $allOk = true;
+                foreach ($recipients as $rcpt) {
+                    $sendRes = $mail->send($rcpt, '[Notebook Reminder] ' . $t['title'], self::buildTaskEmailHtml($t, (string) $rcpt));
+                    if (!$sendRes['success']) {
+                        $allOk = false;
+                        $result['errors'][] = "Task #{$t['id']} ({$rcpt}): " . $sendRes['message'];
+                    }
+                }
+                if ($allOk) {
                     $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ? WHERE id = ?');
                     $upd->execute([$now->format('Y-m-d H:i:s'), $t['id']]);
                     $result['tasks_sent']++;
-                } else {
-                    $result['errors'][] = "Task #{$t['id']}: " . $sendRes['message'];
                 }
             } else {
                 // Recurring: up to 3 daily time slots within [due_date .. end_date]
@@ -101,15 +106,19 @@ class NotebookReminderService
 
                 $dueSlots = self::findDueSlots($times, $nowMins, $today, $sentSlots);
                 foreach ($dueSlots as $slotKey) {
-                    $html = self::buildTaskEmailHtml($t);
-                    $sendRes = $mail->send($recipients, '[Notebook Reminder] ' . $t['title'], $html);
-                    if ($sendRes['success']) {
+                    $allOk = true;
+                    foreach ($recipients as $rcpt) {
+                        $sendRes = $mail->send($rcpt, '[Notebook Reminder] ' . $t['title'], self::buildTaskEmailHtml($t, (string) $rcpt));
+                        if (!$sendRes['success']) {
+                            $allOk = false;
+                            $result['errors'][] = "Task #{$t['id']} ({$rcpt}): " . $sendRes['message'];
+                        }
+                    }
+                    if ($allOk) {
                         $sentSlots[] = $slotKey;
                         $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ?, last_sent_slots = ? WHERE id = ?');
                         $upd->execute([$now->format('Y-m-d H:i:s'), implode(',', $sentSlots), $t['id']]);
                         $result['tasks_sent']++;
-                    } else {
-                        $result['errors'][] = "Task #{$t['id']}: " . $sendRes['message'];
                     }
                 }
             }
@@ -151,15 +160,19 @@ class NotebookReminderService
             }
 
             foreach ($dueSlots as $slotKey) {
-                $html = self::buildDigestEmailHtml($dayTasks, $today);
-                $sendRes = $mail->send($emails, "[Personal Notebook] Briefing Agenda ({$today})", $html);
-                if ($sendRes['success']) {
+                $allOk = true;
+                foreach ($emails as $rcpt) {
+                    $sendRes = $mail->send($rcpt, "[Personal Notebook] Briefing Agenda ({$today})", self::buildDigestEmailHtml($dayTasks, $today, (string) $rcpt));
+                    if (!$sendRes['success']) {
+                        $allOk = false;
+                        $result['errors'][] = "Briefing user #{$s['user_id']} ({$rcpt}): " . $sendRes['message'];
+                    }
+                }
+                if ($allOk) {
                     $sentSlots[] = $slotKey;
                     $upd = $db->prepare('UPDATE notebook_settings SET last_digest_sent_date = ?, last_digest_slots = ? WHERE user_id = ?');
                     $upd->execute([$today, implode(',', $sentSlots), $s['user_id']]);
                     $result['briefings_sent']++;
-                } else {
-                    $result['errors'][] = "Briefing user #{$s['user_id']}: " . $sendRes['message'];
                 }
             }
         }
@@ -205,20 +218,25 @@ class NotebookReminderService
                 $matchedTime = substr($slotKey, 11, 5);
                 $sTitle = htmlspecialchars((string) $sn['title'], ENT_QUOTES, 'UTF-8');
                 $sTime  = htmlspecialchars($matchedTime, ENT_QUOTES, 'UTF-8') . ' WIB';
-                $uName  = htmlspecialchars((string) ($sn['user_name'] ?? $sn['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
                 $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
                     . "<div style='font-weight:bold;color:#111827;'>1. {$sTitle}</div>"
                     . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$sTime}</div></div>";
-                $html = self::wrapEmailLayout($uName, $itemHtml);
 
-                $sendRes = $mail->send($recipients, '[Sticky Note Reminder] ' . $sn['title'], $html);
-                if ($sendRes['success']) {
+                $allOk = true;
+                foreach ($recipients as $rcpt) {
+                    $rcptLabel = htmlspecialchars((string) $rcpt, ENT_QUOTES, 'UTF-8');
+                    $html = self::wrapEmailLayout($rcptLabel, $itemHtml);
+                    $sendRes = $mail->send($rcpt, '[Sticky Note Reminder] ' . $sn['title'], $html);
+                    if (!$sendRes['success']) {
+                        $allOk = false;
+                        $result['errors'][] = "Sticky #{$sn['id']} ({$rcpt}): " . $sendRes['message'];
+                    }
+                }
+                if ($allOk) {
                     $sentSlots[] = $slotKey;
                     $upd = $db->prepare('UPDATE notebook_sticky_notes SET last_reminder_sent_date = ?, last_sent_slots = ? WHERE id = ?');
                     $upd->execute([$today, implode(',', $sentSlots), $sn['id']]);
                     $result['tasks_sent']++;
-                } else {
-                    $result['errors'][] = "Sticky #{$sn['id']}: " . $sendRes['message'];
                 }
             }
         }
@@ -342,12 +360,12 @@ class NotebookReminderService
         return $timeStr !== '' ? $timeStr : ($due !== '' ? date('d/m/Y', strtotime($due)) : 'Seharian');
     }
 
-    private static function buildTaskEmailHtml(array $t): string
+    private static function buildTaskEmailHtml(array $t, string $recipientEmail = 'Anda'): string
     {
         $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
         $sched = self::formatTaskScheduleLine($t);
         $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
-        $uName = htmlspecialchars((string) ($t['user_name'] ?? $t['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
+        $uName = htmlspecialchars($recipientEmail, ENT_QUOTES, 'UTF-8');
         $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
 
         $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
@@ -357,7 +375,7 @@ class NotebookReminderService
         return self::wrapEmailLayout($uName, $itemHtml);
     }
 
-    private static function buildDigestEmailHtml(array $tasks, string $today): string
+    private static function buildDigestEmailHtml(array $tasks, string $today, string $recipientEmail = 'Anda'): string
     {
         $items = '';
         $num   = 1;
@@ -372,7 +390,7 @@ class NotebookReminderService
             $num++;
         }
 
-        return self::wrapEmailLayout('Anda', $items);
+        return self::wrapEmailLayout(htmlspecialchars($recipientEmail, ENT_QUOTES, 'UTF-8'), $items);
     }
 
     private static function wrapEmailLayout(string $userName, string $itemsHtml): string

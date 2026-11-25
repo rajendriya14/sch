@@ -349,18 +349,24 @@ class NotebookController
             $itemsHtml = '<p style="color:#6b7280;margin:0;">Belum ada catatan pengingat aktif hari ini.</p>';
         }
 
-        $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#111827;">'
-            . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-            . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;letter-spacing:0.5px;text-transform:uppercase;">Personal Notebook &middot; Reminder Penting</div>'
-            . "<div style='font-size:20px;font-weight:bold;margin-top:4px;'>Halo {$userName}, ini catatan pengingat Anda</div></td></tr>"
-            . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.5;'>{$itemsHtml}"
-            . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
-            . '</td></tr></table></body></html>';
-
         try {
             $mail = new MailService();
-            $res  = $mail->send($recipients, '[Personal Notebook] Ringkasan Agenda Anda', $html);
-            $this->jsonResponse($res, $res['success'] ? 200 : 500);
+            $lastRes = ['success' => true, 'message' => 'Email terkirim.'];
+            foreach ($recipients as $rcpt) {
+                $rcptSafe = htmlspecialchars((string) $rcpt, ENT_QUOTES, 'UTF-8');
+                $html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"></head><body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#111827;">'
+                    . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
+                    . '<tr><td style="background:#217346;color:#ffffff;padding:18px 24px;"><div style="font-size:12px;opacity:0.9;letter-spacing:0.5px;text-transform:uppercase;">Personal Notebook &middot; Reminder Penting</div>'
+                    . "<div style='font-size:20px;font-weight:bold;margin-top:4px;'>Halo {$rcptSafe}, ini catatan pengingat Anda</div></td></tr>"
+                    . "<tr><td style='padding:22px 24px;font-size:14px;line-height:1.5;'>{$itemsHtml}"
+                    . '<div style="margin-top:16px;"><a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:10px 18px;border-radius:6px;">Buka Personal Notebook</a></div>'
+                    . '</td></tr></table></body></html>';
+                $lastRes = $mail->send($rcpt, '[Personal Notebook] Ringkasan Agenda Anda', $html);
+                if (!$lastRes['success']) {
+                    break;
+                }
+            }
+            $this->jsonResponse($lastRes, $lastRes['success'] ? 200 : 500);
         } catch (\Throwable $e) {
             $this->jsonResponse(['success' => false, 'message' => $e->getMessage()], 500);
         }
