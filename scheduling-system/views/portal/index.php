@@ -44,12 +44,18 @@
                             </div>
                         <?php else: ?>
                             <div class="card-body d-flex align-items-start gap-3">
-                                <div class="portal-icon">
-                                    <i class="bi <?= htmlspecialchars($app['icon']) ?>"></i>
-                                </div>
+                                <?php if (!empty($app['logo_src'])): ?>
+                                    <div class="portal-icon" style="background: transparent;">
+                                        <img src="<?= htmlspecialchars($app['logo_src']) ?>" alt="<?= htmlspecialchars($app['title']) ?>" style="width: 52px; height: 52px; object-fit: contain; display: block;">
+                                    </div>
+                                <?php else: ?>
+                                    <div class="portal-icon">
+                                        <i class="bi <?= htmlspecialchars($app['icon']) ?>"></i>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <h2 class="h5 mb-0"><?= htmlspecialchars($app['title']) ?></h2>
+                                        <h2 class="h5 mb-0"<?= !empty($app['title_font']) ? ' style="font-family: ' . htmlspecialchars($app['title_font']) . '; font-weight: 700; font-size: 1.35rem; line-height: 1.2;"' : '' ?>><?= htmlspecialchars($app['title']) ?></h2>
                                         <?php if (!empty($app['badge'])): ?>
                                             <span class="badge bg-secondary"><?= htmlspecialchars($app['badge']) ?></span>
                                         <?php endif; ?>

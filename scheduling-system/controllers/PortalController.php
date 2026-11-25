@@ -36,9 +36,11 @@ class PortalController
         $apps = [
             [
                 'menu'        => 'notebook',
-                'title'       => 'Personal Notebook',
+                'title'       => 'nyatet.',
                 'description' => 'Catatan pribadi, checklist timeline, dan kalender deadline task Anda.',
                 'icon'        => 'bi-journal-bookmark-fill',
+                'logo_src'    => 'scheduling-system/public/assets/img/nyatet-logo.svg?v=2',
+                'title_font'  => "'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Ink Free', cursive",
                 'url'         => 'index.php?page=notebook',
                 'badge'       => 'Personal',
             ],
