@@ -416,7 +416,28 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         background: #fff;
     }
     .month-head-cell { padding: 8px 12px; font-size: 0.75rem; font-weight: 500; color: var(--nb-muted); min-width: 0; }
-    .month-grid-body { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--nb-border); gap: 1px; }
+    .month-grid-body { display: flex; flex-direction: column; background: var(--nb-border); gap: 1px; }
+    .month-week-row { position: relative; }
+    .month-week-bg { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--nb-border); gap: 1px; }
+    .month-week-events {
+        position: absolute;
+        top: 6px;
+        left: 0;
+        right: 0;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        row-gap: 3px;
+        column-gap: 0;
+        padding: 0 3px;
+        pointer-events: none;
+        z-index: 2;
+    }
+    .month-week-events .m-pill {
+        pointer-events: auto;
+        margin: 0 2px;
+    }
+    .m-pill.cont-left  { border-top-left-radius: 2px; border-bottom-left-radius: 2px; margin-left: 0; border-left: none; }
+    .m-pill.cont-right { border-top-right-radius: 2px; border-bottom-right-radius: 2px; margin-right: 0; border-right: none; }
 
     .month-cell {
         background: #fff;
@@ -426,9 +447,6 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         padding: 6px 6px 26px 6px;
         position: relative;
         cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
     }
     .month-cell:hover { background: #fafafa; }
     .month-cell.is-today { background: #f4fbf7; border-bottom: 2px solid var(--excel-green); }
@@ -1512,32 +1530,123 @@ function renderMonthView() {
     const rem = (cells.length > 35 ? 42 : 35) - cells.length;
     for (let j = 1; j <= rem; j++) cells.push({ d: new Date(y, m + 1, j), other: true });
 
-    cells.forEach(c => {
-        const ds = dateStr(c.d);
-        const cell = document.createElement('div');
-        cell.className = 'month-cell' + (c.other ? ' other-month' : '') + (ds === todayStr ? ' is-today' : '');
-        cell.onclick = () => openTaskModal(null, ds);
+    const diffDays = (aStr, bStr) => {
+        const [ay, am, ad] = aStr.split('-').map(Number);
+        const [by, bm, bd] = bStr.split('-').map(Number);
+        return Math.round((Date.UTC(ay, am - 1, ad) - Date.UTC(by, bm - 1, bd)) / 86400000);
+    };
 
-        list.filter(e => ds >= e.due_date && ds <= (e.end_date || e.due_date)).slice(0, 3).forEach(ev => {
+    for (let w = 0; w < cells.length; w += 7) {
+        const weekCells = cells.slice(w, w + 7);
+        const weekStart = dateStr(weekCells[0].d);
+        const weekEnd   = dateStr(weekCells[6].d);
+
+        const weekRow = document.createElement('div');
+        weekRow.className = 'month-week-row';
+
+        const bgGrid = document.createElement('div');
+        bgGrid.className = 'month-week-bg';
+
+        // Find events overlapping this week
+        const weekEvents = list.filter(ev => {
+            const evEnd = ev.end_date || ev.due_date;
+            return ev.due_date <= weekEnd && evEnd >= weekStart;
+        }).sort((a, b) => {
+            const aSpan = diffDays(a.end_date || a.due_date, a.due_date);
+            const bSpan = diffDays(b.end_date || b.due_date, b.due_date);
+            if (a.due_date !== b.due_date) return a.due_date.localeCompare(b.due_date);
+            if (aSpan !== bSpan) return bSpan - aSpan;
+            return (a.due_time || '').localeCompare(b.due_time || '');
+        });
+
+        // Lane packing (max 3 visible lanes per week row)
+        const lanes = [];
+        const placements = [];
+        const overflowCount = [0, 0, 0, 0, 0, 0, 0];
+
+        weekEvents.forEach(ev => {
+            const evEnd = ev.end_date || ev.due_date;
+            const startIdx = Math.max(0, diffDays(ev.due_date, weekStart));
+            const endIdx   = Math.min(6, diffDays(evEnd, weekStart));
+
+            let placedLane = -1;
+            for (let l = 0; l < 3; l++) {
+                if (!lanes[l]) lanes[l] = Array(7).fill(false);
+                let free = true;
+                for (let c = startIdx; c <= endIdx; c++) {
+                    if (lanes[l][c]) { free = false; break; }
+                }
+                if (free) {
+                    for (let c = startIdx; c <= endIdx; c++) lanes[l][c] = true;
+                    placedLane = l;
+                    break;
+                }
+            }
+
+            if (placedLane >= 0) {
+                placements.push({
+                    ev,
+                    startIdx,
+                    endIdx,
+                    lane: placedLane,
+                    contLeft: ev.due_date < weekStart,
+                    contRight: evEnd > weekEnd
+                });
+            } else {
+                for (let c = startIdx; c <= endIdx; c++) overflowCount[c]++;
+            }
+        });
+
+        weekCells.forEach((c, idx) => {
+            const ds = dateStr(c.d);
+            const cell = document.createElement('div');
+            cell.className = 'month-cell' + (c.other ? ' other-month' : '') + (ds === todayStr ? ' is-today' : '');
+            cell.onclick = () => openTaskModal(null, ds);
+
+            if (overflowCount[idx] > 0) {
+                const more = document.createElement('div');
+                more.style.cssText = 'position:absolute;bottom:6px;left:6px;font-size:0.68rem;color:#6b7280;font-weight:500;';
+                more.textContent = `+${overflowCount[idx]} lainnya`;
+                cell.appendChild(more);
+            }
+
+            const num = document.createElement('div');
+            num.className = 'month-day-num';
+            num.textContent = c.d.getDate();
+            cell.appendChild(num);
+            bgGrid.appendChild(cell);
+        });
+
+        const evLayer = document.createElement('div');
+        evLayer.className = 'month-week-events';
+        placements.forEach(p => {
+            const ev = p.ev;
+            const isMultiDay = (ev.end_date && ev.end_date !== ev.due_date) || p.contLeft || p.contRight;
             const pill = document.createElement('div');
-            pill.className = `m-pill ${ev.theme || 'theme-green'} ${ev.status === 'Done' ? 'is-done' : ''}`;
+            pill.className = `m-pill ${ev.theme || 'theme-green'} ${ev.status === 'Done' ? 'is-done' : ''}${p.contLeft ? ' cont-left' : ''}${p.contRight ? ' cont-right' : ''}`;
+            pill.style.gridColumn = `${p.startIdx + 1} / ${p.endIdx + 2}`;
+            pill.style.gridRow = `${p.lane + 1}`;
+            pill.title = ev.title;
             pill.onclick = (e) => { e.stopPropagation(); openTaskModal(ev.id); };
+
+            const timeLabel = !isMultiDay
+                ? (ev.duration_minutes === 30 ? '30m' : formatShortTime(ev.due_time))
+                : '';
+
             pill.innerHTML = `
                 <span class="m-pill-left">
                     <span class="m-pill-dot"></span>
                     <span class="m-pill-title">${esc(ev.title)}</span>
                 </span>
-                <span class="m-pill-time">${ev.duration_minutes === 30 ? '30m' : formatShortTime(ev.due_time)}</span>
+                ${timeLabel ? `<span class="m-pill-time">${timeLabel}</span>` : ''}
             `;
-            cell.appendChild(pill);
+            evLayer.appendChild(pill);
         });
 
-        const num = document.createElement('div');
-        num.className = 'month-day-num';
-        num.textContent = c.d.getDate();
-        cell.appendChild(num);
-        grid.appendChild(cell);
-    });
+        weekRow.appendChild(bgGrid);
+        weekRow.appendChild(evLayer);
+        grid.appendChild(weekRow);
+    }
 }
 
 /* CATEGORY GRID VIEW */
