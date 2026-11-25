@@ -56,8 +56,8 @@ class NotebookTask
             'INSERT INTO notebook_tasks (
                 user_id, title, notes, due_date, end_date, due_time, duration_minutes,
                 priority, status, tag, theme, color, is_pinned,
-                email_reminder, reminder_freq, reminder_lead, reminder_send_time, reminder_days, reminder_emails
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                email_reminder, reminder_freq, reminder_lead, reminder_send_time, reminder_send_time_2, reminder_send_time_3, reminder_days, reminder_emails
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['user_id'],
@@ -77,6 +77,8 @@ class NotebookTask
             $data['reminder_freq'] ?? 'once',
             $data['reminder_lead'] ?? '1h',
             !empty($data['reminder_send_time']) ? $data['reminder_send_time'] : null,
+            !empty($data['reminder_send_time_2']) ? $data['reminder_send_time_2'] : null,
+            !empty($data['reminder_send_time_3']) ? $data['reminder_send_time_3'] : null,
             $data['reminder_days'] ?? null,
             $data['reminder_emails'] ?? null,
         ]);
@@ -93,7 +95,7 @@ class NotebookTask
              SET title = ?, notes = ?, due_date = ?, end_date = ?, due_time = ?, duration_minutes = ?,
                  priority = ?, status = ?, tag = ?, theme = ?, color = ?, is_pinned = ?,
                  email_reminder = ?, reminder_freq = ?, reminder_lead = ?,
-                 reminder_send_time = ?, reminder_days = ?, reminder_emails = ?
+                 reminder_send_time = ?, reminder_send_time_2 = ?, reminder_send_time_3 = ?, reminder_days = ?, reminder_emails = ?
              WHERE id = ? AND user_id = ?'
         );
         return $stmt->execute([
@@ -113,6 +115,8 @@ class NotebookTask
             $data['reminder_freq'] ?? 'once',
             $data['reminder_lead'] ?? '1h',
             !empty($data['reminder_send_time']) ? $data['reminder_send_time'] : null,
+            !empty($data['reminder_send_time_2']) ? $data['reminder_send_time_2'] : null,
+            !empty($data['reminder_send_time_3']) ? $data['reminder_send_time_3'] : null,
             $data['reminder_days'] ?? null,
             $data['reminder_emails'] ?? null,
             $id,
@@ -171,6 +175,8 @@ class NotebookTask
                 'digest_freq'    => 'workdays',
                 'digest_days'    => ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'],
                 'digest_time'    => '07:30',
+                'digest_time_2'  => '',
+                'digest_time_3'  => '',
                 'preferences'    => $defaultPrefs,
             ];
         }
@@ -192,6 +198,8 @@ class NotebookTask
             'digest_freq'    => $row['digest_freq'] ?? 'workdays',
             'digest_days'    => $days,
             'digest_time'    => substr((string) ($row['digest_time'] ?? '07:30:00'), 0, 5),
+            'digest_time_2'  => !empty($row['digest_time_2']) ? substr((string) $row['digest_time_2'], 0, 5) : '',
+            'digest_time_3'  => !empty($row['digest_time_3']) ? substr((string) $row['digest_time_3'], 0, 5) : '',
             'preferences'    => array_merge($defaultPrefs, $prefs),
         ];
     }
@@ -204,23 +212,27 @@ class NotebookTask
         $emailsJson = json_encode(array_values($data['emails'] ?? []), JSON_UNESCAPED_UNICODE);
         $daysCsv    = implode(',', $data['digest_days'] ?? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum']);
         $time       = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time'] ?? '')) ? substr((string) $data['digest_time'], 0, 5) . ':00' : '07:30:00';
+        $time2      = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time_2'] ?? '')) ? substr((string) $data['digest_time_2'], 0, 5) . ':00' : null;
+        $time3      = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time_3'] ?? '')) ? substr((string) $data['digest_time_3'], 0, 5) . ':00' : null;
         $freq       = in_array($data['digest_freq'] ?? '', ['workdays', 'daily', 'custom'], true) ? $data['digest_freq'] : 'workdays';
         $enabled    = !empty($data['digest_enabled']) ? 1 : 0;
         $prefsJson  = json_encode($data['preferences'] ?? [], JSON_UNESCAPED_UNICODE);
 
         $stmt = Database::getInstance()->prepare(
-            'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time, preferences)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time, digest_time_2, digest_time_3, preferences)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 emails = VALUES(emails),
                 digest_enabled = VALUES(digest_enabled),
                 digest_freq = VALUES(digest_freq),
                 digest_days = VALUES(digest_days),
                 digest_time = VALUES(digest_time),
+                digest_time_2 = VALUES(digest_time_2),
+                digest_time_3 = VALUES(digest_time_3),
                 preferences = VALUES(preferences)'
         );
 
-        return $stmt->execute([$userId, $emailsJson, $enabled, $freq, $daysCsv, $time, $prefsJson]);
+        return $stmt->execute([$userId, $emailsJson, $enabled, $freq, $daysCsv, $time, $time2, $time3, $prefsJson]);
     }
 
     private static function hydrateRow(array $row): array
@@ -240,7 +252,9 @@ class NotebookTask
         $row['reminder_days_arr']  = $days;
         $row['due_time']           = $row['due_time'] ? substr((string) $row['due_time'], 0, 5) : '';
         $row['end_date']           = !empty($row['end_date']) ? $row['end_date'] : $row['due_date'];
-        $row['reminder_send_time'] = !empty($row['reminder_send_time']) ? substr((string) $row['reminder_send_time'], 0, 5) : '08:00';
+        $row['reminder_send_time']   = !empty($row['reminder_send_time']) ? substr((string) $row['reminder_send_time'], 0, 5) : '08:00';
+        $row['reminder_send_time_2'] = !empty($row['reminder_send_time_2']) ? substr((string) $row['reminder_send_time_2'], 0, 5) : '';
+        $row['reminder_send_time_3'] = !empty($row['reminder_send_time_3']) ? substr((string) $row['reminder_send_time_3'], 0, 5) : '';
 
         return $row;
     }

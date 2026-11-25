@@ -30,8 +30,8 @@ class NotebookStickyNote
     {
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            'INSERT INTO notebook_sticky_notes (user_id, title, content, theme, reminder_time, reminder_emails)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO notebook_sticky_notes (user_id, title, content, theme, reminder_time, reminder_time_2, reminder_time_3, reminder_emails)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['user_id'],
@@ -39,6 +39,8 @@ class NotebookStickyNote
             $data['content'],
             $data['theme'] ?? 'sticky-yellow',
             !empty($data['reminder_time']) ? $data['reminder_time'] : null,
+            !empty($data['reminder_time_2']) ? $data['reminder_time_2'] : null,
+            !empty($data['reminder_time_3']) ? $data['reminder_time_3'] : null,
             $data['reminder_emails'] ?? null,
         ]);
         return (int) $db->lastInsertId();
@@ -48,7 +50,7 @@ class NotebookStickyNote
     {
         $stmt = Database::getInstance()->prepare(
             'UPDATE notebook_sticky_notes
-             SET title = ?, content = ?, theme = ?, reminder_time = ?, reminder_emails = ?
+             SET title = ?, content = ?, theme = ?, reminder_time = ?, reminder_time_2 = ?, reminder_time_3 = ?, reminder_emails = ?
              WHERE id = ? AND user_id = ?'
         );
         return $stmt->execute([
@@ -56,6 +58,8 @@ class NotebookStickyNote
             $data['content'],
             $data['theme'] ?? 'sticky-yellow',
             !empty($data['reminder_time']) ? $data['reminder_time'] : null,
+            !empty($data['reminder_time_2']) ? $data['reminder_time_2'] : null,
+            !empty($data['reminder_time_3']) ? $data['reminder_time_3'] : null,
             $data['reminder_emails'] ?? null,
             $id,
             $userId,
@@ -84,6 +88,8 @@ class NotebookStickyNote
         $row['id']              = (int) $row['id'];
         $row['user_id']         = (int) $row['user_id'];
         $row['reminder_time']   = $row['reminder_time'] ?? '';
+        $row['reminder_time_2'] = $row['reminder_time_2'] ?? '';
+        $row['reminder_time_3'] = $row['reminder_time_3'] ?? '';
         $row['reminder_emails'] = is_array($emails) ? $emails : [];
         return $row;
     }

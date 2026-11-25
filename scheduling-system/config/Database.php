@@ -364,9 +364,12 @@ class Database
                 'reminder_freq'         => 'ENUM("once","workdays","daily","custom") NOT NULL DEFAULT "once" AFTER email_reminder',
                 'reminder_lead'         => 'VARCHAR(10) NOT NULL DEFAULT "1h" AFTER reminder_freq',
                 'reminder_send_time'    => 'TIME DEFAULT NULL AFTER reminder_lead',
-                'reminder_days'         => 'VARCHAR(60) DEFAULT NULL AFTER reminder_send_time',
+                'reminder_send_time_2'  => 'TIME DEFAULT NULL AFTER reminder_send_time',
+                'reminder_send_time_3'  => 'TIME DEFAULT NULL AFTER reminder_send_time_2',
+                'reminder_days'         => 'VARCHAR(60) DEFAULT NULL AFTER reminder_send_time_3',
                 'reminder_emails'       => 'TEXT DEFAULT NULL AFTER reminder_days',
                 'last_reminder_sent_at' => 'DATETIME DEFAULT NULL AFTER reminder_emails',
+                'last_sent_slots'       => 'VARCHAR(120) DEFAULT NULL AFTER last_reminder_sent_at',
             ];
             foreach ($extraCols as $col => $def) {
                 try {
@@ -389,10 +392,17 @@ class Database
                     updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
-            try {
-                self::$instance->exec('ALTER TABLE notebook_settings ADD COLUMN preferences TEXT DEFAULT NULL AFTER digest_time');
-            } catch (\PDOException $e) {
-                // Column already exists
+            foreach ([
+                'preferences'       => 'TEXT DEFAULT NULL AFTER digest_time',
+                'digest_time_2'     => 'TIME DEFAULT NULL AFTER digest_time',
+                'digest_time_3'     => 'TIME DEFAULT NULL AFTER digest_time_2',
+                'last_digest_slots' => 'VARCHAR(120) DEFAULT NULL AFTER last_digest_sent_date',
+            ] as $col => $def) {
+                try {
+                    self::$instance->exec("ALTER TABLE notebook_settings ADD COLUMN {$col} {$def}");
+                } catch (\PDOException $e) {
+                    // Column already exists
+                }
             }
 
             self::$instance->exec('
@@ -403,13 +413,27 @@ class Database
                     content                 TEXT NOT NULL,
                     theme                   VARCHAR(30) NOT NULL DEFAULT "sticky-yellow",
                     reminder_time           VARCHAR(10) DEFAULT NULL,
+                    reminder_time_2         VARCHAR(10) DEFAULT NULL,
+                    reminder_time_3         VARCHAR(10) DEFAULT NULL,
                     reminder_emails         TEXT DEFAULT NULL,
                     last_reminder_sent_date DATE DEFAULT NULL,
+                    last_sent_slots         VARCHAR(120) DEFAULT NULL,
                     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_sticky_user (user_id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
+            foreach ([
+                'reminder_time_2' => 'VARCHAR(10) DEFAULT NULL AFTER reminder_time',
+                'reminder_time_3' => 'VARCHAR(10) DEFAULT NULL AFTER reminder_time_2',
+                'last_sent_slots' => 'VARCHAR(120) DEFAULT NULL AFTER last_reminder_sent_date',
+            ] as $col => $def) {
+                try {
+                    self::$instance->exec("ALTER TABLE notebook_sticky_notes ADD COLUMN {$col} {$def}");
+                } catch (\PDOException $e) {
+                    // Column already exists
+                }
+            }
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }

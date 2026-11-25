@@ -102,8 +102,10 @@ class NotebookController
         $emailReminder    = !empty($_POST['email_reminder']) ? 1 : 0;
         $reminderFreq     = trim((string) ($_POST['reminder_freq'] ?? 'once'));
         $reminderLead     = trim((string) ($_POST['reminder_lead'] ?? '1h'));
-        $reminderSendTime = trim((string) ($_POST['reminder_send_time'] ?? '08:00'));
-        $reminderDays     = trim((string) ($_POST['reminder_days'] ?? ''));
+        $reminderSendTime  = trim((string) ($_POST['reminder_send_time'] ?? '08:00'));
+        $reminderSendTime2 = trim((string) ($_POST['reminder_send_time_2'] ?? ''));
+        $reminderSendTime3 = trim((string) ($_POST['reminder_send_time_3'] ?? ''));
+        $reminderDays      = trim((string) ($_POST['reminder_days'] ?? ''));
         $rawEmails        = $_POST['reminder_emails'] ?? '[]';
 
         if ($title === '') {
@@ -159,8 +161,10 @@ class NotebookController
             'email_reminder'     => $emailReminder,
             'reminder_freq'      => $reminderFreq,
             'reminder_lead'      => $reminderLead,
-            'reminder_send_time' => $reminderSendTime !== '' ? $reminderSendTime : null,
-            'reminder_days'      => $reminderDays !== '' ? $reminderDays : null,
+            'reminder_send_time'   => $reminderSendTime !== '' ? $reminderSendTime : null,
+            'reminder_send_time_2' => $reminderSendTime2 !== '' ? $reminderSendTime2 : null,
+            'reminder_send_time_3' => $reminderSendTime3 !== '' ? $reminderSendTime3 : null,
+            'reminder_days'        => $reminderDays !== '' ? $reminderDays : null,
             'reminder_emails'    => json_encode($emailsArr, JSON_UNESCAPED_UNICODE),
         ];
 
@@ -278,6 +282,8 @@ class NotebookController
             'digest_freq'    => trim((string) ($_POST['digest_freq'] ?? 'workdays')),
             'digest_days'    => $daysArr,
             'digest_time'    => trim((string) ($_POST['digest_time'] ?? '07:30')),
+            'digest_time_2'  => trim((string) ($_POST['digest_time_2'] ?? '')),
+            'digest_time_3'  => trim((string) ($_POST['digest_time_3'] ?? '')),
             'preferences'    => $prefsArr,
         ]);
 
@@ -356,16 +362,18 @@ class NotebookController
         $title  = trim((string) ($_POST['title'] ?? ''));
         $content = trim((string) ($_POST['content'] ?? ''));
         $theme  = trim((string) ($_POST['theme'] ?? 'sticky-yellow'));
-        $remTime = trim((string) ($_POST['reminder_time'] ?? ''));
+        $remTime  = trim((string) ($_POST['reminder_time'] ?? ''));
+        $remTime2 = trim((string) ($_POST['reminder_time_2'] ?? ''));
+        $remTime3 = trim((string) ($_POST['reminder_time_3'] ?? ''));
         $rawEmails = $_POST['reminder_emails'] ?? '[]';
 
         if ($title === '' || $content === '') {
             $this->jsonResponse(['success' => false, 'message' => 'Judul dan isi sticky note tidak boleh kosong.'], 400);
         }
 
-        if ($remTime !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime)) {
-            $remTime = '';
-        }
+        if ($remTime !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime)) $remTime = '';
+        if ($remTime2 !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime2)) $remTime2 = '';
+        if ($remTime3 !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime3)) $remTime3 = '';
 
         $emailsArr = is_string($rawEmails) ? json_decode($rawEmails, true) : (is_array($rawEmails) ? $rawEmails : []);
         if (!is_array($emailsArr)) {
@@ -381,6 +389,8 @@ class NotebookController
             'content'         => $content,
             'theme'           => $theme,
             'reminder_time'   => $remTime,
+            'reminder_time_2' => $remTime2,
+            'reminder_time_3' => $remTime3,
             'reminder_emails' => json_encode($emailsArr, JSON_UNESCAPED_UNICODE),
         ];
 

@@ -883,7 +883,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <textarea id="stickyContent" rows="4" required class="form-control" placeholder="Tulis catatan Anda di sini..."></textarea>
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small fw-semibold">Warna Sticky</label>
                             <select id="stickyTheme" class="form-select form-select-sm">
                                 <option value="sticky-yellow">Kuning Hangat</option>
@@ -893,8 +893,8 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                 <option value="sticky-purple">Ungu Lembut</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold">Reminder Setiap Hari</label>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-semibold">Reminder 1 (Utama)</label>
                             <select id="stickyReminderTime" class="form-select form-select-sm">
                                 <option value="">Tidak di-reminder</option>
                                 <option value="07:00">Setiap hari jam 07:00</option>
@@ -904,6 +904,32 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                 <option value="15:00">Setiap hari jam 15:00</option>
                                 <option value="18:00">Setiap hari jam 18:00</option>
                                 <option value="20:00">Setiap hari jam 20:00</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Reminder 2 (Opsional)</label>
+                            <select id="stickyReminderTime2" class="form-select form-select-sm">
+                                <option value="">Tidak ada</option>
+                                <option value="07:00">07:00 WIB</option>
+                                <option value="08:00">08:00 WIB</option>
+                                <option value="09:00">09:00 WIB</option>
+                                <option value="12:00">12:00 WIB</option>
+                                <option value="15:00">15:00 WIB</option>
+                                <option value="18:00">18:00 WIB</option>
+                                <option value="20:00">20:00 WIB</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Reminder 3 (Opsional)</label>
+                            <select id="stickyReminderTime3" class="form-select form-select-sm">
+                                <option value="">Tidak ada</option>
+                                <option value="07:00">07:00 WIB</option>
+                                <option value="08:00">08:00 WIB</option>
+                                <option value="09:00">09:00 WIB</option>
+                                <option value="12:00">12:00 WIB</option>
+                                <option value="15:00">15:00 WIB</option>
+                                <option value="18:00">18:00 WIB</option>
+                                <option value="20:00">20:00 WIB</option>
                             </select>
                         </div>
                     </div>
@@ -1015,8 +1041,18 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                     </select>
                                 </div>
                                 <div class="col-5 d-none" id="taskSendTimeCol">
-                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Kirim Setiap Jam</label>
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 1 (Utama)</label>
                                     <input type="time" id="taskReminderSendTime" class="form-control form-control-sm" value="08:00">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2 d-none" id="taskExtraTimesRow">
+                                <div class="col-6">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 2 (Opsional)</label>
+                                    <input type="time" id="taskReminderSendTime2" class="form-control form-control-sm" value="">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 3 (Opsional)</label>
+                                    <input type="time" id="taskReminderSendTime3" class="form-control form-control-sm" value="">
                                 </div>
                             </div>
 
@@ -1171,10 +1207,20 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                             <option value="custom">Hari Tertentu</option>
                                         </select>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 small text-muted">
-                                        <span>Kirim setiap jam:</span>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 small text-muted mb-2">
+                                        <span>Jam 1:</span>
                                         <input type="time" id="cfgDigestTime" class="form-control form-control-sm w-auto" value="07:30" oninput="syncSettingsPreview()">
                                         <span>WIB</span>
+                                    </div>
+                                    <div class="row g-2 small text-muted">
+                                        <div class="col-6">
+                                            <label class="form-label mb-0" style="font-size:0.72rem;">Jam 2 (Opsional)</label>
+                                            <input type="time" id="cfgDigestTime2" class="form-control form-control-sm" value="" oninput="syncSettingsPreview()">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label mb-0" style="font-size:0.72rem;">Jam 3 (Opsional)</label>
+                                            <input type="time" id="cfgDigestTime3" class="form-control form-control-sm" value="" oninput="syncSettingsPreview()">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2">
@@ -1265,6 +1311,8 @@ function initNotebook() {
     document.getElementById('cfgDigest').checked = !!cfgSettings.digest_enabled;
     document.getElementById('cfgDigestFreq').value = cfgSettings.digest_freq || 'workdays';
     document.getElementById('cfgDigestTime').value = cfgSettings.digest_time || '07:30';
+    document.getElementById('cfgDigestTime2').value = cfgSettings.digest_time_2 || '';
+    document.getElementById('cfgDigestTime3').value = cfgSettings.digest_time_3 || '';
     applyNotePreferences();
 
     if (window.innerWidth < 992) {
@@ -1701,6 +1749,7 @@ function renderStickyView() {
                     <select class="form-select form-select-sm bg-white" onchange="changeStickyReminder(${s.id}, this.value)">
                         ${STICKY_TIME_OPTS.map(o => `<option value="${o.val}" ${(s.reminder_time || '') === o.val ? 'selected' : ''}>${o.label}</option>`).join('')}
                     </select>
+                    ${(s.reminder_time_2 || s.reminder_time_3) ? `<div class="text-muted mt-1" style="font-size:0.7rem;">+ Jam tambahan: ${[s.reminder_time_2, s.reminder_time_3].filter(Boolean).join(', ')} WIB</div>` : ''}
                 </div>
             </div>
         </div>
@@ -1715,6 +1764,8 @@ function openStickyModal(id = null) {
     document.getElementById('stickyContent').value = s ? s.content : '';
     document.getElementById('stickyTheme').value = s ? (s.theme || 'sticky-yellow') : 'sticky-yellow';
     document.getElementById('stickyReminderTime').value = s ? (s.reminder_time || '') : '';
+    document.getElementById('stickyReminderTime2').value = s ? (s.reminder_time_2 || '') : '';
+    document.getElementById('stickyReminderTime3').value = s ? (s.reminder_time_3 || '') : '';
     document.getElementById('btnDeleteSticky').classList.toggle('d-none', !s);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('stickyModal')).show();
 }
@@ -1729,6 +1780,8 @@ async function handleStickySubmit(e) {
     fd.append('content', document.getElementById('stickyContent').value.trim());
     fd.append('theme', document.getElementById('stickyTheme').value);
     fd.append('reminder_time', document.getElementById('stickyReminderTime').value);
+    fd.append('reminder_time_2', document.getElementById('stickyReminderTime2').value);
+    fd.append('reminder_time_3', document.getElementById('stickyReminderTime3').value);
     fd.append('reminder_emails', JSON.stringify(cfgEmails));
 
     try {
@@ -1825,6 +1878,7 @@ function toggleTaskFreqFields() {
     const freq = document.getElementById('taskReminderFreq').value;
     document.getElementById('taskLeadCol').classList.toggle('d-none', freq !== 'once');
     document.getElementById('taskSendTimeCol').classList.toggle('d-none', freq === 'once');
+    document.getElementById('taskExtraTimesRow').classList.toggle('d-none', freq === 'once');
     document.getElementById('taskCustomDaysWrap').classList.toggle('d-none', freq !== 'custom');
 }
 
@@ -1884,6 +1938,8 @@ function openTaskModal(id = null, defDate = null, defTime = null) {
     document.getElementById('taskReminderFreq').value = ev ? (ev.reminder_freq || 'once') : 'once';
     document.getElementById('taskReminderLead').value = ev ? (ev.reminder_lead || '1h') : '1h';
     document.getElementById('taskReminderSendTime').value = ev ? (ev.reminder_send_time || '08:00') : '08:00';
+    document.getElementById('taskReminderSendTime2').value = ev ? (ev.reminder_send_time_2 || '') : '';
+    document.getElementById('taskReminderSendTime3').value = ev ? (ev.reminder_send_time_3 || '') : '';
 
     const savedDays = ev && Array.isArray(ev.reminder_days_arr) ? ev.reminder_days_arr : ['Sen','Sel','Rab','Kam','Jum'];
     document.querySelectorAll('.task-day-cb').forEach(cb => { cb.checked = savedDays.includes(cb.value); });
@@ -1927,6 +1983,8 @@ async function handleTaskSubmit(e) {
     fd.append('reminder_freq', document.getElementById('taskReminderFreq').value);
     fd.append('reminder_lead', document.getElementById('taskReminderLead').value);
     fd.append('reminder_send_time', document.getElementById('taskReminderSendTime').value);
+    fd.append('reminder_send_time_2', document.getElementById('taskReminderSendTime2').value);
+    fd.append('reminder_send_time_3', document.getElementById('taskReminderSendTime3').value);
     fd.append('reminder_days', customDays);
     fd.append('reminder_emails', JSON.stringify(taskEmails));
 
@@ -2008,9 +2066,13 @@ function syncSettingsPreview() {
     document.getElementById('prevEmailTo').textContent = cfgEmails.length ? cfgEmails.join(', ') : '(Belum ada email)';
     const freqMap = { workdays: 'Senin – Jumat', daily: 'Setiap Hari', custom: 'Hari Tertentu' };
     const freq = document.getElementById('cfgDigestFreq').value;
-    const time = document.getElementById('cfgDigestTime').value || '07:30';
+    const times = [
+        document.getElementById('cfgDigestTime').value || '07:30',
+        document.getElementById('cfgDigestTime2').value,
+        document.getElementById('cfgDigestTime3').value
+    ].filter(Boolean).join(', ');
     const enabled = document.getElementById('cfgDigest').checked;
-    document.getElementById('prevEmailSchedule').textContent = enabled ? `${freqMap[freq]}, pukul ${time} WIB` : 'Nonaktif';
+    document.getElementById('prevEmailSchedule').textContent = enabled ? `${freqMap[freq]}, pukul ${times} WIB` : 'Nonaktif';
 
     const todayItems = events.filter(e => e.due_date === relDate(0) && e.status !== 'Done');
     document.getElementById('prevEmailList').innerHTML = todayItems.length
@@ -2033,6 +2095,8 @@ async function saveSettingsToServer() {
     if (document.getElementById('cfgDigest').checked) fd.append('digest_enabled', '1');
     fd.append('digest_freq', document.getElementById('cfgDigestFreq').value);
     fd.append('digest_time', document.getElementById('cfgDigestTime').value);
+    fd.append('digest_time_2', document.getElementById('cfgDigestTime2').value);
+    fd.append('digest_time_3', document.getElementById('cfgDigestTime3').value);
     fd.append('preferences', JSON.stringify(cfgPrefs));
 
     const res = await fetch('index.php?page=notebook&action=saveSettings', {
