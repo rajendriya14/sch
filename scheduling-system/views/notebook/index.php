@@ -438,10 +438,9 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         border-radius: 12px;
         padding: 10px 16px;
         margin-bottom: 16px;
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        width: auto;
-        max-width: 100%;
+        width: 100%;
     }
 
     /* Calendar Shell */
