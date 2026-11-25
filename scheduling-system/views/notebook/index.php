@@ -827,9 +827,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     <!-- LEFT SIDEBAR -->
     <aside class="nb-sidebar" id="nbSidebar">
         <div>
-            <div class="d-flex d-lg-none align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                <span class="fw-bold small" style="color:var(--excel-green);"><i class="bi bi-journal-bookmark me-1"></i>Personal Notebook</span>
-                <button type="button" class="btn-close btn-sm" onclick="toggleSidebar(false)" aria-label="Close"></button>
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <a href="javascript:void(0)" onclick="selectFilter('ALL', 'Personal Notebook')" class="d-inline-flex align-items-center text-decoration-none" title="nyatet.">
+                    <img src="scheduling-system/public/assets/img/nyatet-logo.svg" alt="nyatet." style="height:44px; width:auto; display:block;">
+                </a>
+                <button type="button" class="btn-close btn-sm d-lg-none" onclick="toggleSidebar(false)" aria-label="Close"></button>
             </div>
             <div class="sidebar-search">
                 <i class="bi bi-search"></i>

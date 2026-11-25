@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 38 210 170">
+  <defs>
+    <path id="sheet" d="M60,60 L240,60 L242,80 L238,100 L243,120 L239,140 L242,160 L238,190 L220,182 L202,200 L184,190 L166,202 L148,192 L130,203 L112,191 L94,201 L76,190 L60,196 Z"/>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9CA3AF"/>
+      <stop offset="1" stop-color="#16A34A"/>
+    </linearGradient>
+  </defs>
+
+  <use href="#sheet" transform="translate(-18,-18)" fill="url(#fade)" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+  <use href="#sheet" transform="translate(-9,-9)" fill="url(#fade)" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+  <use href="#sheet" fill="#ffffff" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+
+  <text x="150" y="142" text-anchor="middle" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Ink Free', cursive" font-size="50" font-weight="700" fill="#1a1a1a">nyatet.</text>
+</svg>
