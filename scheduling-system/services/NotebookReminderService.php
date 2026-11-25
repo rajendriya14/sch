@@ -179,19 +179,23 @@ class NotebookReminderService
             }
         }
 
-        // 3. Daily Sticky Note Reminders (up to 3 time slots)
+        // 3. Daily Sticky Note Reminders (up to 3 time slots + day pattern)
         $stStmt = $db->query(
             "SELECT sn.*, u.email AS user_email, ns.emails AS settings_emails
              FROM notebook_sticky_notes sn
              LEFT JOIN users u ON u.id = sn.user_id
              LEFT JOIN notebook_settings ns ON ns.user_id = sn.user_id
-             WHERE (sn.reminder_time IS NOT NULL AND sn.reminder_time <> '')
-                OR (sn.reminder_time_2 IS NOT NULL AND sn.reminder_time_2 <> '')
-                OR (sn.reminder_time_3 IS NOT NULL AND sn.reminder_time_3 <> '')"
+             WHERE sn.email_reminder = 1
+               AND ((sn.reminder_time IS NOT NULL AND sn.reminder_time <> '')
+                 OR (sn.reminder_time_2 IS NOT NULL AND sn.reminder_time_2 <> '')
+                 OR (sn.reminder_time_3 IS NOT NULL AND sn.reminder_time_3 <> ''))"
         );
         $stickies = $stStmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($stickies as $sn) {
+            if (!self::matchesDayPattern($sn['reminder_freq'] ?? 'daily', $dayNum, $dayLabel, (string) ($sn['reminder_days'] ?? ''))) {
+                continue;
+            }
             $sentSlots = array_filter(explode(',', (string) ($sn['last_sent_slots'] ?? '')));
             $times = array_unique(array_filter([
                 !empty($sn['reminder_time']) ? substr((string) $sn['reminder_time'], 0, 5) : '',

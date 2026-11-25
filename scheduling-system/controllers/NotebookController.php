@@ -359,18 +359,24 @@ class NotebookController
     {
         $userId = $this->getCurrentUserId();
         $id     = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
-        $title  = trim((string) ($_POST['title'] ?? ''));
-        $content = trim((string) ($_POST['content'] ?? ''));
-        $theme  = trim((string) ($_POST['theme'] ?? 'sticky-yellow'));
-        $remTime  = trim((string) ($_POST['reminder_time'] ?? ''));
-        $remTime2 = trim((string) ($_POST['reminder_time_2'] ?? ''));
-        $remTime3 = trim((string) ($_POST['reminder_time_3'] ?? ''));
-        $rawEmails = $_POST['reminder_emails'] ?? '[]';
+        $title          = trim((string) ($_POST['title'] ?? ''));
+        $content        = trim((string) ($_POST['content'] ?? ''));
+        $theme          = trim((string) ($_POST['theme'] ?? 'sticky-yellow'));
+        $emailReminder  = !empty($_POST['email_reminder']) ? 1 : 0;
+        $reminderFreq   = trim((string) ($_POST['reminder_freq'] ?? 'daily'));
+        $reminderDays   = trim((string) ($_POST['reminder_days'] ?? ''));
+        $remTime        = trim((string) ($_POST['reminder_time'] ?? ''));
+        $remTime2       = trim((string) ($_POST['reminder_time_2'] ?? ''));
+        $remTime3       = trim((string) ($_POST['reminder_time_3'] ?? ''));
+        $rawEmails      = $_POST['reminder_emails'] ?? '[]';
 
         if ($title === '' || $content === '') {
             $this->jsonResponse(['success' => false, 'message' => 'Judul dan isi sticky note tidak boleh kosong.'], 400);
         }
 
+        if (!in_array($reminderFreq, ['workdays', 'daily', 'custom'], true)) {
+            $reminderFreq = 'daily';
+        }
         if ($remTime !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime)) $remTime = '';
         if ($remTime2 !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime2)) $remTime2 = '';
         if ($remTime3 !== '' && !preg_match('/^\d{2}:\d{2}$/', $remTime3)) $remTime3 = '';
@@ -388,6 +394,9 @@ class NotebookController
             'title'           => $title,
             'content'         => $content,
             'theme'           => $theme,
+            'email_reminder'  => $emailReminder,
+            'reminder_freq'   => $reminderFreq,
+            'reminder_days'   => $reminderDays !== '' ? $reminderDays : null,
             'reminder_time'   => $remTime,
             'reminder_time_2' => $remTime2,
             'reminder_time_3' => $remTime3,

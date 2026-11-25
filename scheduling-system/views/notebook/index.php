@@ -935,55 +935,68 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <label class="form-label small fw-semibold">Isi Catatan <span class="text-danger">*</span></label>
                         <textarea id="stickyContent" rows="4" required class="form-control" placeholder="Tulis catatan Anda di sini..."></textarea>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-12 col-sm-6">
-                            <label class="form-label small fw-semibold">Warna Sticky</label>
-                            <select id="stickyTheme" class="form-select form-select-sm">
-                                <option value="sticky-yellow">Kuning Hangat</option>
-                                <option value="sticky-green">Hijau Segar</option>
-                                <option value="sticky-blue">Biru Langit</option>
-                                <option value="sticky-pink">Merah Muda</option>
-                                <option value="sticky-purple">Ungu Lembut</option>
-                            </select>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Warna Sticky</label>
+                        <select id="stickyTheme" class="form-select form-select-sm">
+                            <option value="sticky-yellow">Kuning Hangat</option>
+                            <option value="sticky-green">Hijau Segar</option>
+                            <option value="sticky-blue">Biru Langit</option>
+                            <option value="sticky-pink">Merah Muda</option>
+                            <option value="sticky-purple">Ungu Lembut</option>
+                        </select>
+                    </div>
+
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="stickyEmailReminder" onchange="toggleStickyReminderBox()">
+                            <label class="form-check-label small fw-semibold" for="stickyEmailReminder">
+                                <i class="bi bi-envelope-check me-1" style="color:var(--excel-green);"></i> Kirim Email Reminder
+                            </label>
                         </div>
-                        <div class="col-12 col-sm-6">
-                            <label class="form-label small fw-semibold">Reminder 1 (Utama)</label>
-                            <select id="stickyReminderTime" class="form-select form-select-sm">
-                                <option value="">Tidak di-reminder</option>
-                                <option value="07:00">Setiap hari jam 07:00</option>
-                                <option value="08:00">Setiap hari jam 08:00</option>
-                                <option value="09:00">Setiap hari jam 09:00</option>
-                                <option value="12:00">Setiap hari jam 12:00</option>
-                                <option value="15:00">Setiap hari jam 15:00</option>
-                                <option value="18:00">Setiap hari jam 18:00</option>
-                                <option value="20:00">Setiap hari jam 20:00</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold">Reminder 2 (Opsional)</label>
-                            <select id="stickyReminderTime2" class="form-select form-select-sm">
-                                <option value="">Tidak ada</option>
-                                <option value="07:00">07:00 WIB</option>
-                                <option value="08:00">08:00 WIB</option>
-                                <option value="09:00">09:00 WIB</option>
-                                <option value="12:00">12:00 WIB</option>
-                                <option value="15:00">15:00 WIB</option>
-                                <option value="18:00">18:00 WIB</option>
-                                <option value="20:00">20:00 WIB</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-semibold">Reminder 3 (Opsional)</label>
-                            <select id="stickyReminderTime3" class="form-select form-select-sm">
-                                <option value="">Tidak ada</option>
-                                <option value="07:00">07:00 WIB</option>
-                                <option value="08:00">08:00 WIB</option>
-                                <option value="09:00">09:00 WIB</option>
-                                <option value="12:00">12:00 WIB</option>
-                                <option value="15:00">15:00 WIB</option>
-                                <option value="18:00">18:00 WIB</option>
-                                <option value="20:00">20:00 WIB</option>
-                            </select>
+                        <div id="stickyReminderBox" class="d-none">
+                            <div class="row g-2 mb-2">
+                                <div class="col-7">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Frekuensi / Pola Hari</label>
+                                    <select id="stickyReminderFreq" class="form-select form-select-sm" onchange="toggleStickyFreqFields()">
+                                        <option value="workdays">Setiap Hari Kerja (Senin–Jumat)</option>
+                                        <option value="daily" selected>Setiap Hari (Senin–Minggu)</option>
+                                        <option value="custom">Pilih Hari Tertentu</option>
+                                    </select>
+                                </div>
+                                <div class="col-5">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 1 (Utama)</label>
+                                    <input type="time" id="stickyReminderTime" class="form-control form-control-sm" value="08:00">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 2 (Opsional)</label>
+                                    <input type="time" id="stickyReminderTime2" class="form-control form-control-sm" value="">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Jam 3 (Opsional)</label>
+                                    <input type="time" id="stickyReminderTime3" class="form-control form-control-sm" value="">
+                                </div>
+                            </div>
+
+                            <div id="stickyCustomDaysWrap" class="d-none mb-2">
+                                <div class="d-flex flex-wrap gap-1">
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Sen" checked>Sen</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Sel" checked>Sel</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Rab" checked>Rab</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Kam" checked>Kam</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Jum" checked>Jum</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Sab">Sab</label>
+                                    <label class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;"><input type="checkbox" class="sticky-day-cb me-1" value="Min">Min</label>
+                                </div>
+                            </div>
+
+                            <label class="form-label mb-1" style="font-size:0.74rem; color:#4b5563;">Kirim ke Email (bisa lebih dari 1 akun)</label>
+                            <div id="stickyEmailChips" class="d-flex flex-wrap gap-1 mb-1"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="email" id="stickyEmailInput" class="form-control" placeholder="Ketik email lalu tekan Enter..." onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addEmailChip('sticky');}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="addEmailChip('sticky')">+ Tambah</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1373,6 +1386,7 @@ let cfgPrefs = Object.assign({
 let cfgHolidays = Array.isArray(cfgPrefs.holidays) ? [...cfgPrefs.holidays] : [];
 let cfgEmails = Array.isArray(cfgSettings.emails) ? [...cfgSettings.emails] : [];
 let taskEmails = [];
+let stickyEmails = [];
 
 let currentView = cfgPrefs.default_view || 'month';
 let currentDate = new Date();
@@ -1911,16 +1925,14 @@ async function handleKanbanDrop(e, newStatus) {
 }
 
 /* STICKY NOTES */
-const STICKY_TIME_OPTS = [
-    { val: '', label: 'Tidak di-reminder' },
-    { val: '07:00', label: 'Setiap hari jam 07:00' },
-    { val: '08:00', label: 'Setiap hari jam 08:00' },
-    { val: '09:00', label: 'Setiap hari jam 09:00' },
-    { val: '12:00', label: 'Setiap hari jam 12:00' },
-    { val: '15:00', label: 'Setiap hari jam 15:00' },
-    { val: '18:00', label: 'Setiap hari jam 18:00' },
-    { val: '20:00', label: 'Setiap hari jam 20:00' }
-];
+function toggleStickyReminderBox() {
+    document.getElementById('stickyReminderBox').classList.toggle('d-none', !document.getElementById('stickyEmailReminder').checked);
+}
+
+function toggleStickyFreqFields() {
+    const freq = document.getElementById('stickyReminderFreq').value;
+    document.getElementById('stickyCustomDaysWrap').classList.toggle('d-none', freq !== 'custom');
+}
 
 function renderStickyView() {
     const q = (document.getElementById('sidebarSearch').value || '').toLowerCase().trim();
@@ -1932,7 +1944,12 @@ function renderStickyView() {
         return;
     }
 
-    grid.innerHTML = list.map(s => `
+    const freqLabels = { workdays: 'Senin–Jumat', daily: 'Setiap Hari', custom: 'Hari Tertentu' };
+    grid.innerHTML = list.map(s => {
+        const times = [s.reminder_time, s.reminder_time_2, s.reminder_time_3].filter(Boolean);
+        const remOn = !!s.email_reminder && times.length > 0;
+        const emCnt = Array.isArray(s.reminder_emails) ? s.reminder_emails.length : 0;
+        return `
         <div class="col-12 col-sm-6 col-lg-4">
             <div class="sticky-card ${s.theme || 'sticky-yellow'}">
                 <div>
@@ -1945,16 +1962,16 @@ function renderStickyView() {
                     </div>
                     <p class="small mb-3" style="white-space: pre-line;">${esc(s.content)}</p>
                 </div>
-                <div class="pt-2 border-top border-dark border-opacity-10">
-                    <label class="d-block text-muted mb-1" style="font-size:0.7rem;"><i class="bi bi-bell me-1"></i>Pengingat Email Harian</label>
-                    <select class="form-select form-select-sm bg-white" onchange="changeStickyReminder(${s.id}, this.value)">
-                        ${STICKY_TIME_OPTS.map(o => `<option value="${o.val}" ${(s.reminder_time || '') === o.val ? 'selected' : ''}>${o.label}</option>`).join('')}
-                    </select>
-                    ${(s.reminder_time_2 || s.reminder_time_3) ? `<div class="text-muted mt-1" style="font-size:0.7rem;">+ Jam tambahan: ${[s.reminder_time_2, s.reminder_time_3].filter(Boolean).join(', ')} WIB</div>` : ''}
+                <div class="pt-2 border-top border-dark border-opacity-10 d-flex align-items-center justify-content-between gap-2" style="cursor:pointer;" onclick="openStickyModal(${s.id})">
+                    ${remOn
+                        ? `<span class="small fw-semibold" style="color:var(--excel-green);"><i class="bi bi-envelope-check me-1"></i>${freqLabels[s.reminder_freq] || 'Setiap Hari'} &middot; ${times.join(', ')} WIB${emCnt ? ` (${emCnt} akun)` : ''}</span>`
+                        : `<span class="small text-muted"><i class="bi bi-bell-slash me-1"></i>Tidak di-reminder</span>`}
+                    <span class="badge bg-white text-dark border" style="font-size:0.68rem;">Atur</span>
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function openStickyModal(id = null) {
@@ -1964,9 +1981,20 @@ function openStickyModal(id = null) {
     document.getElementById('stickyTitle').value = s ? s.title : '';
     document.getElementById('stickyContent').value = s ? s.content : '';
     document.getElementById('stickyTheme').value = s ? (s.theme || 'sticky-yellow') : 'sticky-yellow';
-    document.getElementById('stickyReminderTime').value = s ? (s.reminder_time || '') : '';
+    document.getElementById('stickyEmailReminder').checked = s ? !!s.email_reminder : false;
+    document.getElementById('stickyReminderFreq').value = s ? (s.reminder_freq || 'daily') : 'daily';
+    document.getElementById('stickyReminderTime').value = s ? (s.reminder_time || '08:00') : '08:00';
     document.getElementById('stickyReminderTime2').value = s ? (s.reminder_time_2 || '') : '';
     document.getElementById('stickyReminderTime3').value = s ? (s.reminder_time_3 || '') : '';
+
+    const savedDays = s && Array.isArray(s.reminder_days_arr) && s.reminder_days_arr.length ? s.reminder_days_arr : ['Sen','Sel','Rab','Kam','Jum'];
+    document.querySelectorAll('.sticky-day-cb').forEach(cb => { cb.checked = savedDays.includes(cb.value); });
+
+    stickyEmails = s && Array.isArray(s.reminder_emails) && s.reminder_emails.length ? [...s.reminder_emails] : [...cfgEmails];
+    renderEmailChips('sticky');
+    toggleStickyReminderBox();
+    toggleStickyFreqFields();
+
     document.getElementById('btnDeleteSticky').classList.toggle('d-none', !s);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('stickyModal')).show();
 }
@@ -1975,15 +2003,19 @@ async function handleStickySubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('btnSaveSticky');
     btn.disabled = true;
+    const customDays = Array.from(document.querySelectorAll('.sticky-day-cb:checked')).map(c => c.value).join(',');
     const fd = new FormData();
     fd.append('id', document.getElementById('stickyId').value);
     fd.append('title', document.getElementById('stickyTitle').value.trim());
     fd.append('content', document.getElementById('stickyContent').value.trim());
     fd.append('theme', document.getElementById('stickyTheme').value);
+    if (document.getElementById('stickyEmailReminder').checked) fd.append('email_reminder', '1');
+    fd.append('reminder_freq', document.getElementById('stickyReminderFreq').value);
+    fd.append('reminder_days', customDays);
     fd.append('reminder_time', document.getElementById('stickyReminderTime').value);
     fd.append('reminder_time_2', document.getElementById('stickyReminderTime2').value);
     fd.append('reminder_time_3', document.getElementById('stickyReminderTime3').value);
-    fd.append('reminder_emails', JSON.stringify(cfgEmails));
+    fd.append('reminder_emails', JSON.stringify(stickyEmails));
 
     try {
         const res = await fetch('index.php?page=notebook&action=saveSticky', {
@@ -2002,21 +2034,6 @@ async function handleStickySubmit(e) {
         }
     } finally {
         btn.disabled = false;
-    }
-}
-
-async function changeStickyReminder(id, timeVal) {
-    const fd = new FormData();
-    fd.append('id', id);
-    fd.append('reminder_time', timeVal);
-    const res = await fetch('index.php?page=notebook&action=updateStickyReminder', {
-        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
-    });
-    const json = await res.json();
-    if (json.success) {
-        const s = stickies.find(x => x.id === id);
-        if (s) s.reminder_time = timeVal;
-        showToast(json.message);
     }
 }
 
@@ -2083,11 +2100,16 @@ function toggleTaskFreqFields() {
     document.getElementById('taskCustomDaysWrap').classList.toggle('d-none', freq !== 'custom');
 }
 
+function getEmailTargetArr(target) {
+    return target === 'cfg' ? cfgEmails : (target === 'sticky' ? stickyEmails : taskEmails);
+}
+
 function addEmailChip(target) {
-    const input = document.getElementById(target === 'cfg' ? 'cfgEmailInput' : 'taskEmailInput');
+    const inputId = target === 'cfg' ? 'cfgEmailInput' : (target === 'sticky' ? 'stickyEmailInput' : 'taskEmailInput');
+    const input = document.getElementById(inputId);
     const val = input.value.replace(/,/g, '').trim();
     if (!val || !val.includes('@')) return;
-    const arr = target === 'cfg' ? cfgEmails : taskEmails;
+    const arr = getEmailTargetArr(target);
     if (!arr.includes(val)) arr.push(val);
     input.value = '';
     renderEmailChips(target);
@@ -2095,15 +2117,16 @@ function addEmailChip(target) {
 }
 
 function removeEmailChip(target, idx) {
-    const arr = target === 'cfg' ? cfgEmails : taskEmails;
+    const arr = getEmailTargetArr(target);
     arr.splice(idx, 1);
     renderEmailChips(target);
     if (target === 'cfg') { syncSettingsPreview(); updateSidebarCounts(); }
 }
 
 function renderEmailChips(target) {
-    const arr = target === 'cfg' ? cfgEmails : taskEmails;
-    const container = document.getElementById(target === 'cfg' ? 'cfgEmailChips' : 'taskEmailChips');
+    const arr = getEmailTargetArr(target);
+    const containerId = target === 'cfg' ? 'cfgEmailChips' : (target === 'sticky' ? 'stickyEmailChips' : 'taskEmailChips');
+    const container = document.getElementById(containerId);
     container.innerHTML = arr.map((em, i) => `
         <span class="badge d-inline-flex align-items-center gap-1 fw-normal" style="background:var(--excel-green-soft); color:var(--excel-green); border:1px solid var(--excel-green-border); font-size:0.74rem; padding:4px 8px;">
             ${esc(em)}

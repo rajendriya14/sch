@@ -412,6 +412,9 @@ class Database
                     title                   VARCHAR(255) NOT NULL,
                     content                 TEXT NOT NULL,
                     theme                   VARCHAR(30) NOT NULL DEFAULT "sticky-yellow",
+                    email_reminder          TINYINT(1) NOT NULL DEFAULT 0,
+                    reminder_freq           ENUM("workdays", "daily", "custom") NOT NULL DEFAULT "daily",
+                    reminder_days           VARCHAR(60) DEFAULT NULL,
                     reminder_time           VARCHAR(10) DEFAULT NULL,
                     reminder_time_2         VARCHAR(10) DEFAULT NULL,
                     reminder_time_3         VARCHAR(10) DEFAULT NULL,
@@ -424,6 +427,9 @@ class Database
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
             foreach ([
+                'email_reminder'  => 'TINYINT(1) NOT NULL DEFAULT 0 AFTER theme',
+                'reminder_freq'   => 'ENUM("workdays","daily","custom") NOT NULL DEFAULT "daily" AFTER email_reminder',
+                'reminder_days'   => 'VARCHAR(60) DEFAULT NULL AFTER reminder_freq',
                 'reminder_time_2' => 'VARCHAR(10) DEFAULT NULL AFTER reminder_time',
                 'reminder_time_3' => 'VARCHAR(10) DEFAULT NULL AFTER reminder_time_2',
                 'last_sent_slots' => 'VARCHAR(120) DEFAULT NULL AFTER last_reminder_sent_date',
@@ -433,6 +439,11 @@ class Database
                 } catch (\PDOException $e) {
                     // Column already exists
                 }
+            }
+            try {
+                self::$instance->exec('UPDATE notebook_sticky_notes SET email_reminder = 1 WHERE reminder_time IS NOT NULL AND reminder_time <> "" AND email_reminder = 0');
+            } catch (\PDOException $e) {
+                // Ignore
             }
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
