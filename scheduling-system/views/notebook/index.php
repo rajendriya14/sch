@@ -1269,7 +1269,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Sampai Tanggal</label>
                             <input type="hidden" id="taskEndDate">
-                            <button type="button" class="nb-date-trigger" id="taskEndDateBtn" onclick="openNbDatePicker('task-range', this)">
+                            <button type="button" class="nb-date-trigger" id="taskEndDateBtn" onclick="openNbDatePicker('task-end', this)">
                                 <span id="taskEndDateDisplay">-</span>
                                 <i class="bi bi-calendar3 text-muted"></i>
                             </button>
@@ -1631,8 +1631,8 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     </div>
 </div>
 
-<div class="nb-dp-popover" id="nbDatePickerPopover"></div>
-<div class="nb-tp-popover" id="nbTimePickerPopover"></div>
+<div class="nb-dp-popover" id="nbDatePickerPopover" onclick="event.stopPropagation()"></div>
+<div class="nb-tp-popover" id="nbTimePickerPopover" onclick="event.stopPropagation()"></div>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
 
 <script>
@@ -2448,10 +2448,12 @@ function openNbDatePicker(mode, triggerEl) {
     dpState.mode = mode;
     dpState.step = 0;
 
-    if (mode === 'task-range') {
+    if (mode === 'task-range' || mode === 'task-end') {
         dpState.start = document.getElementById('taskDate').value || relDate(0);
         dpState.end   = document.getElementById('taskEndDate').value || dpState.start;
-        const [y, m] = dpState.start.split('-').map(Number);
+        dpState.step  = mode === 'task-end' ? 1 : 0;
+        const ref = mode === 'task-end' ? dpState.end : dpState.start;
+        const [y, m] = ref.split('-').map(Number);
         dpState.baseDate = new Date(y, m - 1, 1);
     } else {
         dpState.start = document.getElementById('holidayDateInput').value || '';
@@ -2500,7 +2502,7 @@ function renderNbDatePicker() {
             ${buildDpMonthHtml(y1, m1, true, false)}
             <div class="nb-dp-month-second">${buildDpMonthHtml(y2, m2, false, true)}</div>
         </div>
-        ${dpState.mode === 'task-range' ? `<div class="text-muted text-center mt-2" style="font-size:0.72rem;">${dpState.step === 1 ? 'Klik tanggal akhir rentang...' : 'Klik tanggal mulai, lalu tanggal akhir'}</div>` : ''}
+        ${(dpState.mode === 'task-range' || dpState.mode === 'task-end') ? `<div class="text-muted text-center mt-2" style="font-size:0.72rem;">${dpState.step === 1 ? 'Klik tanggal akhir rentang...' : 'Klik tanggal mulai, lalu tanggal akhir'}</div>` : ''}
     `;
 }
 
@@ -2523,7 +2525,7 @@ function buildDpMonthHtml(year, month, showPrev, showNext) {
         const isRed = (dow === 0 || dow === 6 || isHol);
         const isStart = ds === dpState.start;
         const isEnd   = ds === dpState.end;
-        const inRange = dpState.mode === 'task-range' && dpState.start && dpState.end && ds > dpState.start && ds < dpState.end;
+        const inRange = (dpState.mode === 'task-range' || dpState.mode === 'task-end') && dpState.start && dpState.end && ds > dpState.start && ds < dpState.end;
         const cls = [
             'nb-dp-day',
             c.other ? 'is-other' : '',
@@ -2676,7 +2678,7 @@ function renderNbTimePicker(scrollToActive = false) {
         return `<div class="nb-tp-item ${sel}" data-tp-min="${m}" onclick="pickNbTimePart('minute', '${m}')">${m}</div>`;
     }).join('');
 
-    const titleText = escapeHtml(getTpContextTitle());
+    const titleText = esc(getTpContextTitle());
     const curVal = (document.getElementById(tpState.inputId)?.value || '').trim();
     const captionTime = /^\d{2}:\d{2}$/.test(curVal) ? curVal : `${tpState.hour}:${tpState.minute}`;
 
