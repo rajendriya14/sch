@@ -321,7 +321,15 @@ class NotebookController
         $num = 1;
         foreach ($tasks as $t) {
             $tTitle = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
-            $tTime  = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') . ' WIB' : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
+            $due    = (string) ($t['due_date'] ?? '');
+            $end    = !empty($t['end_date']) ? (string) $t['end_date'] : $due;
+            $tm     = !empty($t['due_time']) ? htmlspecialchars((string) $t['due_time'], ENT_QUOTES, 'UTF-8') . ' WIB' : '';
+            if ($due !== '' && $end !== '' && $end !== $due) {
+                $range = date('d/m/Y', strtotime($due)) . ' – ' . date('d/m/Y', strtotime($end));
+                $tTime = $tm !== '' ? "{$range} &middot; {$tm}" : $range;
+            } else {
+                $tTime = $tm !== '' ? $tm : ($due !== '' ? date('d/m/Y', strtotime($due)) : 'Seharian');
+            }
             $tPrio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
             $prioColor = $tPrio === 'High' ? '#b91c1c' : '#374151';
             $itemsHtml .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"

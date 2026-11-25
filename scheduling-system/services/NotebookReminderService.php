@@ -268,17 +268,32 @@ class NotebookReminderService
         return in_array($dayLabel, $days, true);
     }
 
+    private static function formatTaskScheduleLine(array $t): string
+    {
+        $due = (string) ($t['due_date'] ?? '');
+        $end = !empty($t['end_date']) ? (string) $t['end_date'] : $due;
+        $timeStr = !empty($t['due_time']) ? substr((string) $t['due_time'], 0, 5) . ' WIB' : '';
+
+        if ($due !== '' && $end !== '' && $end !== $due) {
+            $d1 = date('d/m/Y', strtotime($due));
+            $d2 = date('d/m/Y', strtotime($end));
+            $range = "{$d1} – {$d2}";
+            return $timeStr !== '' ? "{$range} &middot; {$timeStr}" : $range;
+        }
+        return $timeStr !== '' ? $timeStr : ($due !== '' ? date('d/m/Y', strtotime($due)) : 'Seharian');
+    }
+
     private static function buildTaskEmailHtml(array $t): string
     {
         $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
-        $time  = !empty($t['due_time']) ? substr((string) $t['due_time'], 0, 5) . ' WIB' : htmlspecialchars((string) $t['due_date'], ENT_QUOTES, 'UTF-8');
+        $sched = self::formatTaskScheduleLine($t);
         $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
         $uName = htmlspecialchars((string) ($t['username'] ?? 'User'), ENT_QUOTES, 'UTF-8');
         $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
 
         $itemHtml = "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
             . "<div style='font-weight:bold;color:#111827;'>1. {$title} <span style='color:{$prioColor};font-size:12px;'>[{$prio}]</span></div>"
-            . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$time}</div></div>";
+            . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$sched}</div></div>";
 
         return self::wrapEmailLayout($uName, $itemHtml);
     }
@@ -290,11 +305,11 @@ class NotebookReminderService
         foreach ($tasks as $t) {
             $title = htmlspecialchars((string) $t['title'], ENT_QUOTES, 'UTF-8');
             $prio  = htmlspecialchars((string) ($t['priority'] ?? 'Medium'), ENT_QUOTES, 'UTF-8');
-            $time  = !empty($t['due_time']) ? substr((string) $t['due_time'], 0, 5) . ' WIB' : 'Seharian';
+            $sched = self::formatTaskScheduleLine($t);
             $prioColor = $prio === 'High' ? '#b91c1c' : '#374151';
             $items .= "<div style='border:1px solid #e5e7eb;border-left:4px solid #217346;border-radius:6px;padding:10px 14px;margin-bottom:10px;'>"
                 . "<div style='font-weight:bold;color:#111827;'>{$num}. {$title} <span style='color:{$prioColor};font-size:12px;'>[{$prio}]</span></div>"
-                . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$time}</div></div>";
+                . "<div style='font-size:12px;color:#6b7280;margin-top:4px;'>{$sched}</div></div>";
             $num++;
         }
 
