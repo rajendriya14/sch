@@ -13,7 +13,11 @@ try {
         exit;
     }
     $res = \Services\NotebookReminderService::run();
-    echo json_encode(['success' => true, 'time_wib' => date('Y-m-d H:i:s'), 'result' => $res], JSON_UNESCAPED_UNICODE);
+    $payload = ['success' => true, 'time_wib' => date('Y-m-d H:i:s'), 'result' => $res];
+    if (!empty($_GET['debug'])) {
+        $payload['diagnose'] = \Services\NotebookReminderService::diagnose();
+    }
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
 } catch (\Throwable $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);

@@ -227,6 +227,69 @@ class NotebookReminderService
     }
 
     /**
+     * Return safe diagnostic summary for active reminders (no secrets or content).
+     */
+    public static function diagnose(): array
+    {
+        $tz      = new \DateTimeZone('Asia/Jakarta');
+        $now     = new \DateTimeImmutable('now', $tz);
+        $today   = $now->format('Y-m-d');
+        $nowMins = ((int) $now->format('H')) * 60 + (int) $now->format('i');
+        $db      = Database::getInstance();
+
+        $out = ['now_wib' => $now->format('Y-m-d H:i:s'), 'tasks' => [], 'stickies' => []];
+
+        $tRows = $db->query(
+            "SELECT t.id, t.due_date, t.end_date, t.status, t.email_reminder, t.reminder_freq,
+                    t.reminder_send_time, t.reminder_send_time_2, t.reminder_send_time_3,
+                    t.reminder_emails, t.last_sent_slots, t.last_reminder_sent_at, ns.emails AS settings_emails
+             FROM notebook_tasks t
+             LEFT JOIN notebook_settings ns ON ns.user_id = t.user_id
+             WHERE t.email_reminder = 1 AND t.status <> 'Done'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($tRows as $t) {
+            $rcpt = json_decode((string) ($t['reminder_emails'] ?? '[]'), true);
+            if (!is_array($rcpt) || empty($rcpt)) {
+                $rcpt = json_decode((string) ($t['settings_emails'] ?? '[]'), true);
+            }
+            $out['tasks'][] = [
+                'id'           => (int) $t['id'],
+                'freq'         => $t['reminder_freq'],
+                'range'        => $t['due_date'] . '..' . ($t['end_date'] ?: $t['due_date']),
+                'times'        => array_values(array_filter([$t['reminder_send_time'], $t['reminder_send_time_2'], $t['reminder_send_time_3']])),
+                'has_rcpt'     => is_array($rcpt) && !empty($rcpt),
+                'sent_slots'   => $t['last_sent_slots'],
+                'last_sent_at' => $t['last_reminder_sent_at'],
+            ];
+        }
+
+        $sRows = $db->query(
+            "SELECT sn.id, sn.email_reminder, sn.reminder_freq, sn.reminder_time, sn.reminder_time_2, sn.reminder_time_3,
+                    sn.reminder_emails, sn.last_sent_slots, ns.emails AS settings_emails
+             FROM notebook_sticky_notes sn
+             LEFT JOIN notebook_settings ns ON ns.user_id = sn.user_id
+             WHERE sn.email_reminder = 1"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($sRows as $s) {
+            $rcpt = json_decode((string) ($s['reminder_emails'] ?? '[]'), true);
+            if (!is_array($rcpt) || empty($rcpt)) {
+                $rcpt = json_decode((string) ($s['settings_emails'] ?? '[]'), true);
+            }
+            $out['stickies'][] = [
+                'id'         => (int) $s['id'],
+                'freq'       => $s['reminder_freq'],
+                'times'      => array_values(array_filter([$s['reminder_time'], $s['reminder_time_2'], $s['reminder_time_3']])),
+                'has_rcpt'   => is_array($rcpt) && !empty($rcpt),
+                'sent_slots' => $s['last_sent_slots'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Find all time slots due within the active 2-hour window that haven't been sent today.
      *
      * @param string[] $times
