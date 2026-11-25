@@ -31,6 +31,7 @@ class NotebookReminderService
         $now      = new \DateTimeImmutable('now', $tz);
         $today    = $now->format('Y-m-d');
         $nowTime  = $now->format('H:i');
+        $nowMins  = ((int) $now->format('H')) * 60 + (int) $now->format('i');
         $dayNum   = (int) $now->format('N'); // 1 (Mon) .. 7 (Sun)
         $dayLabel = self::DAY_MAP[$dayNum] ?? 'Sen';
 
@@ -61,7 +62,6 @@ class NotebookReminderService
             $lastSent = $t['last_reminder_sent_at'] ?? null;
             $dueDate  = $t['due_date'];
             $endDate  = !empty($t['end_date']) ? $t['end_date'] : $dueDate;
-            $shouldSend = false;
 
             if ($freq === 'once') {
                 if (!empty($lastSent)) {
@@ -71,8 +71,18 @@ class NotebookReminderService
                 $dueDt      = new \DateTimeImmutable("{$dueDate} {$dueTimeStr}:00", $tz);
                 $leadMap    = ['15m' => '-15 minutes', '1h' => '-1 hour', '1d' => '-1 day'];
                 $triggerDt  = $dueDt->modify($leadMap[$t['reminder_lead'] ?? '1h'] ?? '-1 hour');
-                if ($now >= $triggerDt) {
-                    $shouldSend = true;
+                if ($now < $triggerDt) {
+                    continue;
+                }
+
+                $html = self::buildTaskEmailHtml($t);
+                $sendRes = $mail->send($recipients, '[Notebook Reminder] ' . $t['title'], $html);
+                if ($sendRes['success']) {
+                    $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ? WHERE id = ?');
+                    $upd->execute([$now->format('Y-m-d H:i:s'), $t['id']]);
+                    $result['tasks_sent']++;
+                } else {
+                    $result['errors'][] = "Task #{$t['id']}: " . $sendRes['message'];
                 }
             } else {
                 // Recurring: up to 3 daily time slots within [due_date .. end_date]
@@ -82,46 +92,26 @@ class NotebookReminderService
                 if (!self::matchesDayPattern($freq, $dayNum, $dayLabel, (string) ($t['reminder_days'] ?? ''))) {
                     continue;
                 }
-                $sentSlots = array_filter(explode(',', (string) ($t['last_sent_slots'] ?? '')));
+                $sentSlots = array_values(array_filter(explode(',', (string) ($t['last_sent_slots'] ?? '')), static fn($s) => strpos($s, $today) === 0));
                 $times = array_unique(array_filter([
                     !empty($t['reminder_send_time']) ? substr((string) $t['reminder_send_time'], 0, 5) : '08:00',
                     !empty($t['reminder_send_time_2']) ? substr((string) $t['reminder_send_time_2'], 0, 5) : '',
                     !empty($t['reminder_send_time_3']) ? substr((string) $t['reminder_send_time_3'], 0, 5) : '',
                 ]));
-                $matchedSlot = null;
-                foreach ($times as $tm) {
-                    $slotKey = "{$today}@{$tm}";
-                    if ($nowTime >= $tm && !in_array($slotKey, $sentSlots, true)) {
-                        $matchedSlot = $slotKey;
-                        break;
+
+                $dueSlots = self::findDueSlots($times, $nowMins, $today, $sentSlots);
+                foreach ($dueSlots as $slotKey) {
+                    $html = self::buildTaskEmailHtml($t);
+                    $sendRes = $mail->send($recipients, '[Notebook Reminder] ' . $t['title'], $html);
+                    if ($sendRes['success']) {
+                        $sentSlots[] = $slotKey;
+                        $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ?, last_sent_slots = ? WHERE id = ?');
+                        $upd->execute([$now->format('Y-m-d H:i:s'), implode(',', $sentSlots), $t['id']]);
+                        $result['tasks_sent']++;
+                    } else {
+                        $result['errors'][] = "Task #{$t['id']}: " . $sendRes['message'];
                     }
                 }
-                if ($matchedSlot === null) {
-                    continue;
-                }
-                $shouldSend = true;
-            }
-
-            if (!$shouldSend) {
-                continue;
-            }
-
-            $html = self::buildTaskEmailHtml($t);
-            $sendRes = $mail->send($recipients, '[Notebook Reminder] ' . $t['title'], $html);
-            if ($sendRes['success']) {
-                if (isset($matchedSlot)) {
-                    $sentSlots[] = $matchedSlot;
-                    $sentSlots = array_values(array_filter($sentSlots, static fn($s) => strpos($s, $today) === 0));
-                    $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ?, last_sent_slots = ? WHERE id = ?');
-                    $upd->execute([$now->format('Y-m-d H:i:s'), implode(',', $sentSlots), $t['id']]);
-                    unset($matchedSlot);
-                } else {
-                    $upd = $db->prepare('UPDATE notebook_tasks SET last_reminder_sent_at = ? WHERE id = ?');
-                    $upd->execute([$now->format('Y-m-d H:i:s'), $t['id']]);
-                }
-                $result['tasks_sent']++;
-            } else {
-                $result['errors'][] = "Task #{$t['id']}: " . $sendRes['message'];
             }
         }
 
@@ -137,21 +127,15 @@ class NotebookReminderService
             if (!self::matchesDayPattern($s['digest_freq'] ?? 'workdays', $dayNum, $dayLabel, (string) ($s['digest_days'] ?? ''))) {
                 continue;
             }
-            $sentSlots = array_filter(explode(',', (string) ($s['last_digest_slots'] ?? '')));
+            $sentSlots = array_values(array_filter(explode(',', (string) ($s['last_digest_slots'] ?? '')), static fn($x) => strpos($x, $today) === 0));
             $times = array_unique(array_filter([
                 substr((string) ($s['digest_time'] ?? '07:30:00'), 0, 5),
                 !empty($s['digest_time_2']) ? substr((string) $s['digest_time_2'], 0, 5) : '',
                 !empty($s['digest_time_3']) ? substr((string) $s['digest_time_3'], 0, 5) : '',
             ]));
-            $matchedSlot = null;
-            foreach ($times as $tm) {
-                $slotKey = "{$today}@{$tm}";
-                if ($nowTime >= $tm && !in_array($slotKey, $sentSlots, true)) {
-                    $matchedSlot = $slotKey;
-                    break;
-                }
-            }
-            if ($matchedSlot === null) {
+
+            $dueSlots = self::findDueSlots($times, $nowMins, $today, $sentSlots);
+            if (empty($dueSlots)) {
                 continue;
             }
 
@@ -166,16 +150,17 @@ class NotebookReminderService
                 continue;
             }
 
-            $html = self::buildDigestEmailHtml($dayTasks, $today);
-            $sendRes = $mail->send($emails, "[Personal Notebook] Briefing Agenda ({$today})", $html);
-            if ($sendRes['success']) {
-                $sentSlots[] = $matchedSlot;
-                $sentSlots = array_values(array_filter($sentSlots, static fn($x) => strpos($x, $today) === 0));
-                $upd = $db->prepare('UPDATE notebook_settings SET last_digest_sent_date = ?, last_digest_slots = ? WHERE user_id = ?');
-                $upd->execute([$today, implode(',', $sentSlots), $s['user_id']]);
-                $result['briefings_sent']++;
-            } else {
-                $result['errors'][] = "Briefing user #{$s['user_id']}: " . $sendRes['message'];
+            foreach ($dueSlots as $slotKey) {
+                $html = self::buildDigestEmailHtml($dayTasks, $today);
+                $sendRes = $mail->send($emails, "[Personal Notebook] Briefing Agenda ({$today})", $html);
+                if ($sendRes['success']) {
+                    $sentSlots[] = $slotKey;
+                    $upd = $db->prepare('UPDATE notebook_settings SET last_digest_sent_date = ?, last_digest_slots = ? WHERE user_id = ?');
+                    $upd->execute([$today, implode(',', $sentSlots), $s['user_id']]);
+                    $result['briefings_sent']++;
+                } else {
+                    $result['errors'][] = "Briefing user #{$s['user_id']}: " . $sendRes['message'];
+                }
             }
         }
 
@@ -196,25 +181,18 @@ class NotebookReminderService
             if (!self::matchesDayPattern($sn['reminder_freq'] ?? 'daily', $dayNum, $dayLabel, (string) ($sn['reminder_days'] ?? ''))) {
                 continue;
             }
-            $sentSlots = array_filter(explode(',', (string) ($sn['last_sent_slots'] ?? '')));
+            $sentSlots = array_values(array_filter(explode(',', (string) ($sn['last_sent_slots'] ?? '')), static fn($x) => strpos($x, $today) === 0));
             $times = array_unique(array_filter([
                 !empty($sn['reminder_time']) ? substr((string) $sn['reminder_time'], 0, 5) : '',
                 !empty($sn['reminder_time_2']) ? substr((string) $sn['reminder_time_2'], 0, 5) : '',
                 !empty($sn['reminder_time_3']) ? substr((string) $sn['reminder_time_3'], 0, 5) : '',
             ]));
-            $matchedSlot = null;
-            $matchedTime = '';
-            foreach ($times as $tm) {
-                $slotKey = "{$today}@{$tm}";
-                if ($nowTime >= $tm && !in_array($slotKey, $sentSlots, true)) {
-                    $matchedSlot = $slotKey;
-                    $matchedTime = $tm;
-                    break;
-                }
-            }
-            if ($matchedSlot === null) {
+
+            $dueSlots = self::findDueSlots($times, $nowMins, $today, $sentSlots);
+            if (empty($dueSlots)) {
                 continue;
             }
+
             $recipients = json_decode((string) ($sn['reminder_emails'] ?? '[]'), true);
             if (!is_array($recipients) || empty($recipients)) {
                 $recipients = json_decode((string) ($sn['settings_emails'] ?? '[]'), true);
@@ -227,30 +205,58 @@ class NotebookReminderService
                 }
             }
 
-            $sTitle = htmlspecialchars((string) $sn['title'], ENT_QUOTES, 'UTF-8');
-            $sBody  = nl2br(htmlspecialchars((string) $sn['content'], ENT_QUOTES, 'UTF-8'));
-            $sTime  = htmlspecialchars($matchedTime, ENT_QUOTES, 'UTF-8');
-            $html   = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
-                . '<div style="background:#217346;color:#fff;padding:16px 20px;"><strong>Sticky Note Reminder (' . $sTime . ' WIB)</strong></div>'
-                . '<div style="padding:20px;font-size:14px;color:#111827;">'
-                . "<h3 style='margin:0 0 10px 0;'>{$sTitle}</h3>"
-                . "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:16px;'>{$sBody}</div>"
-                . '<a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a>'
-                . '</div></div>';
+            foreach ($dueSlots as $slotKey) {
+                $matchedTime = substr($slotKey, 11, 5);
+                $sTitle = htmlspecialchars((string) $sn['title'], ENT_QUOTES, 'UTF-8');
+                $sBody  = nl2br(htmlspecialchars((string) $sn['content'], ENT_QUOTES, 'UTF-8'));
+                $sTime  = htmlspecialchars($matchedTime, ENT_QUOTES, 'UTF-8');
+                $html   = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">'
+                    . '<div style="background:#217346;color:#fff;padding:16px 20px;"><strong>Sticky Note Reminder (' . $sTime . ' WIB)</strong></div>'
+                    . '<div style="padding:20px;font-size:14px;color:#111827;">'
+                    . "<h3 style='margin:0 0 10px 0;'>{$sTitle}</h3>"
+                    . "<div style='background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:16px;'>{$sBody}</div>"
+                    . '<a href="https://schedulewfm.iferror.web.id/index.php?page=notebook" style="display:inline-block;background:#217346;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:bold;">Buka Personal Notebook</a>'
+                    . '</div></div>';
 
-            $sendRes = $mail->send($recipients, '[Sticky Note Reminder] ' . $sn['title'], $html);
-            if ($sendRes['success']) {
-                $sentSlots[] = $matchedSlot;
-                $sentSlots = array_values(array_filter($sentSlots, static fn($x) => strpos($x, $today) === 0));
-                $upd = $db->prepare('UPDATE notebook_sticky_notes SET last_reminder_sent_date = ?, last_sent_slots = ? WHERE id = ?');
-                $upd->execute([$today, implode(',', $sentSlots), $sn['id']]);
-                $result['tasks_sent']++;
-            } else {
-                $result['errors'][] = "Sticky #{$sn['id']}: " . $sendRes['message'];
+                $sendRes = $mail->send($recipients, '[Sticky Note Reminder] ' . $sn['title'], $html);
+                if ($sendRes['success']) {
+                    $sentSlots[] = $slotKey;
+                    $upd = $db->prepare('UPDATE notebook_sticky_notes SET last_reminder_sent_date = ?, last_sent_slots = ? WHERE id = ?');
+                    $upd->execute([$today, implode(',', $sentSlots), $sn['id']]);
+                    $result['tasks_sent']++;
+                } else {
+                    $result['errors'][] = "Sticky #{$sn['id']}: " . $sendRes['message'];
+                }
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Find all time slots due within the active 2-hour window that haven't been sent today.
+     *
+     * @param string[] $times
+     * @param string[] $sentSlots
+     * @return string[]
+     */
+    private static function findDueSlots(array $times, int $nowMins, string $today, array $sentSlots): array
+    {
+        $due = [];
+        foreach ($times as $tm) {
+            if (!preg_match('/^(\d{2}):(\d{2})$/', $tm, $m)) {
+                continue;
+            }
+            $slotMins = ((int) $m[1]) * 60 + (int) $m[2];
+            $diff     = $nowMins - $slotMins;
+            if ($diff >= 0 && $diff <= 120) {
+                $slotKey = "{$today}@{$tm}";
+                if (!in_array($slotKey, $sentSlots, true)) {
+                    $due[] = $slotKey;
+                }
+            }
+        }
+        return $due;
     }
 
     private static function matchesDayPattern(string $freq, int $dayNum, string $dayLabel, string $customCsv): bool

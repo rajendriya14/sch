@@ -1,0 +1,14 @@
+name: Notebook Email Reminder Cron
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Notebook Reminders Endpoint
+        run: |
+          curl -fsS -m 25 "https://schedulewfm.iferror.web.id/scheduling-system/public/notebook_cron.php"

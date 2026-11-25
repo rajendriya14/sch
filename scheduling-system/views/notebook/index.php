@@ -1250,9 +1250,20 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <!-- TAB 2: EMAIL REMINDER -->
                     <div class="tab-pane fade" id="tabPaneEmail" role="tabpanel">
                         <?php if (empty($smtpReady)): ?>
-                        <div class="alert alert-warning small py-2 px-3 mb-3">
-                            <i class="bi bi-exclamation-triangle me-1"></i>
-                            <strong>SMTP belum terpasang di server:</strong> Upload file <code>scheduling-system/config/mail.credentials.local.php</code> ke hosting agar email bisa terkirim.
+                        <div class="alert alert-warning small p-3 mb-3" id="smtpSetupAlert">
+                            <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle me-1"></i> SMTP Belum Aktif di Server</div>
+                            <p class="mb-2 text-muted" style="font-size:0.78rem;">Masukkan akun Gmail + App Password (16 digit) agar reminder bisa langsung terkirim:</p>
+                            <div class="row g-2">
+                                <div class="col-sm-5">
+                                    <input type="email" id="smtpUser" class="form-control form-control-sm" placeholder="Gmail pengirim (mis. ivanlawu@gmail.com)">
+                                </div>
+                                <div class="col-sm-5">
+                                    <input type="password" id="smtpPass" class="form-control form-control-sm" placeholder="App Password (16 digit)">
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="button" class="btn-excel w-100 justify-content-center" onclick="saveSmtpConfig()">Aktifkan</button>
+                                </div>
+                            </div>
                         </div>
                         <?php endif; ?>
                         <div class="row g-3">
@@ -2415,5 +2426,38 @@ function showToast(msg) {
     setTimeout(() => el.remove(), 3500);
 }
 
-document.addEventListener('DOMContentLoaded', initNotebook);
+async function saveSmtpConfig() {
+    const u = document.getElementById('smtpUser').value.trim();
+    const p = document.getElementById('smtpPass').value.trim();
+    if (!u || !p) { alert('Isi Gmail pengirim dan App Password.'); return; }
+    const fd = new FormData();
+    fd.append('username', u);
+    fd.append('password', p);
+    const res = await fetch('index.php?page=notebook&action=saveSmtpConfig', {
+        method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    const json = await res.json();
+    if (json.success) {
+        const box = document.getElementById('smtpSetupAlert');
+        if (box) box.remove();
+        showToast(json.message);
+        runDueRemindersSilent();
+    } else {
+        alert(json.message || 'Gagal menyimpan SMTP.');
+    }
+}
+
+async function runDueRemindersSilent() {
+    try {
+        await fetch('index.php?page=notebook&action=runDueReminders', {
+            method: 'POST', headers: { 'Accept': 'application/json' }
+        });
+    } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initNotebook();
+    runDueRemindersSilent();
+    setInterval(runDueRemindersSilent, 60000);
+});
 </script>

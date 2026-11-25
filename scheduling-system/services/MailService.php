@@ -20,10 +20,41 @@ class MailService
         }
 
         $localPath = __DIR__ . '/../config/mail.credentials.local.php';
-        if (!file_exists($localPath)) {
-            throw new RuntimeException('Konfigurasi SMTP belum tersedia (mail.credentials.local.php tidak ditemukan).');
+        if (file_exists($localPath)) {
+            $this->config = require $localPath;
+            return;
         }
-        $this->config = require $localPath;
+
+        $dbConfig = self::loadDbConfig();
+        if ($dbConfig !== null) {
+            $this->config = $dbConfig;
+            return;
+        }
+
+        throw new RuntimeException('Konfigurasi SMTP belum tersedia. Isi di Settings -> Email Reminder atau upload mail.credentials.local.php.');
+    }
+
+    public static function isConfigured(): bool
+    {
+        if (file_exists(__DIR__ . '/../config/mail.credentials.local.php')) {
+            return true;
+        }
+        return self::loadDbConfig() !== null;
+    }
+
+    private static function loadDbConfig(): ?array
+    {
+        try {
+            $db = \Config\Database::getInstance();
+            $stmt = $db->query('SELECT * FROM app_mail_config WHERE id = 1 LIMIT 1');
+            $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : null;
+            if ($row && !empty($row['username']) && !empty($row['password'])) {
+                return $row;
+            }
+        } catch (\Throwable $e) {
+            // Ignore
+        }
+        return null;
     }
 
     /**

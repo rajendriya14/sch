@@ -445,6 +445,20 @@ class Database
             } catch (\PDOException $e) {
                 // Ignore
             }
+
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS app_mail_config (
+                    id         INT PRIMARY KEY,
+                    host       VARCHAR(120) NOT NULL DEFAULT "smtp.gmail.com",
+                    port       INT NOT NULL DEFAULT 465,
+                    encryption VARCHAR(10) NOT NULL DEFAULT "ssl",
+                    username   VARCHAR(150) NOT NULL DEFAULT "",
+                    password   VARCHAR(255) NOT NULL DEFAULT "",
+                    from_email VARCHAR(150) NOT NULL DEFAULT "",
+                    from_name  VARCHAR(150) NOT NULL DEFAULT "Personal Notebook Assistant",
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }

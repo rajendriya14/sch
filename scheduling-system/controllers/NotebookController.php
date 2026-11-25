@@ -6,6 +6,7 @@ use Models\NotebookStickyNote;
 use Models\NotebookTask;
 use Services\AuthService;
 use Services\MailService;
+use Services\NotebookReminderService;
 
 class NotebookController
 {
@@ -59,7 +60,7 @@ class NotebookController
         $tasks     = NotebookTask::allByUser($userId);
         $stickies  = NotebookStickyNote::allByUser($userId);
         $settings  = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
-        $smtpReady = file_exists(__DIR__ . '/../config/mail.credentials.local.php');
+        $smtpReady = MailService::isConfigured();
 
         require_once __DIR__ . '/../views/layouts/header.php';
         require_once __DIR__ . '/../views/notebook/index.php';
@@ -458,5 +459,51 @@ class NotebookController
 
         NotebookStickyNote::delete($id, $userId);
         $this->jsonResponse(['success' => true, 'message' => 'Sticky note dihapus.']);
+    }
+
+    /**
+     * API: Save SMTP config to DB (fallback when mail.credentials.local.php is not on server)
+     */
+    public function saveSmtpConfig(): void
+    {
+        $this->getCurrentUserId();
+        $host       = trim((string) ($_POST['host'] ?? 'smtp.gmail.com'));
+        $port       = (int) ($_POST['port'] ?? 465);
+        $encryption = trim((string) ($_POST['encryption'] ?? 'ssl'));
+        $username   = trim((string) ($_POST['username'] ?? ''));
+        $password   = str_replace(' ', '', trim((string) ($_POST['password'] ?? '')));
+
+        if ($username === '' || $password === '') {
+            $this->jsonResponse(['success' => false, 'message' => 'Email pengirim dan App Password wajib diisi.'], 400);
+        }
+
+        $db = \Config\Database::getInstance();
+        $stmt = $db->prepare(
+            'INSERT INTO app_mail_config (id, host, port, encryption, username, password, from_email, from_name)
+             VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                host = VALUES(host), port = VALUES(port), encryption = VALUES(encryption),
+                username = VALUES(username), password = VALUES(password), from_email = VALUES(from_email)'
+        );
+        $stmt->execute([$host, $port, $encryption, $username, $password, $username, 'Personal Notebook Assistant']);
+
+        $this->jsonResponse(['success' => true, 'message' => 'Konfigurasi SMTP berhasil disimpan!']);
+    }
+
+    /**
+     * API: Run due reminders immediately (called by browser heartbeat or manual trigger)
+     */
+    public function runDueReminders(): void
+    {
+        $this->getCurrentUserId();
+        if (!MailService::isConfigured()) {
+            $this->jsonResponse(['success' => false, 'skipped' => true, 'message' => 'SMTP belum dikonfigurasi.']);
+        }
+        try {
+            $res = NotebookReminderService::run();
+            $this->jsonResponse(['success' => true, 'result' => $res]);
+        } catch (\Throwable $e) {
+            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }
