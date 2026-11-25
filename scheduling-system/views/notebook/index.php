@@ -602,6 +602,112 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     .sticky-blue   { background: #dbeafe; }
     .sticky-pink   { background: #fce7f3; }
     .sticky-purple { background: #ede9fe; }
+
+    /* Custom Dual-Month Excel-Green Date Picker Popover */
+    .nb-date-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 0.83rem;
+        color: var(--nb-text);
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .nb-date-trigger:hover { border-color: #9ca3af; }
+    .nb-date-trigger:focus { border-color: var(--excel-green); box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.12); outline: none; }
+
+    .nb-dp-popover {
+        position: fixed;
+        z-index: 1085;
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        padding: 14px 16px;
+        display: none;
+        user-select: none;
+    }
+    .nb-dp-popover.is-open { display: block; }
+    .nb-dp-months {
+        display: grid;
+        grid-template-columns: repeat(2, 232px);
+        gap: 20px;
+    }
+    @media (max-width: 575px) {
+        .nb-dp-months {
+            grid-template-columns: 245px;
+            gap: 0;
+        }
+        .nb-dp-month-second { display: none; }
+    }
+    .nb-dp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--nb-text);
+    }
+    .nb-dp-nav-btn {
+        border: none;
+        background: transparent;
+        color: var(--nb-muted);
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .nb-dp-nav-btn:hover { background: #f3f4f6; color: var(--nb-text); }
+    .nb-dp-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        row-gap: 3px;
+        text-align: center;
+    }
+    .nb-dp-dow {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--nb-muted);
+        padding-bottom: 4px;
+    }
+    .nb-dp-day {
+        height: 31px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        color: var(--nb-text);
+        cursor: pointer;
+        border-radius: 7px;
+        transition: background 0.1s;
+    }
+    .nb-dp-day:hover { background: #f3f4f6; }
+    .nb-dp-day.is-other { color: #9ca3af; }
+    .nb-dp-day.is-red { color: #dc2626; }
+    .nb-dp-day.is-today { background: #f3f4f6; font-weight: 600; }
+    .nb-dp-day.is-in-range {
+        background: var(--excel-green-soft);
+        color: var(--excel-green);
+        border-radius: 0;
+    }
+    .nb-dp-day.is-range-start,
+    .nb-dp-day.is-range-end,
+    .nb-dp-day.is-selected {
+        background: var(--excel-green) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border-radius: 7px !important;
+    }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -1030,11 +1136,19 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Dari Tanggal</label>
-                            <input type="date" id="taskDate" required class="form-control form-control-sm" onchange="syncEndDateMin()">
+                            <input type="hidden" id="taskDate" required>
+                            <button type="button" class="nb-date-trigger" id="taskDateBtn" onclick="openNbDatePicker('task-range', this)">
+                                <span id="taskDateDisplay">-</span>
+                                <i class="bi bi-calendar3 text-muted"></i>
+                            </button>
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-semibold">Sampai Tanggal</label>
-                            <input type="date" id="taskEndDate" class="form-control form-control-sm">
+                            <input type="hidden" id="taskEndDate">
+                            <button type="button" class="nb-date-trigger" id="taskEndDateBtn" onclick="openNbDatePicker('task-range', this)">
+                                <span id="taskEndDateDisplay">-</span>
+                                <i class="bi bi-calendar3 text-muted"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
@@ -1336,7 +1450,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <div class="row g-2 mb-3 align-items-end">
                             <div class="col-sm-4">
                                 <label class="form-label small fw-semibold mb-1">Tanggal</label>
-                                <input type="date" id="holidayDateInput" class="form-control form-control-sm">
+                                <input type="hidden" id="holidayDateInput">
+                                <button type="button" class="nb-date-trigger" id="holidayDateBtn" onclick="openNbDatePicker('holiday-single', this)">
+                                    <span id="holidayDateDisplay">Pilih tanggal...</span>
+                                    <i class="bi bi-calendar3 text-muted"></i>
+                                </button>
                             </div>
                             <div class="col-sm-5">
                                 <label class="form-label small fw-semibold mb-1">Keterangan (Opsional)</label>
@@ -1361,6 +1479,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     </div>
 </div>
 
+<div class="nb-dp-popover" id="nbDatePickerPopover"></div>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
 
 <script>
@@ -2146,12 +2265,166 @@ function renderEmailChips(target) {
     `).join('');
 }
 
-function syncEndDateMin() {
-    const start = document.getElementById('taskDate').value;
-    const endEl = document.getElementById('taskEndDate');
-    endEl.min = start;
-    if (!endEl.value || endEl.value < start) endEl.value = start;
+function formatDisplayDateBtn(iso) {
+    if (!iso) return 'Pilih tanggal...';
+    const p = iso.split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
 }
+
+function syncTaskDateDisplays() {
+    document.getElementById('taskDateDisplay').textContent = formatDisplayDateBtn(document.getElementById('taskDate').value);
+    document.getElementById('taskEndDateDisplay').textContent = formatDisplayDateBtn(document.getElementById('taskEndDate').value);
+}
+
+/* CUSTOM DUAL-MONTH EXCEL-GREEN DATE PICKER */
+let dpState = { open: false, mode: 'task-range', step: 0, baseDate: new Date(), start: '', end: '' };
+
+function openNbDatePicker(mode, triggerEl) {
+    const pop = document.getElementById('nbDatePickerPopover');
+    dpState.mode = mode;
+    dpState.step = 0;
+
+    if (mode === 'task-range') {
+        dpState.start = document.getElementById('taskDate').value || relDate(0);
+        dpState.end   = document.getElementById('taskEndDate').value || dpState.start;
+        const [y, m] = dpState.start.split('-').map(Number);
+        dpState.baseDate = new Date(y, m - 1, 1);
+    } else {
+        dpState.start = document.getElementById('holidayDateInput').value || '';
+        dpState.end   = dpState.start;
+        const ref = dpState.start || relDate(0);
+        const [y, m] = ref.split('-').map(Number);
+        dpState.baseDate = new Date(y, m - 1, 1);
+    }
+
+    renderNbDatePicker();
+    pop.classList.add('is-open');
+
+    const rect = triggerEl.getBoundingClientRect();
+    const popW = pop.offsetWidth || 280;
+    const popH = pop.offsetHeight || 260;
+    let left = Math.min(rect.left, window.innerWidth - popW - 12);
+    if (left < 10) left = 10;
+    let top = rect.bottom + 6;
+    if (top + popH > window.innerHeight - 10) {
+        top = Math.max(10, rect.top - popH - 6);
+    }
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+    dpState.open = true;
+}
+
+function closeNbDatePicker() {
+    const pop = document.getElementById('nbDatePickerPopover');
+    if (pop) pop.classList.remove('is-open');
+    dpState.open = false;
+}
+
+function shiftDpMonth(delta) {
+    dpState.baseDate.setMonth(dpState.baseDate.getMonth() + delta);
+    renderNbDatePicker();
+}
+
+function renderNbDatePicker() {
+    const pop = document.getElementById('nbDatePickerPopover');
+    const y1 = dpState.baseDate.getFullYear(), m1 = dpState.baseDate.getMonth();
+    const d2 = new Date(y1, m1 + 1, 1);
+    const y2 = d2.getFullYear(), m2 = d2.getMonth();
+
+    pop.innerHTML = `
+        <div class="nb-dp-months">
+            ${buildDpMonthHtml(y1, m1, true, false)}
+            <div class="nb-dp-month-second">${buildDpMonthHtml(y2, m2, false, true)}</div>
+        </div>
+        ${dpState.mode === 'task-range' ? `<div class="text-muted text-center mt-2" style="font-size:0.72rem;">${dpState.step === 1 ? 'Klik tanggal akhir rentang...' : 'Klik tanggal mulai, lalu tanggal akhir'}</div>` : ''}
+    `;
+}
+
+function buildDpMonthHtml(year, month, showPrev, showNext) {
+    const firstIdx = new Date(year, month, 1).getDay();
+    const lastDay  = new Date(year, month + 1, 0).getDate();
+    const prevLast = new Date(year, month, 0).getDate();
+    const todayStr = relDate(0);
+
+    const cells = [];
+    for (let x = firstIdx; x > 0; x--) cells.push({ d: new Date(year, month - 1, prevLast - x + 1), other: true });
+    for (let i = 1; i <= lastDay; i++) cells.push({ d: new Date(year, month, i), other: false });
+    const rem = (cells.length > 35 ? 42 : 35) - cells.length;
+    for (let j = 1; j <= rem; j++) cells.push({ d: new Date(year, month + 1, j), other: true });
+
+    const daysHtml = cells.map(c => {
+        const ds = dateStr(c.d);
+        const dow = c.d.getDay();
+        const isHol = cfgHolidays.some(h => h.date === ds);
+        const isRed = (dow === 0 || dow === 6 || isHol);
+        const isStart = ds === dpState.start;
+        const isEnd   = ds === dpState.end;
+        const inRange = dpState.mode === 'task-range' && dpState.start && dpState.end && ds > dpState.start && ds < dpState.end;
+        const cls = [
+            'nb-dp-day',
+            c.other ? 'is-other' : '',
+            isRed && !c.other ? 'is-red' : '',
+            ds === todayStr ? 'is-today' : '',
+            inRange ? 'is-in-range' : '',
+            isStart ? 'is-range-start' : '',
+            isEnd ? 'is-range-end' : ''
+        ].filter(Boolean).join(' ');
+        return `<div class="${cls}" onclick="pickNbDate('${ds}')">${c.d.getDate()}</div>`;
+    }).join('');
+
+    return `
+        <div>
+            <div class="nb-dp-header">
+                ${showPrev ? `<button type="button" class="nb-dp-nav-btn" onclick="shiftDpMonth(-1)"><i class="bi bi-chevron-left"></i></button>` : '<span style="width:26px;"></span>'}
+                <span>${MONTHS[month]} ${year}</span>
+                ${showNext ? `<button type="button" class="nb-dp-nav-btn" onclick="shiftDpMonth(1)"><i class="bi bi-chevron-right"></i></button>` : `<button type="button" class="nb-dp-nav-btn d-sm-none" onclick="shiftDpMonth(1)"><i class="bi bi-chevron-right"></i></button>`}
+            </div>
+            <div class="nb-dp-grid">
+                <div class="nb-dp-dow">Su</div><div class="nb-dp-dow">Mo</div><div class="nb-dp-dow">Tu</div>
+                <div class="nb-dp-dow">We</div><div class="nb-dp-dow">Th</div><div class="nb-dp-dow">Fr</div><div class="nb-dp-dow">Sa</div>
+                ${daysHtml}
+            </div>
+        </div>
+    `;
+}
+
+function pickNbDate(ds) {
+    if (dpState.mode === 'holiday-single') {
+        document.getElementById('holidayDateInput').value = ds;
+        document.getElementById('holidayDateDisplay').textContent = formatDisplayDateBtn(ds);
+        closeNbDatePicker();
+        return;
+    }
+
+    if (dpState.step === 0) {
+        dpState.start = ds;
+        dpState.end   = ds;
+        dpState.step  = 1;
+        document.getElementById('taskDate').value = ds;
+        document.getElementById('taskEndDate').value = ds;
+        syncTaskDateDisplays();
+        renderNbDatePicker();
+    } else {
+        if (ds < dpState.start) {
+            dpState.end   = dpState.start;
+            dpState.start = ds;
+        } else {
+            dpState.end = ds;
+        }
+        document.getElementById('taskDate').value = dpState.start;
+        document.getElementById('taskEndDate').value = dpState.end;
+        syncTaskDateDisplays();
+        closeNbDatePicker();
+    }
+}
+
+document.addEventListener('click', (e) => {
+    if (!dpState.open) return;
+    const pop = document.getElementById('nbDatePickerPopover');
+    if (pop && !pop.contains(e.target) && !e.target.closest('.nb-date-trigger')) {
+        closeNbDatePicker();
+    }
+});
 
 /* TASK MODAL CRUD */
 function openTaskModal(id = null, defDate = null, defTime = null) {
@@ -2162,7 +2435,7 @@ function openTaskModal(id = null, defDate = null, defTime = null) {
     const startVal = ev ? ev.due_date : (defDate || dateStr(currentDate));
     document.getElementById('taskDate').value = startVal;
     document.getElementById('taskEndDate').value = ev ? (ev.end_date || startVal) : startVal;
-    document.getElementById('taskEndDate').min = startVal;
+    syncTaskDateDisplays();
     document.getElementById('taskTime').value = ev ? (ev.due_time || '') : (defTime || '09:00');
     document.getElementById('taskDuration').value = ev ? (ev.duration_minutes || 60) : (cfgPrefs.default_duration || 60);
     document.getElementById('taskPriority').value = ev ? (ev.priority || 'Medium') : (cfgPrefs.default_priority || 'Medium');
@@ -2317,6 +2590,7 @@ function addHoliday() {
     else cfgHolidays.push({ date: dateVal, label: labelVal });
     dEl.value = '';
     lEl.value = '';
+    document.getElementById('holidayDateDisplay').textContent = 'Pilih tanggal...';
     renderHolidaysList();
 }
 
