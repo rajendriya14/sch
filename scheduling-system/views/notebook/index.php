@@ -451,6 +451,8 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
     .month-cell:hover { background: #fafafa; }
     .month-cell.is-today { background: #f4fbf7; border-bottom: 2px solid var(--excel-green); }
     .month-cell.other-month .month-day-num { color: #9ca3af; }
+    .month-cell.is-red .month-day-num { color: #dc2626; font-weight: 600; }
+    .month-cell.other-month.is-red .month-day-num { color: #fca5a5; }
     .month-day-num {
         position: absolute;
         bottom: 6px;
@@ -469,6 +471,33 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         color: #fff;
         border-radius: 50%;
         font-weight: 600;
+    }
+    .month-add-btn {
+        position: absolute;
+        bottom: 8px;
+        right: 34px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--excel-green);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        line-height: 1;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.14s ease, transform 0.14s ease;
+        z-index: 3;
+    }
+    .month-cell:hover .month-add-btn {
+        opacity: 1;
+    }
+    @media (max-width: 575px) {
+        .month-add-btn {
+            display: none;
+        }
     }
 
     /* Pastel Pills */
@@ -665,6 +694,12 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                         <span>Email Reminder</span>
                     </span>
                     <span class="sidebar-count" id="cnt-Email">0</span>
+                </button>
+                <button type="button" class="sidebar-nav-item" id="nav-Holidays" onclick="openSettingsModal(this, 'holidays')">
+                    <span class="sidebar-nav-left">
+                        <i class="bi bi-calendar-x text-danger"></i>
+                        <span>Tanggal Merah</span>
+                    </span>
                 </button>
             </div>
         </div>
@@ -1127,6 +1162,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                             <i class="bi bi-envelope-check me-1"></i> Email Reminder
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link small fw-semibold" id="tabBtnHolidays" data-bs-toggle="tab" data-bs-target="#tabPaneHolidays" type="button" role="tab">
+                            <i class="bi bi-calendar-x text-danger me-1"></i> Tanggal Merah
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
@@ -1263,6 +1303,34 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                             </div>
                         </div>
                     </div>
+
+                    <!-- TAB 3: TANGGAL MERAH -->
+                    <div class="tab-pane fade" id="tabPaneHolidays" role="tabpanel">
+                        <p class="small text-muted mb-3">
+                            Tambahkan daftar tanggal merah / hari libur nasional. Tanggal merah dan hari akhir pekan (Sabtu &amp; Minggu) otomatis ditandai berwarna merah di kalender.
+                        </p>
+                        <div class="row g-2 mb-3 align-items-end">
+                            <div class="col-sm-4">
+                                <label class="form-label small fw-semibold mb-1">Tanggal</label>
+                                <input type="date" id="holidayDateInput" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-sm-5">
+                                <label class="form-label small fw-semibold mb-1">Keterangan (Opsional)</label>
+                                <input type="text" id="holidayLabelInput" class="form-control form-control-sm" placeholder="Misal: Hari Natal, Cuti Bersama...">
+                            </div>
+                            <div class="col-sm-3">
+                                <button type="button" class="btn-cal-outline w-100 justify-content-center" onclick="addHoliday()">
+                                    <i class="bi bi-plus-lg"></i> Tambah
+                                </button>
+                            </div>
+                        </div>
+                        <div id="holidaysList" class="border rounded-3 p-2 bg-light mb-3" style="max-height: 220px; overflow-y: auto;"></div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn-excel" onclick="saveSettingsToServer()">
+                                <i class="bi bi-check2"></i> Simpan Tanggal Merah
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1299,8 +1367,10 @@ let cfgPrefs = Object.assign({
     default_priority: 'Medium',
     default_theme: 'theme-green',
     week_start: 'sun',
-    show_greeting: true
+    show_greeting: true,
+    holidays: []
 }, cfgSettings.preferences || {});
+let cfgHolidays = Array.isArray(cfgPrefs.holidays) ? [...cfgPrefs.holidays] : [];
 let cfgEmails = Array.isArray(cfgSettings.emails) ? [...cfgSettings.emails] : [];
 let taskEmails = [];
 
@@ -1363,7 +1433,8 @@ function renderBreadcrumb(navId) {
         'nav-Kanban':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Kanban Board' }],
         'nav-Sticky':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Sticky Notes' }],
         'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
-        'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }]
+        'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }],
+        'nav-Holidays': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Tanggal Merah' }]
     };
 
     const items = trails[navId] || trails['nav-ALL'];
@@ -1599,8 +1670,19 @@ function renderMonthView() {
 
         weekCells.forEach((c, idx) => {
             const ds = dateStr(c.d);
+            const dow = c.d.getDay();
+            const isWeekend = (dow === 0 || dow === 6);
+            const holiday = cfgHolidays.find(h => h.date === ds);
+            const isRed = isWeekend || !!holiday;
+
             const cell = document.createElement('div');
-            cell.className = 'month-cell' + (c.other ? ' other-month' : '') + (ds === todayStr ? ' is-today' : '');
+            cell.className = 'month-cell'
+                + (c.other ? ' other-month' : '')
+                + (isRed ? ' is-red' : '')
+                + (ds === todayStr ? ' is-today' : '');
+            if (holiday && holiday.label) {
+                cell.title = 'Tanggal Merah: ' + holiday.label;
+            }
             cell.onclick = () => openTaskModal(null, ds);
 
             if (overflowCount[idx] > 0) {
@@ -1608,7 +1690,17 @@ function renderMonthView() {
                 more.style.cssText = 'position:absolute;bottom:6px;left:6px;font-size:0.68rem;color:#6b7280;font-weight:500;';
                 more.textContent = `+${overflowCount[idx]} lainnya`;
                 cell.appendChild(more);
+            } else if (holiday && holiday.label) {
+                const holBadge = document.createElement('div');
+                holBadge.style.cssText = 'position:absolute;bottom:6px;left:6px;right:56px;font-size:0.66rem;color:#dc2626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;';
+                holBadge.textContent = holiday.label;
+                cell.appendChild(holBadge);
             }
+
+            const addBtn = document.createElement('span');
+            addBtn.className = 'month-add-btn';
+            addBtn.innerHTML = '<i class="bi bi-plus"></i>';
+            cell.appendChild(addBtn);
 
             const num = document.createElement('div');
             num.className = 'month-day-num';
@@ -2158,15 +2250,59 @@ async function deleteTask() {
     }
 }
 
-/* SETTINGS MODAL */
+/* SETTINGS MODAL & TANGGAL MERAH */
+function renderHolidaysList() {
+    const el = document.getElementById('holidaysList');
+    if (!el) return;
+    if (!cfgHolidays.length) {
+        el.innerHTML = '<div class="text-center text-muted small py-3">Belum ada tanggal merah yang ditambahkan.</div>';
+        return;
+    }
+    const sorted = [...cfgHolidays].sort((a, b) => a.date.localeCompare(b.date));
+    el.innerHTML = sorted.map((h, i) => `
+        <div class="d-flex align-items-center justify-content-between bg-white border rounded-2 px-3 py-2 mb-1 small">
+            <div>
+                <strong class="text-danger me-2">${esc(h.date)}</strong>
+                <span>${esc(h.label || 'Hari Libur')}</span>
+            </div>
+            <button type="button" class="btn btn-sm p-0 text-danger" onclick="removeHoliday('${esc(h.date)}')" title="Hapus">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function addHoliday() {
+    const dEl = document.getElementById('holidayDateInput');
+    const lEl = document.getElementById('holidayLabelInput');
+    const dateVal = dEl.value;
+    if (!dateVal) return;
+    const labelVal = lEl.value.trim() || 'Tanggal Merah';
+    const existing = cfgHolidays.find(h => h.date === dateVal);
+    if (existing) existing.label = labelVal;
+    else cfgHolidays.push({ date: dateVal, label: labelVal });
+    dEl.value = '';
+    lEl.value = '';
+    renderHolidaysList();
+}
+
+function removeHoliday(dateVal) {
+    cfgHolidays = cfgHolidays.filter(h => h.date !== dateVal);
+    renderHolidaysList();
+}
+
 function openSettingsModal(btnEl = null, tab = 'prefs') {
     if (btnEl) {
-        setActiveSidebarNav(tab === 'email' ? 'nav-Email' : 'nav-Prefs', tab === 'email' ? 'Email Reminder' : 'Preferensi Notes');
+        const navId = tab === 'email' ? 'nav-Email' : (tab === 'holidays' ? 'nav-Holidays' : 'nav-Prefs');
+        const title = tab === 'email' ? 'Email Reminder' : (tab === 'holidays' ? 'Tanggal Merah' : 'Preferensi Notes');
+        setActiveSidebarNav(navId, title);
     }
     applyNotePreferences();
     renderEmailChips('cfg');
+    renderHolidaysList();
     syncSettingsPreview();
-    const tabBtn = document.getElementById(tab === 'email' ? 'tabBtnEmail' : 'tabBtnPrefs');
+    const tabId = tab === 'email' ? 'tabBtnEmail' : (tab === 'holidays' ? 'tabBtnHolidays' : 'tabBtnPrefs');
+    const tabBtn = document.getElementById(tabId);
     if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();
 }
@@ -2196,7 +2332,8 @@ async function saveSettingsToServer() {
         default_duration: Number(document.getElementById('prefDefaultDuration').value) || 60,
         default_priority: document.getElementById('prefDefaultPriority').value,
         default_theme: document.getElementById('prefDefaultTheme').value,
-        show_greeting: document.getElementById('prefShowGreeting').checked
+        show_greeting: document.getElementById('prefShowGreeting').checked,
+        holidays: cfgHolidays
     };
 
     const fd = new FormData();
