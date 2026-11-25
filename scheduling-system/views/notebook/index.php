@@ -214,6 +214,53 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             font-size: 0.65rem;
             padding-right: 6px;
         }
+        html, body, .nb-app-shell {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        .cal-shell {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .time-grid-wrapper {
+            -webkit-overflow-scrolling: touch;
+        }
+        .cal-footer-bar {
+            padding: 8px 10px;
+            gap: 8px 12px;
+            font-size: 0.72rem;
+        }
+        .sticky-card, .kanban-col, .agenda-drawer {
+            padding: 12px;
+        }
+        .nb-date-trigger {
+            min-height: 38px;
+        }
+        .nb-tp-item {
+            height: 34px;
+        }
+        #settingsModal .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        #settingsModal .nav-tabs::-webkit-scrollbar { display: none; }
+        #settingsModal .nav-link {
+            white-space: nowrap;
+            font-size: 0.78rem;
+            padding: 7px 10px;
+        }
+        #stickyModal input.form-control,
+        #stickyModal select.form-select,
+        #stickyModal textarea.form-control,
+        #taskModal input.form-control,
+        #taskModal select.form-select,
+        #taskModal textarea.form-control,
+        #settingsModal input.form-control,
+        #settingsModal select.form-select {
+            font-size: 16px;
+        }
     }
 
     .sidebar-search {
