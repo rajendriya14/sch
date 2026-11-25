@@ -436,21 +436,12 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         background: #ffffff;
         border: 1px solid var(--nb-border);
         border-radius: 12px;
-        padding: 12px 16px;
+        padding: 10px 16px;
         margin-bottom: 16px;
-    }
-
-    .assistant-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
-        background: var(--excel-green-soft);
-        color: var(--excel-green);
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        flex-shrink: 0;
+        width: auto;
+        max-width: 100%;
     }
 
     /* Calendar Shell */
@@ -1034,8 +1025,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
         <div class="nb-content">
             <!-- Compact Assistant Greeting Strip -->
-            <div class="assistant-card d-flex align-items-center gap-3">
-                <div class="assistant-icon"><i class="bi bi-stars"></i></div>
+            <div class="assistant-card">
                 <div>
                     <div class="fw-semibold small" id="heroGreeting">Halo, <?= $userName ?>!</div>
                     <div class="text-muted" style="font-size:0.78rem;" id="heroBriefing">Memuat ringkasan...</div>
@@ -1860,14 +1850,39 @@ function renderPinnedSidebar() {
         : '<div class="px-2 py-1 text-muted" style="font-size:0.78rem;">Belum ada yang disematkan</div>';
 }
 
+const HERO_DAYS_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const HERO_MONTHS_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+function formatHeroLiveClock() {
+    const now = new Date();
+    const dayName = HERO_DAYS_ID[now.getDay()];
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mmmm = HERO_MONTHS_ID[now.getMonth()];
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    return `${dayName}, ${dd} ${mmmm} ${yyyy} ${hh}:${mm}:${ss}`;
+}
+
+function updateHeroClock() {
+    const el = document.getElementById('heroLiveClock');
+    if (el) el.textContent = formatHeroLiveClock();
+}
+
 function renderBriefing() {
     const today = relDate(0);
     const todayCount = events.filter(e => e.due_date === today && e.status !== 'Done').length;
     const emailCount = events.filter(e => e.email_reminder && e.status !== 'Done').length;
-    document.getElementById('heroBriefing').innerHTML = (todayCount || emailCount)
+    const summaryText = (todayCount || emailCount)
         ? `Hari ini ada <strong>${todayCount} agenda</strong> dan <strong>${emailCount} email reminder</strong> aktif.`
         : 'Belum ada agenda hari ini. Klik <strong>+ New event</strong> untuk mulai mencatat.';
+    document.getElementById('heroBriefing').innerHTML =
+        `<span id="heroLiveClock" class="fw-semibold" style="color:var(--excel-green); font-variant-numeric:tabular-nums;">${formatHeroLiveClock()}</span>`
+        + ` <span class="mx-1">&middot;</span> ${summaryText}`;
 }
+
+setInterval(updateHeroClock, 1000);
 
 function switchView(view) {
     currentView = view;
