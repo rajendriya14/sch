@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 38 212 176">
+  <defs>
+    <path id="sheet" d="M60,60 L240,60 L242,80 L238,100 L243,120 L239,140 L242,160 L238,190 L220,182 L202,200 L184,190 L166,202 L148,192 L130,203 L112,191 L94,201 L76,190 L60,196 Z"/>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9CA3AF"/>
+      <stop offset="1" stop-color="#16A34A"/>
+    </linearGradient>
+  </defs>
+
+  <use href="#sheet" transform="translate(-18,-18)" fill="url(#fade)" stroke="#1a1a1a" stroke-width="5" stroke-linejoin="round"/>
+  <use href="#sheet" transform="translate(-9,-9)" fill="url(#fade)" stroke="#1a1a1a" stroke-width="5" stroke-linejoin="round"/>
+
+  <g transform="translate(-3,-4)">
+    <path d="M60,60 L240,60 L241,80 L239,100 L240,122 L228,118 L219,123 L210,119 L201,124 L192,118 L183,123 L175,117 L166,122 L158,116 L150,120 L141,115 L133,121 L124,114 L117,118 L108,112 L100,119 L91,113 L84,117 L75,110 L68,116 L60,112 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(3,6)">
+    <path d="M60,112 L68,116 L75,110 L84,117 L91,113 L100,119 L108,112 L117,118 L124,114 L133,121 L141,115 L150,120 L158,116 L166,122 L175,117 L183,123 L192,118 L201,124 L210,119 L219,123 L228,118 L240,122 L238,160 L242,180 L238,190 L220,182 L202,200 L184,190 L166,202 L148,192 L130,203 L112,191 L94,201 L76,190 L60,196 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+</svg>

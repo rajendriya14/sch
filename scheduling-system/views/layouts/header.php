@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars((($pageName ?? '') === 'notebook') ? 'nyatet.' : ($pageTitle ?? 'Pradiya Portal')) ?></title>
     <?php if (($pageName ?? '') === 'notebook'): ?>
-    <link rel="icon" type="image/svg+xml" href="scheduling-system/public/assets/img/nyatet-logo.svg?v=2">
+    <link rel="icon" type="image/svg+xml" href="scheduling-system/public/assets/img/nyatet-icon.svg?v=1">
     <?php else: ?>
     <!-- Favicon: ikon `bi-calendar-check` yang sama dengan logo di navbar,
          ditanam sebagai data URI SVG agar tidak butuh berkas tambahan.
