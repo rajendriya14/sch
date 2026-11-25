@@ -147,6 +147,26 @@ class NotebookTask
     }
 
     /**
+     * Delete multiple tasks ensuring user ownership.
+     *
+     * @param int[] $ids
+     */
+    public static function deleteMany(array $ids, int $userId): int
+    {
+        $cleanIds = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $v): bool => $v > 0)));
+        if (empty($cleanIds)) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
+        $params = array_merge($cleanIds, [$userId]);
+        $stmt = Database::getInstance()->prepare(
+            "DELETE FROM notebook_tasks WHERE id IN ({$placeholders}) AND user_id = ?"
+        );
+        $stmt->execute($params);
+        return $stmt->rowCount();
+    }
+
+    /**
      * Get notebook email/digest settings for a user.
      */
     public static function getSettings(int $userId, string $fallbackEmail = ''): array

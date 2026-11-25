@@ -254,6 +254,32 @@ class NotebookController
     }
 
     /**
+     * API: Bulk delete selected tasks
+     */
+    public function deleteBulk(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $rawIds = $_POST['ids'] ?? [];
+        if (is_string($rawIds)) {
+            $decoded = json_decode($rawIds, true);
+            $rawIds  = is_array($decoded) ? $decoded : explode(',', $rawIds);
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', is_array($rawIds) ? $rawIds : []), static fn (int $v): bool => $v > 0)));
+
+        if (empty($ids)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Pilih minimal 1 catatan untuk dihapus.'], 400);
+        }
+
+        $deleted = NotebookTask::deleteMany($ids, $userId);
+        $this->jsonResponse([
+            'success'       => true,
+            'deleted_count' => $deleted,
+            'deleted_ids'   => $ids,
+            'message'       => "{$deleted} catatan berhasil dihapus.",
+        ]);
+    }
+
+    /**
      * API: Save User Email Reminder Settings
      */
     public function saveSettings(): void

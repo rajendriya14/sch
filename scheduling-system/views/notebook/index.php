@@ -857,6 +857,49 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    /* Tree-Checkbox Delete Manager */
+    .nb-tree-group { margin-bottom: 14px; }
+    .nb-tree-group:last-child { margin-bottom: 0; }
+    .nb-tree-parent {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--nb-text);
+        cursor: pointer;
+        padding: 4px 2px;
+        user-select: none;
+    }
+    .nb-tree-children {
+        padding-left: 26px;
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .nb-tree-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--nb-text);
+        padding: 2px 4px;
+        border-radius: 6px;
+        user-select: none;
+    }
+    .nb-tree-item:hover { background: #f8fafc; }
+    .nb-tree-cb {
+        width: 17px;
+        height: 17px;
+        accent-color: var(--excel-green);
+        cursor: pointer;
+        flex-shrink: 0;
+        border-radius: 4px;
+    }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -956,6 +999,12 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <span class="sidebar-nav-left">
                         <i class="bi bi-calendar-x text-danger"></i>
                         <span>Tanggal Merah</span>
+                    </span>
+                </button>
+                <button type="button" class="sidebar-nav-item" id="nav-Manage" onclick="openSettingsModal(this, 'manage')">
+                    <span class="sidebar-nav-left">
+                        <i class="bi bi-trash3 text-danger"></i>
+                        <span>Hapus Catatan</span>
                     </span>
                 </button>
             </div>
@@ -1472,6 +1521,11 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                             <i class="bi bi-calendar-x text-danger me-1"></i> Tanggal Merah
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link small fw-semibold" id="tabBtnManage" data-bs-toggle="tab" data-bs-target="#tabPaneManage" type="button" role="tab" onclick="renderManageNotesTree()">
+                            <i class="bi bi-trash3 text-danger me-1"></i> Hapus Catatan
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
@@ -1663,6 +1717,27 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                             </button>
                         </div>
                     </div>
+
+                    <!-- TAB 4: HAPUS CATATAN (MEETING & SYNC / PERSONAL NOTES) -->
+                    <div class="tab-pane fade" id="tabPaneManage" role="tabpanel">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn-cal-outline" onclick="selectAllManageNotes(true)">
+                                    <i class="bi bi-check2-square"></i> Select All
+                                </button>
+                                <button type="button" class="btn-cal-outline" onclick="selectAllManageNotes(false)">
+                                    <i class="bi bi-square"></i> Unselect All
+                                </button>
+                            </div>
+                            <span class="small text-muted" id="manageSelectedCount">0 dipilih</span>
+                        </div>
+                        <div id="manageNotesTree" class="border rounded-3 p-3 bg-white mb-3" style="max-height: 320px; overflow-y: auto;"></div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-danger btn-sm px-3" id="btnDeleteSelectedNotes" onclick="deleteSelectedNotes()" disabled>
+                                <i class="bi bi-trash3 me-1"></i> Hapus Terpilih
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1770,7 +1845,8 @@ function renderBreadcrumb(navId) {
         'nav-Sticky':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Sticky Notes' }],
         'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
         'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }],
-        'nav-Holidays': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Tanggal Merah' }]
+        'nav-Holidays': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Tanggal Merah' }],
+    'nav-Manage':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Hapus Catatan' }]
     };
 
     const items = trails[navId] || trails['nav-ALL'];
@@ -3016,18 +3092,157 @@ function removeHoliday(dateVal) {
 
 function openSettingsModal(btnEl = null, tab = 'prefs') {
     if (btnEl) {
-        const navId = tab === 'email' ? 'nav-Email' : (tab === 'holidays' ? 'nav-Holidays' : 'nav-Prefs');
-        const title = tab === 'email' ? 'Email Reminder' : (tab === 'holidays' ? 'Tanggal Merah' : 'Preferensi Notes');
-        setActiveSidebarNav(navId, title);
+        const navMap = { email: 'nav-Email', holidays: 'nav-Holidays', manage: 'nav-Manage', prefs: 'nav-Prefs' };
+        const titleMap = { email: 'Email Reminder', holidays: 'Tanggal Merah', manage: 'Hapus Catatan', prefs: 'Preferensi Notes' };
+        setActiveSidebarNav(navMap[tab] || 'nav-Prefs', titleMap[tab] || 'Preferensi Notes');
     }
     applyNotePreferences();
     renderEmailChips('cfg');
     renderHolidaysList();
+    renderManageNotesTree();
     syncSettingsPreview();
-    const tabId = tab === 'email' ? 'tabBtnEmail' : (tab === 'holidays' ? 'tabBtnHolidays' : 'tabBtnPrefs');
-    const tabBtn = document.getElementById(tabId);
+    const tabMap = { email: 'tabBtnEmail', holidays: 'tabBtnHolidays', manage: 'tabBtnManage', prefs: 'tabBtnPrefs' };
+    const tabBtn = document.getElementById(tabMap[tab] || 'tabBtnPrefs');
     if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('settingsModal')).show();
+}
+
+let manageSelectedIds = new Set();
+
+function renderManageNotesTree() {
+    const box = document.getElementById('manageNotesTree');
+    if (!box) return;
+
+    const existingIds = new Set(events.map(e => Number(e.id)));
+    manageSelectedIds = new Set([...manageSelectedIds].filter(id => existingIds.has(id)));
+
+    const groups = [
+        { key: '#Meeting',  label: 'Meeting & Sync',  items: events.filter(e => e.category === '#Meeting') },
+        { key: '#Personal', label: 'Personal Notes', items: events.filter(e => e.category !== '#Meeting') }
+    ];
+
+    if (events.length === 0) {
+        box.innerHTML = '<div class="text-muted small text-center py-3">Belum ada catatan di Meeting &amp; Sync maupun Personal Notes.</div>';
+        syncManageTreeState();
+        return;
+    }
+
+    box.innerHTML = groups.map(g => {
+        const itemsHtml = g.items.length
+            ? g.items.map(item => {
+                const id = Number(item.id);
+                const checked = manageSelectedIds.has(id) ? 'checked' : '';
+                const dateLabel = item.due_date ? formatDisplayDateBtn(item.due_date) : '';
+                return `
+                    <label class="nb-tree-item">
+                        <span class="d-flex align-items-center gap-2 min-width-0">
+                            <input type="checkbox" class="nb-tree-cb manage-item-cb" data-group="${g.key}" value="${id}" ${checked} onchange="toggleManageItem(${id}, this.checked)">
+                            <span class="text-truncate">${esc(item.title)}</span>
+                        </span>
+                        <span class="text-muted flex-shrink-0" style="font-size:0.72rem;">${esc(dateLabel)}</span>
+                    </label>
+                `;
+            }).join('')
+            : '<div class="text-muted" style="font-size:0.78rem;">Tidak ada catatan</div>';
+
+        return `
+            <div class="nb-tree-group">
+                <label class="nb-tree-parent">
+                    <input type="checkbox" class="nb-tree-cb manage-group-cb" data-group="${g.key}" onchange="toggleManageGroup('${g.key}', this.checked)" ${g.items.length ? '' : 'disabled'}>
+                    <span>${g.label}</span>
+                    <span class="text-muted fw-normal" style="font-size:0.75rem;">(${g.items.length})</span>
+                </label>
+                <div class="nb-tree-children">${itemsHtml}</div>
+            </div>
+        `;
+    }).join('');
+
+    syncManageTreeState();
+}
+
+function toggleManageGroup(groupKey, checked) {
+    document.querySelectorAll(`.manage-item-cb[data-group="${groupKey}"]`).forEach(cb => {
+        const id = Number(cb.value);
+        cb.checked = checked;
+        if (checked) manageSelectedIds.add(id);
+        else manageSelectedIds.delete(id);
+    });
+    syncManageTreeState();
+}
+
+function toggleManageItem(id, checked) {
+    if (checked) manageSelectedIds.add(Number(id));
+    else manageSelectedIds.delete(Number(id));
+    syncManageTreeState();
+}
+
+function selectAllManageNotes(checked) {
+    manageSelectedIds.clear();
+    document.querySelectorAll('.manage-item-cb').forEach(cb => {
+        cb.checked = checked;
+        if (checked) manageSelectedIds.add(Number(cb.value));
+    });
+    syncManageTreeState();
+}
+
+function syncManageTreeState() {
+    document.querySelectorAll('.manage-group-cb').forEach(gCb => {
+        const gKey = gCb.dataset.group;
+        const items = [...document.querySelectorAll(`.manage-item-cb[data-group="${gKey}"]`)];
+        if (items.length === 0) {
+            gCb.checked = false;
+            gCb.indeterminate = false;
+            return;
+        }
+        const checkedCount = items.filter(cb => cb.checked).length;
+        gCb.checked = checkedCount === items.length;
+        gCb.indeterminate = checkedCount > 0 && checkedCount < items.length;
+    });
+
+    const count = manageSelectedIds.size;
+    const countEl = document.getElementById('manageSelectedCount');
+    if (countEl) countEl.textContent = `${count} dipilih`;
+
+    const btn = document.getElementById('btnDeleteSelectedNotes');
+    if (btn) {
+        btn.disabled = count === 0;
+        btn.innerHTML = count > 0
+            ? `<i class="bi bi-trash3 me-1"></i> Hapus Terpilih (${count})`
+            : '<i class="bi bi-trash3 me-1"></i> Hapus Terpilih';
+    }
+}
+
+async function deleteSelectedNotes() {
+    const ids = [...manageSelectedIds];
+    if (ids.length === 0) return;
+    if (!confirm(`Hapus ${ids.length} catatan terpilih secara permanen?`)) return;
+
+    const btn = document.getElementById('btnDeleteSelectedNotes');
+    if (btn) btn.disabled = true;
+
+    const fd = new FormData();
+    fd.append('ids', JSON.stringify(ids));
+
+    try {
+        const res = await fetch('index.php?page=notebook&action=deleteBulk', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Gagal menghapus catatan');
+
+        const delSet = new Set(ids);
+        events = events.filter(e => !delSet.has(Number(e.id)));
+        manageSelectedIds.clear();
+        renderAll();
+        renderBriefing();
+        renderManageNotesTree();
+        showToast(data.message || `${ids.length} catatan berhasil dihapus.`, 'success');
+    } catch (err) {
+        showToast(err.message, 'danger');
+        syncManageTreeState();
+    }
 }
 
 function syncSettingsPreview() {
