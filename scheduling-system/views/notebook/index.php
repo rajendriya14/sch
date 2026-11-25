@@ -730,51 +730,57 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         border-radius: 7px !important;
     }
 
-    /* Custom Excel-Green Time Picker Popover (frame & font matched to Date Picker) */
+    /* Custom Excel-Green Time Picker Popover */
     .nb-time-trigger {
         font-variant-numeric: tabular-nums;
     }
     .nb-tp-popover {
         position: fixed;
         z-index: 1085;
-        background: #ffffff;
-        border: 1px solid var(--nb-border);
-        border-radius: 14px;
-        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
-        padding: 12px 14px;
-        width: 172px;
+        width: 176px;
         display: none;
         user-select: none;
     }
     .nb-tp-popover.is-open { display: block; }
+    .nb-tp-card {
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+    }
     .nb-tp-cols {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 8px;
+    }
+    .nb-tp-col:first-child {
+        border-right: 1px solid #f1f5f9;
     }
     .nb-tp-col-title {
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 500;
         color: var(--nb-muted);
         text-align: center;
-        padding-bottom: 4px;
+        padding: 10px 0 4px;
     }
     .nb-tp-list {
-        height: 217px;
+        height: 160px;
         overflow-y: auto;
-        scrollbar-width: thin;
-        padding-right: 2px;
+        scrollbar-width: none;
+        padding: 0 6px 4px;
     }
+    .nb-tp-list::-webkit-scrollbar { display: none; }
     .nb-tp-item {
-        height: 31px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
+        font-size: 0.84rem;
         font-variant-numeric: tabular-nums;
         color: var(--nb-text);
         cursor: pointer;
-        border-radius: 7px;
+        border-radius: 9px;
+        margin: 0 4px;
         transition: background 0.1s;
     }
     .nb-tp-item:hover { background: #f3f4f6; }
@@ -784,34 +790,36 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         font-weight: 600;
     }
     .nb-tp-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         border-top: 1px solid #f1f5f9;
-        margin-top: 8px;
-        padding-top: 8px;
     }
+    .nb-tp-now,
     .nb-tp-clear {
         border: none;
         background: transparent;
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 9px 0;
+        cursor: pointer;
+        transition: background 0.1s;
+    }
+    .nb-tp-now { color: var(--nb-text); }
+    .nb-tp-clear { color: var(--nb-muted); }
+    .nb-tp-now:hover,
+    .nb-tp-clear:hover { background: #f8fafc; color: var(--nb-text); }
+    .nb-tp-caption {
+        text-align: center;
+        font-size: 0.76rem;
         color: var(--nb-muted);
-        font-size: 0.74rem;
+        margin-top: 8px;
         padding: 2px 6px;
+        background: rgba(255, 255, 255, 0.92);
         border-radius: 6px;
-        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .nb-tp-clear:hover { background: #f3f4f6; color: var(--nb-text); }
-    .nb-tp-ok {
-        border: none;
-        background: var(--excel-green);
-        color: #ffffff;
-        font-size: 0.74rem;
-        font-weight: 600;
-        padding: 3px 12px;
-        border-radius: 7px;
-        cursor: pointer;
-    }
-    .nb-tp-ok:hover { filter: brightness(0.95); }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -2642,6 +2650,16 @@ function closeNbTimePicker() {
     tpState.open = false;
 }
 
+function getTpContextTitle() {
+    if (tpState.inputId.startsWith('stickyReminderTime')) {
+        return (document.getElementById('stickyTitle')?.value || '').trim() || 'Sticky Note';
+    }
+    if (tpState.inputId.startsWith('cfgDigestTime')) {
+        return 'Daily Briefing';
+    }
+    return (document.getElementById('taskTitle')?.value || '').trim() || 'Event';
+}
+
 function renderNbTimePicker(scrollToActive = false) {
     const pop = document.getElementById('nbTimePickerPopover');
     if (!pop) return;
@@ -2658,21 +2676,28 @@ function renderNbTimePicker(scrollToActive = false) {
         return `<div class="nb-tp-item ${sel}" data-tp-min="${m}" onclick="pickNbTimePart('minute', '${m}')">${m}</div>`;
     }).join('');
 
+    const titleText = escapeHtml(getTpContextTitle());
+    const curVal = (document.getElementById(tpState.inputId)?.value || '').trim();
+    const captionTime = /^\d{2}:\d{2}$/.test(curVal) ? curVal : `${tpState.hour}:${tpState.minute}`;
+
     pop.innerHTML = `
-        <div class="nb-tp-cols">
-            <div>
-                <div class="nb-tp-col-title">Jam</div>
-                <div class="nb-tp-list" id="nbTpHourList">${hoursHtml}</div>
+        <div class="nb-tp-card">
+            <div class="nb-tp-cols">
+                <div class="nb-tp-col">
+                    <div class="nb-tp-col-title">Hour</div>
+                    <div class="nb-tp-list" id="nbTpHourList">${hoursHtml}</div>
+                </div>
+                <div class="nb-tp-col">
+                    <div class="nb-tp-col-title">Minute</div>
+                    <div class="nb-tp-list" id="nbTpMinList">${minsHtml}</div>
+                </div>
             </div>
-            <div>
-                <div class="nb-tp-col-title">Menit</div>
-                <div class="nb-tp-list" id="nbTpMinList">${minsHtml}</div>
+            <div class="nb-tp-footer">
+                <button type="button" class="nb-tp-now" onclick="setNbTimeNow()">Now</button>
+                <button type="button" class="nb-tp-clear" onclick="clearNbTime()">Clear</button>
             </div>
         </div>
-        <div class="nb-tp-footer">
-            <button type="button" class="nb-tp-clear" onclick="clearNbTime()">Hapus</button>
-            <button type="button" class="nb-tp-ok" onclick="closeNbTimePicker()">OK</button>
-        </div>
+        <div class="nb-tp-caption" id="nbTpCaption">${titleText} at ${captionTime}</div>
     `;
 
     if (scrollToActive) {
@@ -2705,7 +2730,23 @@ function pickNbTimePart(part, val) {
                 el.classList.toggle('is-selected', el.dataset.tpMin === tpState.minute);
             });
         }
+        const cap = document.getElementById('nbTpCaption');
+        if (cap) cap.textContent = `${getTpContextTitle()} at ${tpState.hour}:${tpState.minute}`;
     }
+}
+
+function setNbTimeNow() {
+    const now = new Date();
+    tpState.hour = String(now.getHours()).padStart(2, '0');
+    tpState.minute = String(now.getMinutes()).padStart(2, '0');
+
+    const inp = document.getElementById(tpState.inputId);
+    if (inp) {
+        inp.value = `${tpState.hour}:${tpState.minute}`;
+        syncTimeDisplay(tpState.inputId);
+        if (tpState.inputId.startsWith('cfgDigestTime')) syncSettingsPreview();
+    }
+    renderNbTimePicker(true);
 }
 
 function clearNbTime() {
