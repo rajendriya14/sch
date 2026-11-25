@@ -6,6 +6,10 @@
     <title><?= htmlspecialchars((($pageName ?? '') === 'notebook') ? 'nyatet.' : ($pageTitle ?? 'Pradiya Portal')) ?></title>
     <?php if (($pageName ?? '') === 'notebook'): ?>
     <link rel="icon" type="image/svg+xml" href="scheduling-system/public/assets/img/nyatet-icon.svg?v=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="scheduling-system/public/assets/img/nyatet-apple-touch-icon.png?v=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="nyatet.">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <?php else: ?>
     <!-- Favicon: ikon `bi-calendar-check` yang sama dengan logo di navbar,
          ditanam sebagai data URI SVG agar tidak butuh berkas tambahan.
