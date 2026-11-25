@@ -26,6 +26,27 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         padding: 0 !important;
         margin: 0 !important;
         overflow-x: hidden;
+        accent-color: var(--excel-green);
+    }
+
+    body.page-notebook .form-check-input:checked {
+        background-color: var(--excel-green);
+        border-color: var(--excel-green);
+    }
+
+    body.page-notebook .form-control:focus,
+    body.page-notebook .form-select:focus,
+    body.page-notebook .form-check-input:focus {
+        border-color: var(--excel-green);
+        box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.14);
+    }
+
+    body.page-notebook .nav-tabs .nav-link {
+        color: var(--nb-muted);
+    }
+    body.page-notebook .nav-tabs .nav-link.active {
+        color: var(--excel-green);
+        border-color: var(--nb-border) var(--nb-border) #ffffff;
     }
 
     body.page-notebook #wrapper,
@@ -1602,7 +1623,7 @@ function selectFilter(tag, title) {
     activeTagFilter = tag;
     const navId = tag === '#Meeting' ? 'nav-Meeting' : (tag === '#Personal' ? 'nav-Personal' : 'nav-ALL');
     setActiveSidebarNav(navId, title || 'All Notes');
-    if (currentView === 'kanban') {
+    if (currentView === 'kanban' || currentView === 'sticky') {
         switchView('month');
         return;
     }
@@ -2131,6 +2152,13 @@ function openStickyModal(id = null) {
 
 async function handleStickySubmit(e) {
     e.preventDefault();
+    addEmailChip('sticky');
+    const remEnabled = document.getElementById('stickyEmailReminder').checked;
+    if (remEnabled && stickyEmails.length === 0) {
+        alert('Tambahkan minimal 1 alamat email penerima untuk reminder.');
+        document.getElementById('stickyEmailInput').focus();
+        return;
+    }
     const btn = document.getElementById('btnSaveSticky');
     btn.disabled = true;
     const customDays = Array.from(document.querySelectorAll('.sticky-day-cb:checked')).map(c => c.value).join(',');
@@ -2159,6 +2187,7 @@ async function handleStickySubmit(e) {
             bootstrap.Modal.getInstance(document.getElementById('stickyModal')).hide();
             renderAll();
             showToast(json.message || 'Sticky note disimpan.');
+            if (remEnabled) runDueRemindersSilent();
         } else {
             alert(json.message || 'Gagal menyimpan sticky note.');
         }
@@ -2467,6 +2496,13 @@ function openTaskModal(id = null, defDate = null, defTime = null) {
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
+    addEmailChip('task');
+    const remEnabled = document.getElementById('taskEmailReminder').checked;
+    if (remEnabled && taskEmails.length === 0) {
+        alert('Tambahkan minimal 1 alamat email penerima untuk reminder.');
+        document.getElementById('taskEmailInput').focus();
+        return;
+    }
     const btn = document.getElementById('btnSaveTask');
     btn.disabled = true;
 
@@ -2508,6 +2544,7 @@ async function handleTaskSubmit(e) {
             bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
             renderAll();
             showToast(json.message || 'Agenda tersimpan.');
+            if (remEnabled) runDueRemindersSilent();
         } else {
             alert(json.message || 'Gagal menyimpan agenda.');
         }
@@ -2634,6 +2671,7 @@ function syncSettingsPreview() {
 }
 
 async function saveSettingsToServer() {
+    addEmailChip('cfg');
     cfgPrefs = {
         default_view: document.getElementById('prefDefaultView').value,
         week_start: document.getElementById('prefWeekStart').value,
