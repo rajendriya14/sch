@@ -2240,9 +2240,10 @@ function renderMonthView() {
                 };
                 cell.appendChild(more);
             }
-            if (holiday && holiday.label) {
+            const hasEventOnDay = overflowCount[idx] > 0 || placements.some(p => idx >= p.startIdx && idx <= p.endIdx);
+            if (holiday && holiday.label && !hasEventOnDay) {
                 const holBadge = document.createElement('div');
-                holBadge.className = 'month-hol-label' + (overflowCount[idx] > 0 ? ' has-more' : '');
+                holBadge.className = 'month-hol-label';
                 holBadge.textContent = holiday.label;
                 cell.appendChild(holBadge);
             }
