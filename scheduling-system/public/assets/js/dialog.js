@@ -122,9 +122,13 @@
             els.note.classList.remove('d-none');
         }
 
-        els.cancel.textContent = opts.cancelText || 'Batal';
-        els.cancel.className = 'btn btn-light border';
-        els.confirm.textContent = opts.confirmText || 'Lanjutkan';
+        var card = overlay.querySelector('.dlg-card');
+        if (card) card.classList.toggle('is-alert', !!opts.alert);
+
+        els.cancel.classList.toggle('d-none', !!opts.alert);
+        els.cancel.textContent = opts.cancelText || 'No';
+        els.cancel.className = 'btn btn-light border' + (opts.alert ? ' d-none' : '');
+        els.confirm.textContent = opts.confirmText || (opts.alert ? 'OK' : 'Yes');
         els.confirm.className = 'btn ' + (opts.confirmClass || CONFIRM_BTN[tone]);
 
         lastFocus = document.activeElement;
@@ -247,7 +251,16 @@
         });
     }
 
-    window.AppDialog = { confirm: open, toast: toast };
+    function alertBox(opts) {
+        opts = typeof opts === 'string' ? { message: opts } : Object.assign({}, opts);
+        opts.alert = true;
+        opts.tone = opts.tone || 'info';
+        opts.title = opts.title || TONE_TITLE[opts.tone] || 'Informasi';
+        opts.confirmText = opts.confirmText || 'OK';
+        return open(opts);
+    }
+
+    window.AppDialog = { confirm: open, alert: alertBox, toast: toast };
 
     // ---------------------------------------------------------------
     // Jembatan untuk atribut data-confirm (dipakai app.js & view FFR)

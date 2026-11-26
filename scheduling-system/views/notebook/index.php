@@ -2542,7 +2542,7 @@ async function handleStickySubmit(e) {
     addEmailChip('sticky');
     const remEnabled = document.getElementById('stickyEmailReminder').checked;
     if (remEnabled && stickyEmails.length === 0) {
-        alert('Tambahkan minimal 1 alamat email penerima untuk reminder.');
+        await AppDialog.alert({ tone: 'warning', title: 'Email Diperlukan', message: 'Tambahkan minimal 1 alamat email penerima untuk reminder.' });
         document.getElementById('stickyEmailInput').focus();
         return;
     }
@@ -2576,7 +2576,7 @@ async function handleStickySubmit(e) {
             showToast(json.message || 'Sticky note disimpan.');
             if (remEnabled) runDueRemindersSilent();
         } else {
-            alert(json.message || 'Gagal menyimpan sticky note.');
+            await AppDialog.alert({ tone: 'danger', title: 'Gagal Menyimpan', message: json.message || 'Gagal menyimpan sticky note.' });
         }
     } finally {
         btn.disabled = false;
@@ -2584,7 +2584,14 @@ async function handleStickySubmit(e) {
 }
 
 async function deleteSticky(id) {
-    if (!confirm('Hapus sticky note ini?')) return;
+    const ok = await AppDialog.confirm({
+        tone: 'danger',
+        title: 'Are you sure?',
+        message: 'Hapus sticky note ini?',
+        cancelText: 'No',
+        confirmText: 'Yes, Delete'
+    });
+    if (!ok) return;
     const fd = new FormData();
     fd.append('id', id);
     const res = await fetch('index.php?page=notebook&action=deleteSticky', {
@@ -3149,7 +3156,7 @@ async function handleTaskSubmit(e) {
     addEmailChip('task');
     const remEnabled = document.getElementById('taskEmailReminder').checked;
     if (remEnabled && taskEmails.length === 0) {
-        alert('Tambahkan minimal 1 alamat email penerima untuk reminder.');
+        await AppDialog.alert({ tone: 'warning', title: 'Email Diperlukan', message: 'Tambahkan minimal 1 alamat email penerima untuk reminder.' });
         document.getElementById('taskEmailInput').focus();
         return;
     }
@@ -3196,10 +3203,10 @@ async function handleTaskSubmit(e) {
             showToast(json.message || 'Agenda tersimpan.');
             if (remEnabled) runDueRemindersSilent();
         } else {
-            alert(json.message || 'Gagal menyimpan agenda.');
+            await AppDialog.alert({ tone: 'danger', title: 'Gagal Menyimpan', message: json.message || 'Gagal menyimpan agenda.' });
         }
     } catch (err) {
-        alert('Terjadi kesalahan jaringan saat menyimpan.');
+        await AppDialog.alert({ tone: 'danger', title: 'Kesalahan Jaringan', message: 'Terjadi kesalahan jaringan saat menyimpan.' });
     } finally {
         btn.disabled = false;
     }
@@ -3228,7 +3235,15 @@ async function toggleDoneFromModal() {
 
 async function deleteTask() {
     const id = Number(document.getElementById('taskId').value);
-    if (!id || !confirm('Hapus agenda ini dari notebook Anda?')) return;
+    if (!id) return;
+    const ok = await AppDialog.confirm({
+        tone: 'danger',
+        title: 'Are you sure?',
+        message: 'Hapus agenda ini dari notebook Anda?',
+        cancelText: 'No',
+        confirmText: 'Yes, Delete'
+    });
+    if (!ok) return;
 
     const fd = new FormData();
     fd.append('id', id);
@@ -3411,7 +3426,14 @@ function syncManageTreeState() {
 async function deleteSelectedNotes() {
     const ids = [...manageSelectedIds];
     if (ids.length === 0) return;
-    if (!confirm(`Permanently delete ${ids.length} selected note(s)?`)) return;
+    const ok = await AppDialog.confirm({
+        tone: 'danger',
+        title: 'Are you sure?',
+        message: `Permanently delete ${ids.length} selected note(s)?`,
+        cancelText: 'No',
+        confirmText: 'Yes, Delete'
+    });
+    if (!ok) return;
 
     const btn = document.getElementById('btnDeleteSelectedNotes');
     if (btn) btn.disabled = true;
@@ -3503,7 +3525,7 @@ async function sendTestEmail() {
         });
         const json = await res.json();
         if (!json.success) {
-            alert(json.message || 'Gagal mengirim email.');
+            await AppDialog.alert({ tone: 'danger', title: 'Gagal Mengirim', message: json.message || 'Gagal mengirim email.' });
         } else {
             showToast(json.message || 'Email terkirim.');
         }
@@ -3530,7 +3552,10 @@ function showToast(msg) {
 async function saveSmtpConfig() {
     const u = document.getElementById('smtpUser').value.trim();
     const p = document.getElementById('smtpPass').value.trim();
-    if (!u || !p) { alert('Isi Gmail pengirim dan App Password.'); return; }
+    if (!u || !p) {
+        await AppDialog.alert({ tone: 'warning', title: 'Data Belum Lengkap', message: 'Isi Gmail pengirim dan App Password.' });
+        return;
+    }
     const fd = new FormData();
     fd.append('username', u);
     fd.append('password', p);
@@ -3544,7 +3569,7 @@ async function saveSmtpConfig() {
         showToast(json.message);
         runDueRemindersSilent();
     } else {
-        alert(json.message || 'Gagal menyimpan SMTP.');
+        await AppDialog.alert({ tone: 'danger', title: 'Gagal Menyimpan SMTP', message: json.message || 'Gagal menyimpan SMTP.' });
     }
 }
 

@@ -1614,14 +1614,15 @@ body.ledger-exporting .ledger-table tr:hover > * {
 
 .dlg-card {
     width: 100%;
-    max-width: 440px;
+    max-width: 340px;
     max-height: calc(100vh - 40px);
-    overflow-y: auto;
+    overflow: hidden;
     margin: auto;
     background: #fff;
+    border: 1px solid #e5e7eb;
     border-radius: 16px;
-    box-shadow: 0 24px 60px -12px rgba(15, 23, 42, .35), 0 8px 20px -8px rgba(15, 23, 42, .2);
-    padding: 26px 26px 20px;
+    box-shadow: 0 24px 60px -12px rgba(15, 23, 42, .28), 0 8px 20px -8px rgba(15, 23, 42, .14);
+    padding: 26px 0 0;
     text-align: center;
     transform: translateY(10px) scale(.97);
     opacity: 0;
@@ -1634,8 +1635,8 @@ body.ledger-exporting .ledger-table tr:hover > * {
 }
 
 .dlg-icon {
-    width: 46px;
-    height: 46px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -1643,33 +1644,35 @@ body.ledger-exporting .ledger-table tr:hover > * {
     margin: 0 auto 14px;
 }
 
-.dlg-icon--danger  { background: #fee2e2; color: #b91c1c; }
-.dlg-icon--warning { background: #fef3c7; color: #b45309; }
-.dlg-icon--info    { background: #dbeafe; color: #1d4ed8; }
-.dlg-icon--success { background: #dcfce7; color: #15803d; }
+.dlg-icon--danger  { background: #fee2e2; color: #dc2626; }
+.dlg-icon--warning { background: #fef3c7; color: #d97706; }
+.dlg-icon--info    { background: #ede9fe; color: #7c3aed; }
+.dlg-icon--success { background: #dcfce7; color: #217346; }
 
 .dlg-title {
-    font-size: 1.06rem;
-    font-weight: 650;
+    font-size: 1.05rem;
+    font-weight: 700;
     color: #0f172a;
     margin: 0 0 6px;
+    padding: 0 22px;
     letter-spacing: -.01em;
 }
 
 .dlg-message {
-    font-size: .9rem;
-    line-height: 1.6;
-    color: #55627a;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: #6b7280;
     margin: 0;
+    padding: 0 22px;
 }
 
 .dlg-detail {
-    margin: 14px 0 0;
-    padding: 12px 14px;
-    background: #f6f8fa;
-    border: 1px solid #e6eaf0;
+    margin: 14px 22px 0;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
-    font-size: .84rem;
+    font-size: .82rem;
     color: #475467;
     text-align: center;
     list-style-position: inside;
@@ -1679,29 +1682,58 @@ body.ledger-exporting .ledger-table tr:hover > * {
 .dlg-detail li:last-child { margin-bottom: 0; }
 
 .dlg-note {
-    margin: 14px 0 0;
-    font-size: .8rem;
-    color: #7b8698;
+    display: none !important;
 }
 
 .dlg-actions {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
     margin-top: 22px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.dlg-card.is-alert .dlg-actions {
+    grid-template-columns: 1fr;
 }
 
 .dlg-actions .btn {
-    border-radius: 9px;
-    font-size: .875rem;
-    font-weight: 550;
-    padding: .5rem 1rem;
-    min-width: 92px;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #111827 !important;
+    font-size: .9rem;
+    font-weight: 500;
+    padding: 13px 12px;
+    min-width: 0;
+    width: 100%;
+    box-shadow: none !important;
+    transition: background .14s ease;
+}
+
+.dlg-actions .btn:hover {
+    background: #f8fafc !important;
+}
+
+.dlg-actions #dlgCancel {
+    border-right: 1px solid #e5e7eb !important;
+}
+
+.dlg-actions #dlgConfirm {
+    font-weight: 600;
+}
+
+.dlg-actions #dlgConfirm.btn-danger {
+    color: #dc2626 !important;
+}
+
+.dlg-actions #dlgConfirm.btn-success {
+    color: #217346 !important;
 }
 
 .dlg-actions .btn:focus-visible {
-    outline: 3px solid rgba(13, 110, 253, .35);
-    outline-offset: 2px;
+    outline: none;
+    background: #f1f5f9 !important;
 }
 
 /* Toast notifikasi hasil simpan */
@@ -1769,9 +1801,7 @@ body.ledger-exporting .ledger-table tr:hover > * {
 }
 
 @media (max-width: 480px) {
-    .dlg-card { padding: 22px 20px 16px; }
-    .dlg-actions { flex-direction: column-reverse; }
-    .dlg-actions .btn { width: 100%; }
+    .dlg-card { max-width: 340px; }
 }
 
 /* ==========================================================================
