@@ -42,13 +42,14 @@ class NotebookCoretan
     {
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            'INSERT INTO notebook_coretan (user_id, title, content, paper_style, font_family, is_pinned)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO notebook_coretan (user_id, title, content, drawing_data, paper_style, font_family, is_pinned)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             (int) $data['user_id'],
             (string) ($data['title'] ?? 'Untitled'),
             (string) ($data['content'] ?? ''),
+            $data['drawing_data'] ?? null,
             (string) ($data['paper_style'] ?? 'plain'),
             (string) ($data['font_family'] ?? 'sans'),
             !empty($data['is_pinned']) ? 1 : 0,
@@ -60,12 +61,13 @@ class NotebookCoretan
     {
         $stmt = Database::getInstance()->prepare(
             'UPDATE notebook_coretan
-             SET title = ?, content = ?, paper_style = ?, font_family = ?, is_pinned = ?
+             SET title = ?, content = ?, drawing_data = ?, paper_style = ?, font_family = ?, is_pinned = ?
              WHERE id = ? AND user_id = ?'
         );
         return $stmt->execute([
             (string) ($data['title'] ?? 'Untitled'),
             (string) ($data['content'] ?? ''),
+            $data['drawing_data'] ?? null,
             (string) ($data['paper_style'] ?? 'plain'),
             (string) ($data['font_family'] ?? 'sans'),
             !empty($data['is_pinned']) ? 1 : 0,

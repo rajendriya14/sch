@@ -1100,6 +1100,36 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         padding: 22px 26px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    #coretanDrawCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 4;
+        pointer-events: none;
+        border-radius: 14px;
+    }
+    .coretan-paper.is-draw-mode #coretanDrawCanvas {
+        pointer-events: auto;
+        touch-action: none;
+        cursor: crosshair;
+    }
+    .coretan-pen-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: transform 0.12s;
+    }
+    .coretan-pen-dot.is-active {
+        transform: scale(1.18);
+        box-shadow: 0 0 0 2px var(--excel-green);
     }
     .coretan-paper[data-paper="lined"] {
         background-image: repeating-linear-gradient(
@@ -1554,44 +1584,94 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                     <div class="coretan-paper" id="coretanPaper" data-paper="plain" data-font="sans">
                                         <input type="text" id="coretanTitle" class="coretan-title-input" placeholder="Judul coretan..." oninput="scheduleCoretanAutoSave()">
                                         <div id="coretanQuillEditor"></div>
+                                        <canvas id="coretanDrawCanvas" width="780" height="560"></canvas>
                                     </div>
 
-                                    <!-- Bottom Floating Formatting Pill Toolbar -->
+                                    <!-- Bottom Floating Formatting & Pen Pill Toolbar -->
                                     <div class="coretan-pill-bar">
-                                        <select id="coretanFontSelect" class="form-select form-select-sm border-0 bg-transparent fw-semibold" style="width:auto; font-size:0.78rem; cursor:pointer;" onchange="setCoretanFont(this.value)" title="Pilih Font">
-                                            <option value="sans">Sans</option>
-                                            <option value="serif">Serif</option>
-                                            <option value="mono">Mono</option>
-                                            <option value="hand">Handwriting</option>
-                                        </select>
-                                        <span class="coretan-tool-sep"></span>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtBold" onclick="toggleCoretanFormat('bold')" title="Bold">
-                                            <i class="bi bi-type-bold"></i>
+                                        <button type="button" class="coretan-tool-btn is-active" id="btnCoretanTextMode" onclick="setCoretanInputMode('text')" title="Mode Ketik (T)">
+                                            <span class="fw-bold" style="font-size:0.85rem;">T</span>
                                         </button>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtItalic" onclick="toggleCoretanFormat('italic')" title="Italic">
-                                            <i class="bi bi-type-italic"></i>
-                                        </button>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtUnderline" onclick="toggleCoretanFormat('underline')" title="Underline">
-                                            <i class="bi bi-type-underline"></i>
+                                        <button type="button" class="coretan-tool-btn" id="btnCoretanDrawMode" onclick="setCoretanInputMode('draw')" title="Mode Pen / Gambar (Stylus &amp; Touch)">
+                                            <i class="bi bi-pen"></i>
                                         </button>
                                         <span class="coretan-tool-sep"></span>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtCheck" onclick="toggleCoretanList('check')" title="Checkbox / Checklist">
-                                            <i class="bi bi-check2-square"></i>
-                                        </button>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtBullet" onclick="toggleCoretanList('bullet')" title="Bullet List">
-                                            <i class="bi bi-list-ul"></i>
-                                        </button>
-                                        <button type="button" class="coretan-tool-btn" id="btnFmtOrdered" onclick="toggleCoretanList('ordered')" title="Numbering">
-                                            <i class="bi bi-list-ol"></i>
-                                        </button>
-                                        <span class="coretan-tool-sep"></span>
-                                        <span class="coretan-hl-dot" style="background:#fef08a;" onclick="setCoretanHighlight('#fef08a')" title="Highlight Kuning"></span>
-                                        <span class="coretan-hl-dot" style="background:#bbf7d0;" onclick="setCoretanHighlight('#bbf7d0')" title="Highlight Hijau"></span>
-                                        <span class="coretan-hl-dot" style="background:#bfdbfe;" onclick="setCoretanHighlight('#bfdbfe')" title="Highlight Biru"></span>
-                                        <span class="coretan-hl-dot" style="background:#fbcfe8;" onclick="setCoretanHighlight('#fbcfe8')" title="Highlight Pink"></span>
-                                        <button type="button" class="coretan-tool-btn" onclick="setCoretanHighlight(false)" title="Hapus Highlight">
-                                            <i class="bi bi-eraser"></i>
-                                        </button>
+
+                                        <!-- Text Formatting Tools -->
+                                        <div id="coretanTextTools" class="d-flex align-items-center gap-1">
+                                            <select id="coretanFontSelect" class="form-select form-select-sm border-0 bg-transparent fw-semibold" style="width:auto; font-size:0.78rem; cursor:pointer;" onchange="setCoretanFont(this.value)" title="Pilih Font">
+                                                <option value="sans">Sans</option>
+                                                <option value="serif">Serif</option>
+                                                <option value="mono">Mono</option>
+                                                <option value="hand">Handwriting</option>
+                                            </select>
+                                            <span class="coretan-tool-sep"></span>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtBold" onclick="toggleCoretanFormat('bold')" title="Bold">
+                                                <i class="bi bi-type-bold"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtItalic" onclick="toggleCoretanFormat('italic')" title="Italic">
+                                                <i class="bi bi-type-italic"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtUnderline" onclick="toggleCoretanFormat('underline')" title="Underline">
+                                                <i class="bi bi-type-underline"></i>
+                                            </button>
+                                            <span class="coretan-tool-sep"></span>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtCheck" onclick="toggleCoretanList('check')" title="Checkbox / Checklist">
+                                                <i class="bi bi-check2-square"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtBullet" onclick="toggleCoretanList('bullet')" title="Bullet List">
+                                                <i class="bi bi-list-ul"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnFmtOrdered" onclick="toggleCoretanList('ordered')" title="Numbering">
+                                                <i class="bi bi-list-ol"></i>
+                                            </button>
+                                            <span class="coretan-tool-sep"></span>
+                                            <span class="coretan-hl-dot" style="background:#fef08a;" onclick="setCoretanHighlight('#fef08a')" title="Highlight Kuning"></span>
+                                            <span class="coretan-hl-dot" style="background:#bbf7d0;" onclick="setCoretanHighlight('#bbf7d0')" title="Highlight Hijau"></span>
+                                            <span class="coretan-hl-dot" style="background:#bfdbfe;" onclick="setCoretanHighlight('#bfdbfe')" title="Highlight Biru"></span>
+                                            <span class="coretan-hl-dot" style="background:#fbcfe8;" onclick="setCoretanHighlight('#fbcfe8')" title="Highlight Pink"></span>
+                                            <button type="button" class="coretan-tool-btn" onclick="setCoretanHighlight(false)" title="Hapus Highlight">
+                                                <i class="bi bi-eraser"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Pen / Stylus Tools -->
+                                        <div id="coretanDrawTools" class="d-none align-items-center gap-1">
+                                            <button type="button" class="coretan-tool-btn is-active" id="btnBrushPen" onclick="setCoretanBrush('pen')" title="Ballpoint Pen">
+                                                <i class="bi bi-pen-fill"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushFountain" onclick="setCoretanBrush('fountain')" title="Fountain Pen (Tekanan Stylus)">
+                                                <i class="bi bi-vector-pen"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushPencil" onclick="setCoretanBrush('pencil')" title="Pencil (Arsir Lembut)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushHighlighter" onclick="setCoretanBrush('highlighter')" title="Highlighter Marker">
+                                                <i class="bi bi-highlighter"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushEraser" onclick="setCoretanBrush('eraser')" title="Eraser">
+                                                <i class="bi bi-eraser-fill"></i>
+                                            </button>
+                                            <span class="coretan-tool-sep"></span>
+                                            <select id="coretanStrokeSize" class="form-select form-select-sm border-0 bg-transparent fw-semibold" style="width:auto; font-size:0.75rem; cursor:pointer;" onchange="coretanPenSize = Number(this.value)" title="Ketebalan Goresan">
+                                                <option value="2">Tipis</option>
+                                                <option value="4" selected>Sedang</option>
+                                                <option value="8">Tebal</option>
+                                            </select>
+                                            <span class="coretan-tool-sep"></span>
+                                            <span class="coretan-pen-dot is-active" data-pen-color="#111827" style="background:#111827;" onclick="setCoretanPenColor('#111827', this)" title="Hitam"></span>
+                                            <span class="coretan-pen-dot" data-pen-color="#217346" style="background:#217346;" onclick="setCoretanPenColor('#217346', this)" title="Hijau Excel"></span>
+                                            <span class="coretan-pen-dot" data-pen-color="#2563eb" style="background:#2563eb;" onclick="setCoretanPenColor('#2563eb', this)" title="Biru"></span>
+                                            <span class="coretan-pen-dot" data-pen-color="#dc2626" style="background:#dc2626;" onclick="setCoretanPenColor('#dc2626', this)" title="Merah"></span>
+                                            <span class="coretan-pen-dot" data-pen-color="#eab308" style="background:#eab308;" onclick="setCoretanPenColor('#eab308', this)" title="Kuning"></span>
+                                            <span class="coretan-tool-sep"></span>
+                                            <button type="button" class="coretan-tool-btn" id="btnStylusOnly" onclick="toggleStylusOnly()" title="Stylus Only (Palm Rejection untuk Tablet)">
+                                                <i class="bi bi-hand-index"></i>
+                                            </button>
+                                            <button type="button" class="coretan-tool-btn text-danger" onclick="clearCoretanCanvas()" title="Bersihkan Semua Goresan">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3908,6 +3988,7 @@ let activeCoretanFont = 'sans';
 let activeCoretanPinned = false;
 
 function ensureCoretanQuill() {
+    initCoretanCanvas();
     if (coretanQuill || typeof Quill === 'undefined') return;
     coretanQuill = new Quill('#coretanQuillEditor', {
         theme: 'snow',
@@ -3986,6 +4067,7 @@ function loadCoretanIntoEditor(item, enterMobileEdit = true) {
     coretanSuppressChange = true;
     if (coretanQuill) coretanQuill.root.innerHTML = item.content || '';
     coretanSuppressChange = false;
+    loadCoretanDrawing(item.drawing_data || '');
 
     applyCoretanPaperAndFontUI();
     document.getElementById('coretanSaveStatus').textContent = 'Saved';
@@ -4003,6 +4085,7 @@ function resetCoretanEditor(enterMobileEdit = true) {
     coretanSuppressChange = true;
     if (coretanQuill) coretanQuill.setContents([]);
     coretanSuppressChange = false;
+    loadCoretanDrawing('');
     applyCoretanPaperAndFontUI();
     document.getElementById('coretanSaveStatus').textContent = 'Draft';
     if (enterMobileEdit) document.getElementById('coretanShell')?.classList.add('is-editing');
@@ -4080,11 +4163,19 @@ function setCoretanHighlight(color) {
 }
 
 function coretanUndo() {
-    if (coretanQuill) coretanQuill.history.undo();
+    if (coretanInputMode === 'draw') {
+        undoCoretanCanvas();
+    } else if (coretanQuill) {
+        coretanQuill.history.undo();
+    }
 }
 
 function coretanRedo() {
-    if (coretanQuill) coretanQuill.history.redo();
+    if (coretanInputMode === 'draw') {
+        redoCoretanCanvas();
+    } else if (coretanQuill) {
+        coretanQuill.history.redo();
+    }
 }
 
 function syncCoretanToolbarState() {
@@ -4110,7 +4201,7 @@ async function saveCoretanNow(manual = false) {
     const title = (document.getElementById('coretanTitle')?.value || '').trim();
     const html = coretanQuill ? coretanQuill.root.innerHTML : '';
     const plain = (coretanQuill ? coretanQuill.getText() : '').trim();
-    if (!manual && !activeCoretanId && !title && !plain) return;
+    if (!manual && !activeCoretanId && !title && !plain && !coretanHasInk) return;
 
     const st = document.getElementById('coretanSaveStatus');
     if (st) st.textContent = 'Saving...';
@@ -4119,6 +4210,7 @@ async function saveCoretanNow(manual = false) {
     fd.append('id', activeCoretanId);
     fd.append('title', title || 'Untitled');
     fd.append('content', html);
+    fd.append('drawing_data', getCoretanDrawingDataUrl());
     fd.append('paper_style', activeCoretanPaper);
     fd.append('font_family', activeCoretanFont);
     if (activeCoretanPinned) fd.append('is_pinned', '1');
@@ -4177,5 +4269,235 @@ async function deleteCurrentCoretan() {
         coretanBackToList();
         showToast('Coretan dihapus.');
     }
+}
+
+/* CORETAN. — STYLUS / PEN / CANVAS DRAWING ENGINE */
+let coretanInputMode = 'text';
+let coretanBrush = 'pen';
+let coretanPenColor = '#111827';
+let coretanPenSize = 4;
+let coretanStylusOnly = false;
+let coretanCanvasReady = false;
+let coretanIsDrawing = false;
+let coretanHasInk = false;
+let coretanLastPt = null;
+let coretanDrawUndo = [];
+let coretanDrawRedo = [];
+
+function initCoretanCanvas() {
+    if (coretanCanvasReady) return;
+    const canvas = document.getElementById('coretanDrawCanvas');
+    const paper = document.getElementById('coretanPaper');
+    if (!canvas || !paper) return;
+    coretanCanvasReady = true;
+
+    // Auto-switch to draw mode when a stylus/Apple Pencil touches the paper
+    paper.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'pen' && coretanInputMode !== 'draw') {
+            setCoretanInputMode('draw');
+        }
+    }, true);
+
+    canvas.addEventListener('pointerdown', (e) => {
+        if (coretanInputMode !== 'draw') return;
+        if (coretanStylusOnly && e.pointerType !== 'pen') return;
+        e.preventDefault();
+        canvas.setPointerCapture(e.pointerId);
+        pushCoretanDrawHistory();
+        coretanIsDrawing = true;
+        coretanLastPt = getCanvasPoint(canvas, e);
+        drawCoretanSegment(canvas.getContext('2d'), coretanLastPt, coretanLastPt, e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+        if (!coretanIsDrawing || coretanInputMode !== 'draw') return;
+        if (coretanStylusOnly && e.pointerType !== 'pen') return;
+        e.preventDefault();
+        const ctx = canvas.getContext('2d');
+        const pt = getCanvasPoint(canvas, e);
+        drawCoretanSegment(ctx, coretanLastPt, pt, e);
+        coretanLastPt = pt;
+    });
+
+    const endStroke = () => {
+        if (!coretanIsDrawing) return;
+        coretanIsDrawing = false;
+        coretanLastPt = null;
+        coretanHasInk = true;
+        scheduleCoretanAutoSave();
+    };
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+}
+
+function getCanvasPoint(canvas, e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+        pressure: (e.pointerType === 'pen' && e.pressure > 0) ? e.pressure : 0.5
+    };
+}
+
+function drawCoretanSegment(ctx, p1, p2, e) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const pressure = p2.pressure || 0.5;
+    if (coretanBrush === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = coretanPenSize * 4;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    } else if (coretanBrush === 'highlighter') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = coretanPenColor;
+        ctx.lineWidth = coretanPenSize * 4.5;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    } else if (coretanBrush === 'fountain') {
+        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const speedFactor = Math.max(0.55, Math.min(1.45, 1.35 - dist * 0.025));
+        const pressFactor = (e.pointerType === 'pen') ? (0.4 + pressure * 1.3) : speedFactor;
+        ctx.globalAlpha = 0.96;
+        ctx.strokeStyle = coretanPenColor;
+        ctx.lineWidth = Math.max(1.2, coretanPenSize * pressFactor);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    } else if (coretanBrush === 'pencil') {
+        ctx.globalAlpha = 0.35 + pressure * 0.35;
+        ctx.strokeStyle = coretanPenColor;
+        ctx.lineWidth = Math.max(1, coretanPenSize * (0.6 + pressure * 0.6));
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    } else {
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = coretanPenColor;
+        ctx.lineWidth = coretanPenSize;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function setCoretanInputMode(mode) {
+    coretanInputMode = mode;
+    const paper = document.getElementById('coretanPaper');
+    if (paper) paper.classList.toggle('is-draw-mode', mode === 'draw');
+
+    document.getElementById('btnCoretanTextMode')?.classList.toggle('is-active', mode === 'text');
+    document.getElementById('btnCoretanDrawMode')?.classList.toggle('is-active', mode === 'draw');
+
+    const textTools = document.getElementById('coretanTextTools');
+    const drawTools = document.getElementById('coretanDrawTools');
+    if (textTools) {
+        textTools.classList.toggle('d-none', mode !== 'text');
+        textTools.classList.toggle('d-flex', mode === 'text');
+    }
+    if (drawTools) {
+        drawTools.classList.toggle('d-none', mode !== 'draw');
+        drawTools.classList.toggle('d-flex', mode === 'draw');
+    }
+}
+
+function setCoretanBrush(brush) {
+    coretanBrush = brush;
+    ['Pen', 'Fountain', 'Pencil', 'Highlighter', 'Eraser'].forEach(name => {
+        document.getElementById('btnBrush' + name)?.classList.toggle('is-active', name.toLowerCase() === brush);
+    });
+}
+
+function setCoretanPenColor(color, el) {
+    coretanPenColor = color;
+    if (coretanBrush === 'eraser') setCoretanBrush('pen');
+    document.querySelectorAll('.coretan-pen-dot').forEach(d => d.classList.remove('is-active'));
+    if (el) el.classList.add('is-active');
+}
+
+function toggleStylusOnly() {
+    coretanStylusOnly = !coretanStylusOnly;
+    document.getElementById('btnStylusOnly')?.classList.toggle('is-active', coretanStylusOnly);
+    showToast(coretanStylusOnly ? 'Mode Stylus Only aktif (Palm Rejection)' : 'Mode Touch & Stylus aktif');
+}
+
+function pushCoretanDrawHistory() {
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (!canvas) return;
+    coretanDrawUndo.push(canvas.toDataURL('image/png'));
+    if (coretanDrawUndo.length > 25) coretanDrawUndo.shift();
+    coretanDrawRedo = [];
+}
+
+function restoreCanvasFromDataUrl(dataUrl) {
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!dataUrl) {
+        coretanHasInk = false;
+        return;
+    }
+    const img = new Image();
+    img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        coretanHasInk = true;
+    };
+    img.src = dataUrl;
+}
+
+function undoCoretanCanvas() {
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (!canvas || !coretanDrawUndo.length) return;
+    coretanDrawRedo.push(canvas.toDataURL('image/png'));
+    const prev = coretanDrawUndo.pop();
+    restoreCanvasFromDataUrl(prev);
+    scheduleCoretanAutoSave();
+}
+
+function redoCoretanCanvas() {
+    if (!coretanDrawRedo.length) return;
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (canvas) coretanDrawUndo.push(canvas.toDataURL('image/png'));
+    const next = coretanDrawRedo.pop();
+    restoreCanvasFromDataUrl(next);
+    scheduleCoretanAutoSave();
+}
+
+function clearCoretanCanvas() {
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (!canvas) return;
+    pushCoretanDrawHistory();
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    coretanHasInk = false;
+    scheduleCoretanAutoSave();
+}
+
+function loadCoretanDrawing(dataUrl) {
+    initCoretanCanvas();
+    coretanDrawUndo = [];
+    coretanDrawRedo = [];
+    restoreCanvasFromDataUrl(dataUrl || '');
+}
+
+function getCoretanDrawingDataUrl() {
+    const canvas = document.getElementById('coretanDrawCanvas');
+    if (!canvas || !coretanHasInk) return '';
+    return canvas.toDataURL('image/png');
 }
 </script>

@@ -466,6 +466,7 @@ class Database
                     user_id     INT NOT NULL,
                     title       VARCHAR(255) NOT NULL DEFAULT "Untitled",
                     content     MEDIUMTEXT NULL,
+                    drawing_data MEDIUMTEXT NULL,
                     paper_style ENUM("plain","lined","grid") NOT NULL DEFAULT "plain",
                     font_family VARCHAR(60) NOT NULL DEFAULT "sans",
                     is_pinned   TINYINT(1) NOT NULL DEFAULT 0,
@@ -474,6 +475,11 @@ class Database
                     INDEX idx_coretan_user (user_id, updated_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
+            try {
+                self::$instance->exec('ALTER TABLE notebook_coretan ADD COLUMN drawing_data MEDIUMTEXT NULL AFTER content');
+            } catch (\PDOException $e) {
+                // Column already exists
+            }
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }

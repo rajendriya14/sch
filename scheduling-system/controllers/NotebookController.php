@@ -477,6 +477,7 @@ class NotebookController
         $id         = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
         $title      = trim((string) ($_POST['title'] ?? ''));
         $content    = (string) ($_POST['content'] ?? '');
+        $drawingData = (string) ($_POST['drawing_data'] ?? '');
         $paperStyle = trim((string) ($_POST['paper_style'] ?? 'plain'));
         $fontFamily = trim((string) ($_POST['font_family'] ?? 'sans'));
         $isPinned   = !empty($_POST['is_pinned']) ? 1 : 0;
@@ -492,12 +493,13 @@ class NotebookController
         }
 
         $data = [
-            'user_id'     => $userId,
-            'title'       => $title,
-            'content'     => $content,
-            'paper_style' => $paperStyle,
-            'font_family' => $fontFamily,
-            'is_pinned'   => $isPinned,
+            'user_id'      => $userId,
+            'title'        => $title,
+            'content'      => $content,
+            'drawing_data' => $drawingData !== '' ? $drawingData : null,
+            'paper_style'  => $paperStyle,
+            'font_family'  => $fontFamily,
+            'is_pinned'    => $isPinned,
         ];
 
         if ($id > 0) {
