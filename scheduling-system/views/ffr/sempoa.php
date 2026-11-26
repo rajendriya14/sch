@@ -208,31 +208,42 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
         .annual-tab-btn[data-sheet-tab="expenses"].active { color: #fff; background: var(--ppt-red); border-color: var(--ppt-red); border-bottom-color: var(--ppt-red-dark); }
         .annual-tab-btn[data-sheet-tab="savings"].active { color: #fff; background: var(--excel-green); border-color: var(--excel-green); border-bottom-color: var(--excel-green-dark); }
 
-        /* Sheet Table */
-        .sheet-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+        /* Classic Finance / ERP Grid (Dynamics NAV / Business Central style) */
+        .sheet-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.79rem; }
         .sheet-table thead th {
-            padding: 10px 10px; font-weight: 600; color: #4b5563; background: #fff;
-            border-bottom: 2px solid var(--accent); white-space: nowrap; text-align: right;
+            padding: 6px 8px; font-weight: 600; font-size: 0.74rem; color: #0369a1; background: #fafbfc;
+            border-bottom: 2px solid var(--accent); border-right: 1px solid #e5e7eb; white-space: nowrap; text-align: right;
         }
         .sheet-table thead th.col-item, .sheet-table tbody td.col-item {
             text-align: left; position: sticky; left: 0; background: #fff; z-index: 2;
-            min-width: 220px; max-width: 260px; padding-left: 14px; box-shadow: 2px 0 4px rgba(0,0,0,0.03);
+            min-width: 220px; max-width: 260px; padding-left: 22px; border-right: 1px solid #cbd5e1;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.03);
         }
-        .sheet-table tbody td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; text-align: right; white-space: nowrap; vertical-align: middle; }
+        .sheet-table thead th.col-item { background: #fafbfc; }
+        .sheet-table tbody td {
+            padding: 5px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #edf2f7;
+            text-align: right; white-space: nowrap; vertical-align: middle;
+        }
+        .sheet-table tbody tr.item-row:hover td,
+        .sheet-table tbody tr.item-row:hover td.col-item { background-color: #eef6fb !important; }
+        .sheet-table tbody tr.item-row td.col-item::before {
+            content: '→'; position: absolute; left: 7px; color: #0284c7; font-weight: 700; opacity: 0; transition: opacity 0.1s;
+        }
+        .sheet-table tbody tr.item-row:hover td.col-item::before { opacity: 1; }
         .sheet-table tr.section-row td, .sheet-table tr.section-row td.col-item {
-            background: #f8fafc; padding: 7px 10px; text-align: left; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+            background: #f1f5f9; padding: 5px 8px; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;
         }
-        .sheet-table tr.section-row td.col-item { padding-left: 14px; }
-        .section-title-label { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-dark); }
+        .sheet-table tr.section-row td.col-item { padding-left: 12px; }
+        .section-title-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-dark); }
         .section-add-controls { display: inline-flex; align-items: center; gap: 6px; }
-        .section-add-select { font-size: 0.78rem; padding: 2px 24px 2px 8px; height: 28px; min-width: 190px; }
-        .section-custom-input { font-size: 0.78rem; padding: 2px 8px; height: 28px; width: 160px; }
+        .section-add-select { font-size: 0.76rem; padding: 2px 24px 2px 8px; height: 26px; min-width: 190px; }
+        .section-custom-input { font-size: 0.76rem; padding: 2px 8px; height: 26px; width: 160px; }
         .btn-accent {
             background-color: var(--accent); border-color: var(--accent); color: #fff;
-            font-size: 0.76rem; padding: 3px 10px; height: 28px; display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.75rem; padding: 2px 10px; height: 26px; display: inline-flex; align-items: center; gap: 4px;
         }
         .btn-accent:hover { background-color: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
-        .btn-manage-list { font-size: 0.76rem; padding: 3px 9px; height: 28px; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-manage-list { font-size: 0.75rem; padding: 2px 9px; height: 26px; display: inline-flex; align-items: center; gap: 4px; }
         .sheet-table tr.subtotal-row td, .sheet-table tr.subtotal-row td.col-item {
             background: var(--accent-soft); color: var(--accent-dark); font-weight: 700;
             border-top: 1px solid var(--accent-border); border-bottom: 1px solid var(--accent-border);
@@ -241,44 +252,54 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             background: var(--accent-mid); color: #111827; font-weight: 700;
             border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
         }
-        .editable-cell { cursor: pointer; min-width: 102px; }
-        .editable-cell:hover { background-color: var(--accent-soft); }
+        .editable-cell { cursor: pointer; min-width: 98px; }
+        .editable-cell:hover { background-color: #dff2f8 !important; outline: 1px solid #0284c7; outline-offset: -1px; }
         .editable-cell.is-zero { color: #9ca3af; }
         .cell-inline-input {
-            width: 96px; text-align: right; font-size: 0.82rem; padding: 2px 6px;
-            border: 1px solid var(--accent); border-radius: 4px; outline: none;
+            width: 92px; text-align: right; font-size: 0.79rem; padding: 1px 5px;
+            border: 1px solid #0284c7; border-radius: 2px; outline: none; background: #fff;
         }
-        .col-year-total { background: #fafafa; font-weight: 600; border-left: 1px solid #e5e7eb; }
+        .col-year-total { background: #fafafa; font-weight: 600; border-left: 1px solid #cbd5e1; }
         .row-actions { opacity: 0.35; transition: opacity 0.15s; }
         .item-row:hover .row-actions { opacity: 1; }
 
         /* Shadow Forecast + Gap inside Actual Cell */
-        .shadow-fcst { display: block; font-size: 0.67rem; color: #9ca3af; line-height: 1.1; margin-top: 2px; }
-        .shadow-gap { display: block; font-size: 0.67rem; font-weight: 600; line-height: 1.1; }
+        .shadow-fcst { display: block; font-size: 0.66rem; color: #9ca3af; line-height: 1.1; margin-top: 1px; }
+        .shadow-gap { display: block; font-size: 0.66rem; font-weight: 600; line-height: 1.1; }
         .gap-good { color: #15803d; }
         .gap-bad { color: #b91c1c; }
         .gap-zero { color: #9ca3af; }
 
-        /* Summary PL-Style Table */
-        .summary-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.81rem; }
+        /* Summary Classic Finance Table */
+        .summary-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.79rem; }
         .summary-table thead th {
-            background: var(--summary-navy); color: #f8fafc; padding: 9px 10px;
-            font-weight: 700; font-size: 0.74rem; text-transform: uppercase; text-align: right; white-space: nowrap;
+            background: #fafbfc; color: #0369a1; padding: 6px 8px; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e5e7eb;
+            font-weight: 700; font-size: 0.73rem; text-align: right; white-space: nowrap;
         }
         .summary-table thead th.col-det {
-            text-align: left; position: sticky; left: 0; z-index: 3; background: var(--summary-navy); min-width: 220px; padding-left: 14px;
+            text-align: left; position: sticky; left: 0; z-index: 3; background: #fafbfc; min-width: 220px; padding-left: 14px; border-right: 1px solid #cbd5e1;
         }
-        .summary-table tbody td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: right; white-space: nowrap; }
+        .summary-table tbody td { padding: 5px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #edf2f7; text-align: right; white-space: nowrap; }
         .summary-table tbody td.col-det {
-            text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; padding-left: 14px; box-shadow: 2px 0 4px rgba(0,0,0,0.03);
+            text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; padding-left: 14px; border-right: 1px solid #cbd5e1; box-shadow: 2px 0 4px rgba(0,0,0,0.03);
         }
+        .summary-table tbody tr:hover td, .summary-table tbody tr:hover td.col-det { background-color: #eef6fb; }
         .summary-group-row td, .summary-group-row td.col-det { background: #f1f5f9; font-weight: 700; color: #0f172a; cursor: pointer; }
-        .summary-child-row td.col-det { padding-left: 38px; color: #475569; }
+        .summary-child-row td.col-det { padding-left: 34px; color: #475569; }
         .summary-total-cost td, .summary-total-cost td.col-det { background: #ffe4e6; color: #9f1239; font-weight: 700; }
         .summary-saving-row td, .summary-saving-row td.col-det { background: #eff6ff; color: #1d4ed8; font-weight: 700; }
         .summary-profit-row td, .summary-profit-row td.col-det { background: #dcfce7; color: #14532d; font-weight: 700; }
         .summary-pct-row td, .summary-pct-row td.col-det { background: #bbf7d0; color: #14532d; font-weight: 700; }
         .count-pill { font-size: 0.68rem; background: #e2e8f0; color: #475569; padding: 1px 6px; border-radius: 999px; margin-left: 6px; }
+
+        /* Classic Finance ERP styling for Rate Card & Ledger tables */
+        .app-canvas .table { font-size: 0.79rem; font-variant-numeric: tabular-nums; }
+        .app-canvas .table thead th {
+            background: #fafbfc; color: #0369a1; font-weight: 600; font-size: 0.74rem;
+            border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e5e7eb; padding: 6px 8px;
+        }
+        .app-canvas .table tbody td { padding: 5px 8px; border-right: 1px solid #edf2f7; border-bottom: 1px solid #e2e8f0; }
+        .app-canvas .table-hover tbody tr:hover td { background-color: #eef6fb; }
 
         /* Mobile & Tablet Responsive Drawer + Table Tuning */
         .mobile-menu-btn {
