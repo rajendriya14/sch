@@ -349,6 +349,17 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             display: grid; grid-template-columns: 1fr 1fr; background: #f3f4f6;
             padding: 3px; border-radius: 10px; border: 1px solid #e5e7eb;
         }
+        .scenario-pill-wrap {
+            display: inline-flex; background: #f3f4f6; padding: 3px; border-radius: 999px;
+            border: 1px solid #e5e7eb; gap: 2px;
+        }
+        .scenario-pill-btn {
+            border: none; background: transparent; padding: 4px 14px; font-size: 0.78rem;
+            font-weight: 600; color: #6b7280; border-radius: 999px; cursor: pointer; transition: all 0.15s;
+        }
+        .scenario-pill-btn.active {
+            background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
         .rc-seg-btn {
             border: none; background: transparent; padding: 6px 10px; font-size: 0.78rem;
             font-weight: 600; color: #6b7280; border-radius: 8px; cursor: pointer; transition: all 0.15s;
@@ -780,6 +791,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             let currentYear = '2026';
             let currentNav = 'forecast'; // 'forecast' | 'actual' | 'ratecard' | 'ledger' | 'settings'
             let currentRateCardSub = 'income'; // 'income' | 'expense' | 'savings'
+            let currentRcScenario = 'forecast'; // 'forecast' | 'actual'
             let currentSheetTab = 'expenses';
             let ledgerMonthIdx = 10;
             let searchQuery = '';
@@ -1525,8 +1537,9 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     const rowsHtml = items.length ? items.map((it, idx) => {
                         const fArr = it.forecast || Array(12).fill(0);
                         const aArr = it.actual || Array(12).fill(0);
-                        const activeMonths = fArr.filter(v => Number(v) > 0).length;
-                        const firstVal = fArr.find(v => Number(v) > 0) || 0;
+                        const activeArr = currentRcScenario === 'actual' ? aArr : fArr;
+                        const activeMonths = activeArr.filter(v => Number(v) > 0).length;
+                        const firstVal = activeArr.find(v => Number(v) > 0) || 0;
                         const totFcst = fArr.reduce((a, b) => a + Number(b || 0), 0);
                         const totAct = aArr.reduce((a, b) => a + Number(b || 0), 0);
                         const freqLabel = it.freq === 'weekly' ? 'Weekly ×4' : (it.freq === 'biweekly' ? 'Biweekly ×2' : (it.freq === 'once' ? 'Once' : 'Monthly'));
@@ -1535,11 +1548,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                                 <td class="text-muted" style="width:40px;">${idx + 1}</td>
                                 <td>
                                     <div class="fw-semibold">${esc(it.name)}</div>
-                                    <div class="small text-muted">${freqLabel} · ${activeMonths}/12 bln terisi</div>
+                                    <div class="small text-muted">${freqLabel} · ${activeMonths}/12 bln terisi (${currentRcScenario === 'actual' ? 'Actual' : 'Forecast'})</div>
                                 </td>
                                 <td class="text-end">${rp(firstVal)}</td>
-                                <td class="text-end fw-semibold">${rp(totFcst)}</td>
-                                <td class="text-end text-muted">${rp(totAct)}</td>
+                                <td class="text-end ${currentRcScenario === 'forecast' ? 'fw-bold text-dark' : 'text-muted'}">${rp(totFcst)}</td>
+                                <td class="text-end ${currentRcScenario === 'actual' ? 'fw-bold text-primary' : 'text-muted'}">${rp(totAct)}</td>
                                 <td class="text-end" style="width:150px;">
                                     <button type="button" class="btn btn-sm btn-outline-dark py-0 px-2 rc-open-edit"
                                             data-sec="${sec.key}" data-id="${it.id}">
@@ -1578,14 +1591,23 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 });
 
                 document.getElementById('canvasBody').innerHTML = `
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
                         <div>
                             <h5 class="mb-0 fw-bold">${meta.title} (${currentYear})</h5>
                             <div class="small text-muted">Tambahkan item baru atau atur rate per bulan / multi-tahun sekaligus, otomatis masuk ke Annual Sheet &amp; Dashboard.</div>
                         </div>
-                        <button type="button" class="btn btn-sm btn-accent rc-open-add" data-sec="${meta.sections[0].key}">
-                            <i class="bi bi-plus-lg"></i> Tambah Rate Card
-                        </button>
+                        <div class="d-flex align-items-end gap-3 flex-wrap">
+                            <div>
+                                <div class="text-muted" style="font-size:0.7rem;font-weight:600;margin-bottom:2px;">Scenario</div>
+                                <div class="scenario-pill-wrap">
+                                    <button type="button" class="scenario-pill-btn ${currentRcScenario === 'forecast' ? 'active' : ''}" data-rc-scenario="forecast">Forecast</button>
+                                    <button type="button" class="scenario-pill-btn ${currentRcScenario === 'actual' ? 'active' : ''}" data-rc-scenario="actual">Actual</button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-accent rc-open-add" data-sec="${meta.sections[0].key}" style="height:32px;">
+                                <i class="bi bi-plus-lg"></i> Tambah Rate Card
+                            </button>
+                        </div>
                     </div>
                     <div class="annual-tabs-bar mb-3">
                         <div class="annual-tabs-left">
@@ -1675,6 +1697,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     { k: 'savings', l: 'Saving' }
                 ];
                 document.getElementById('rcSection').innerHTML = secOpts.map(o => `<option value="${o.k}" ${o.k === secKey ? 'selected' : ''}>${o.l}</option>`).join('');
+                document.getElementById('rcTargetMode').value = currentRcScenario;
                 document.getElementById('rcEditId').value = itemId ? String(itemId) : '';
                 rcEditMode = 'selected';
                 document.querySelectorAll('.rc-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.rcEditmode === 'selected'));
@@ -1682,14 +1705,15 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
 
                 if (itemId) {
                     const it = (state.years[currentYear]?.[secKey] || []).find(i => i.id === itemId);
+                    const arr = currentRcScenario === 'actual' ? it?.actual : it?.forecast;
                     document.getElementById('rcDrawerTitle').textContent = 'Edit rate card';
-                    document.getElementById('rcDrawerSub').textContent = `${it?.name || ''} · ${currentYear}`;
+                    document.getElementById('rcDrawerSub').textContent = `${it?.name || ''} · ${currentYear} · ${currentRcScenario === 'actual' ? 'Actual' : 'Forecast'}`;
                     document.getElementById('rcName').value = it?.name || '';
                     document.getElementById('rcFreq').value = it?.freq || 'monthly';
                     document.getElementById('rcQty').value = it?.qty || 1;
                     document.getElementById('rcFeePct').value = '';
                     const curM = Number(state.settings?.activeMonthIdx ?? 10);
-                    document.getElementById('rcAmount').value = Number(it?.forecast?.[curM] || it?.forecast?.find(v => v > 0) || 0);
+                    document.getElementById('rcAmount').value = Number(arr?.[curM] || arr?.find(v => v > 0) || 0);
                 } else {
                     document.getElementById('rcDrawerTitle').textContent = 'Tambah rate card baru';
                     document.getElementById('rcDrawerSub').textContent = `Sempoa · ${currentYear}`;
@@ -1915,6 +1939,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     const sec = setPresetDel.dataset.sec, idx = Number(setPresetDel.dataset.idx);
                     state.presets[sec].splice(idx, 1); saveState(); return render();
                 }
+                const rcScenBtn = e.target.closest('[data-rc-scenario]');
+                if (rcScenBtn) {
+                    currentRcScenario = rcScenBtn.dataset.rcScenario;
+                    return render();
+                }
                 const rcTabBtn = e.target.closest('[data-rc-tab]');
                 if (rcTabBtn) {
                     currentRateCardSub = rcTabBtn.dataset.rcTab;
@@ -2075,7 +2104,20 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     renderRcGridAndPreview();
                 });
             });
-            ['rcAmount', 'rcQty', 'rcFreq', 'rcFeePct', 'rcSection', 'rcTargetMode'].forEach(id => {
+            document.getElementById('rcTargetMode')?.addEventListener('change', function () {
+                const editId = Number(document.getElementById('rcEditId').value || 0);
+                if (editId) {
+                    const sec = document.getElementById('rcSection').value;
+                    const it = (state.years[currentYear]?.[sec] || []).find(i => i.id === editId);
+                    if (it) {
+                        const arr = this.value === 'actual' ? it.actual : it.forecast;
+                        const curM = Number(state.settings?.activeMonthIdx ?? 10);
+                        document.getElementById('rcAmount').value = Number(arr?.[curM] || arr?.find(v => v > 0) || 0);
+                    }
+                }
+                renderRcGridAndPreview();
+            });
+            ['rcAmount', 'rcQty', 'rcFreq', 'rcFeePct', 'rcSection'].forEach(id => {
                 document.getElementById(id)?.addEventListener('input', renderRcGridAndPreview);
                 document.getElementById(id)?.addEventListener('change', renderRcGridAndPreview);
             });
