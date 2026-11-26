@@ -72,27 +72,11 @@ class FfrController
     }
 
     /**
-     * Dashboard — ringkasan bulan + trend + rekomendasi singkat.
+     * Dashboard Sempoa — tampilan utama modul Financial Reporting (Forecast, Actual, Ledger, Settings).
      */
     public function index(): void
     {
-        $period = $this->periodFromRequest($_GET);
-        $id = (int) $period['id'];
-
-        $dashboard    = $this->service->dashboard($id);
-        $trend        = $this->service->trend($id, 6);
-        $comparison   = $this->service->categoryComparison($id);
-        $topItems     = $this->service->topItems($id, 5);
-        $insights     = $this->service->insights($id);
-        $recommend    = $this->service->recommendations($id);
-        $periodLabel  = $this->service->periodLabelLong($period['period']);
-        $periodOptions = $this->service->periodOptions();
-        $hasAnyData   = $dashboard['income'] > 0 || $dashboard['plan_total'] > 0;
-
-        $this->render('dashboard', compact(
-            'period', 'periodOptions', 'dashboard', 'trend', 'comparison',
-            'topItems', 'insights', 'recommend', 'periodLabel', 'hasAnyData'
-        ));
+        require __DIR__ . '/../views/ffr/sempoa.php';
     }
 
     /**
