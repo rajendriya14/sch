@@ -54,9 +54,11 @@ class PortalController
             ],
             [
                 'menu'        => 'ffr',
-                'title'       => 'Family Financial Report',
+                'title'       => 'Sempoa',
                 'description' => 'Catat pemasukan bulanan, bagi gaji ke kelompok dana, dan pantau ke mana uang pergi.',
                 'icon'        => 'bi-piggy-bank',
+                'logo_src'    => 'scheduling-system/public/assets/img/sempoa-logo.svg',
+                'title_font'  => "'Shantell Sans', 'Comic Sans MS', cursive, sans-serif",
                 'url'         => self::FINANCE_URL,
                 'badge'       => null,
             ],
