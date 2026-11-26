@@ -1131,6 +1131,48 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         transform: scale(1.18);
         box-shadow: 0 0 0 2px var(--excel-green);
     }
+    .coretan-size-pop {
+        position: fixed;
+        z-index: 1085;
+        width: 215px;
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        padding: 10px 12px;
+        display: none;
+        user-select: none;
+    }
+    .coretan-size-pop.is-open { display: block; }
+    .coretan-size-presets {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        margin: 8px 0;
+    }
+    .coretan-size-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        background: #f8fafc;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s, border-color 0.12s;
+    }
+    .coretan-size-btn:hover { background: #f1f5f9; }
+    .coretan-size-btn.is-active {
+        background: var(--excel-green-soft);
+        border-color: var(--excel-green);
+    }
+    .coretan-size-dot {
+        border-radius: 50%;
+        background: #111827;
+        display: block;
+    }
     .coretan-paper[data-paper="lined"] {
         background-image: repeating-linear-gradient(
             to bottom,
@@ -1637,27 +1679,24 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
                                         <!-- Pen / Stylus Tools -->
                                         <div id="coretanDrawTools" class="d-none align-items-center gap-1">
-                                            <button type="button" class="coretan-tool-btn is-active" id="btnBrushPen" onclick="setCoretanBrush('pen')" title="Ballpoint Pen">
+                                            <button type="button" class="coretan-tool-btn is-active" id="btnBrushPen" data-brush="pen" onclick="setCoretanBrush('pen')" oncontextmenu="openBrushSizePopover(event, 'pen', this)" title="Ballpoint Pen (Klik kanan: atur ukuran)">
                                                 <i class="bi bi-pen-fill"></i>
                                             </button>
-                                            <button type="button" class="coretan-tool-btn" id="btnBrushFountain" onclick="setCoretanBrush('fountain')" title="Fountain Pen (Tekanan Stylus)">
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushFountain" data-brush="fountain" onclick="setCoretanBrush('fountain')" oncontextmenu="openBrushSizePopover(event, 'fountain', this)" title="Fountain Pen (Klik kanan: atur ukuran)">
                                                 <i class="bi bi-vector-pen"></i>
                                             </button>
-                                            <button type="button" class="coretan-tool-btn" id="btnBrushPencil" onclick="setCoretanBrush('pencil')" title="Pencil (Arsir Lembut)">
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushPencil" data-brush="pencil" onclick="setCoretanBrush('pencil')" oncontextmenu="openBrushSizePopover(event, 'pencil', this)" title="Pencil (Klik kanan: atur ukuran)">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button type="button" class="coretan-tool-btn" id="btnBrushHighlighter" onclick="setCoretanBrush('highlighter')" title="Highlighter Marker">
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushHighlighter" data-brush="highlighter" onclick="setCoretanBrush('highlighter')" oncontextmenu="openBrushSizePopover(event, 'highlighter', this)" title="Highlighter Marker (Klik kanan: atur ukuran)">
                                                 <i class="bi bi-highlighter"></i>
                                             </button>
-                                            <button type="button" class="coretan-tool-btn" id="btnBrushEraser" onclick="setCoretanBrush('eraser')" title="Eraser">
+                                            <button type="button" class="coretan-tool-btn" id="btnBrushEraser" data-brush="eraser" onclick="setCoretanBrush('eraser')" oncontextmenu="openBrushSizePopover(event, 'eraser', this)" title="Eraser (Klik kanan: atur ukuran)">
                                                 <i class="bi bi-eraser-fill"></i>
                                             </button>
-                                            <span class="coretan-tool-sep"></span>
-                                            <select id="coretanStrokeSize" class="form-select form-select-sm border-0 bg-transparent fw-semibold" style="width:auto; font-size:0.75rem; cursor:pointer;" onchange="coretanPenSize = Number(this.value)" title="Ketebalan Goresan">
-                                                <option value="2">Tipis</option>
-                                                <option value="4" selected>Sedang</option>
-                                                <option value="8">Tebal</option>
-                                            </select>
+                                            <button type="button" class="btn-cal-outline py-0 px-2" id="coretanSizeBadgeBtn" style="font-size:0.72rem; height:26px; border-radius:999px;" onclick="openBrushSizePopover(event, coretanBrush, this)" title="Ukuran Goresan">
+                                                4px
+                                            </button>
                                             <span class="coretan-tool-sep"></span>
                                             <span class="coretan-pen-dot is-active" data-pen-color="#111827" style="background:#111827;" onclick="setCoretanPenColor('#111827', this)" title="Hitam"></span>
                                             <span class="coretan-pen-dot" data-pen-color="#217346" style="background:#217346;" onclick="setCoretanPenColor('#217346', this)" title="Hijau Excel"></span>
@@ -2223,6 +2262,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 <div class="nb-dp-popover" id="nbDatePickerPopover" onclick="event.stopPropagation()"></div>
 <div class="nb-tp-popover" id="nbTimePickerPopover" onclick="event.stopPropagation()"></div>
 <div class="nb-day-pop" id="nbDayEventsPopover" onclick="event.stopPropagation()"></div>
+<div class="coretan-size-pop" id="coretanBrushSizePopover" onclick="event.stopPropagation()"></div>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
 
 <script>
@@ -4275,7 +4315,10 @@ async function deleteCurrentCoretan() {
 let coretanInputMode = 'text';
 let coretanBrush = 'pen';
 let coretanPenColor = '#111827';
-let coretanPenSize = 4;
+let coretanBrushSizes = { pen: 4, fountain: 5, pencil: 4, highlighter: 16, eraser: 16 };
+let coretanBrushLabels = { pen: 'Ballpoint Pen', fountain: 'Fountain Pen', pencil: 'Pencil', highlighter: 'Highlighter', eraser: 'Eraser' };
+let coretanSizePopOpen = false;
+let coretanSizePopBrush = 'pen';
 let coretanStylusOnly = false;
 let coretanCanvasReady = false;
 let coretanIsDrawing = false;
@@ -4284,12 +4327,35 @@ let coretanLastPt = null;
 let coretanDrawUndo = [];
 let coretanDrawRedo = [];
 
+function getActiveBrushSize() {
+    return coretanBrushSizes[coretanBrush] || 4;
+}
+
+function updateCoretanSizeBadge() {
+    const btn = document.getElementById('coretanSizeBadgeBtn');
+    if (btn) btn.textContent = `${getActiveBrushSize()}px`;
+}
+
 function initCoretanCanvas() {
     if (coretanCanvasReady) return;
     const canvas = document.getElementById('coretanDrawCanvas');
     const paper = document.getElementById('coretanPaper');
     if (!canvas || !paper) return;
     coretanCanvasReady = true;
+
+    // Long-press (~450ms) on brush buttons for touch/tablet users
+    document.querySelectorAll('#coretanDrawTools [data-brush]').forEach(btn => {
+        let lpTimer = null;
+        btn.addEventListener('pointerdown', (ev) => {
+            if (ev.button === 2) return;
+            lpTimer = setTimeout(() => {
+                openBrushSizePopover(ev, btn.dataset.brush, btn);
+            }, 450);
+        });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
+            btn.addEventListener(evt, () => clearTimeout(lpTimer));
+        });
+    });
 
     // Auto-switch to draw mode when a stylus/Apple Pencil touches the paper
     paper.addEventListener('pointerdown', (e) => {
@@ -4299,6 +4365,7 @@ function initCoretanCanvas() {
     }, true);
 
     canvas.addEventListener('pointerdown', (e) => {
+        closeBrushSizePopover();
         if (coretanInputMode !== 'draw') return;
         if (coretanStylusOnly && e.pointerType !== 'pen') return;
         e.preventDefault();
@@ -4347,10 +4414,11 @@ function drawCoretanSegment(ctx, p1, p2, e) {
     ctx.lineJoin = 'round';
 
     const pressure = p2.pressure || 0.5;
+    const baseSize = getActiveBrushSize();
     if (coretanBrush === 'eraser') {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = coretanPenSize * 4;
+        ctx.lineWidth = baseSize;
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -4359,7 +4427,7 @@ function drawCoretanSegment(ctx, p1, p2, e) {
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.28;
         ctx.strokeStyle = coretanPenColor;
-        ctx.lineWidth = coretanPenSize * 4.5;
+        ctx.lineWidth = baseSize;
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -4370,7 +4438,7 @@ function drawCoretanSegment(ctx, p1, p2, e) {
         const pressFactor = (e.pointerType === 'pen') ? (0.4 + pressure * 1.3) : speedFactor;
         ctx.globalAlpha = 0.96;
         ctx.strokeStyle = coretanPenColor;
-        ctx.lineWidth = Math.max(1.2, coretanPenSize * pressFactor);
+        ctx.lineWidth = Math.max(1.2, baseSize * pressFactor);
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -4378,7 +4446,7 @@ function drawCoretanSegment(ctx, p1, p2, e) {
     } else if (coretanBrush === 'pencil') {
         ctx.globalAlpha = 0.35 + pressure * 0.35;
         ctx.strokeStyle = coretanPenColor;
-        ctx.lineWidth = Math.max(1, coretanPenSize * (0.6 + pressure * 0.6));
+        ctx.lineWidth = Math.max(1, baseSize * (0.6 + pressure * 0.6));
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -4386,7 +4454,7 @@ function drawCoretanSegment(ctx, p1, p2, e) {
     } else {
         ctx.globalAlpha = 1;
         ctx.strokeStyle = coretanPenColor;
-        ctx.lineWidth = coretanPenSize;
+        ctx.lineWidth = baseSize;
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -4394,6 +4462,79 @@ function drawCoretanSegment(ctx, p1, p2, e) {
     }
     ctx.restore();
 }
+
+function openBrushSizePopover(e, brush, triggerEl) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    setCoretanBrush(brush);
+    coretanSizePopBrush = brush;
+    const pop = document.getElementById('coretanBrushSizePopover');
+    if (!pop) return;
+
+    renderBrushSizePopover();
+    pop.classList.add('is-open');
+
+    const rect = triggerEl.getBoundingClientRect();
+    const popW = pop.offsetWidth || 215;
+    const popH = pop.offsetHeight || 125;
+    let left = Math.min(Math.max(10, rect.left + rect.width / 2 - popW / 2), window.innerWidth - popW - 10);
+    let top = rect.top - popH - 8;
+    if (top < 10) top = Math.min(window.innerHeight - popH - 10, rect.bottom + 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    coretanSizePopOpen = true;
+}
+
+function closeBrushSizePopover() {
+    const pop = document.getElementById('coretanBrushSizePopover');
+    if (pop) pop.classList.remove('is-open');
+    coretanSizePopOpen = false;
+}
+
+function renderBrushSizePopover() {
+    const pop = document.getElementById('coretanBrushSizePopover');
+    if (!pop) return;
+    const curSize = coretanBrushSizes[coretanSizePopBrush] || 4;
+    const presets = (coretanSizePopBrush === 'highlighter' || coretanSizePopBrush === 'eraser')
+        ? [8, 12, 16, 24, 32]
+        : [1, 2, 4, 8, 14];
+    const dotColor = coretanSizePopBrush === 'eraser' ? '#9ca3af' : coretanPenColor;
+
+    pop.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="fw-semibold" style="font-size:0.76rem; color:var(--nb-text);">${esc(coretanBrushLabels[coretanSizePopBrush] || 'Pen')}</span>
+            <span class="fw-semibold" id="coretanPopSizeVal" style="font-size:0.74rem; color:var(--excel-green);">${curSize}px</span>
+        </div>
+        <div class="coretan-size-presets">
+            ${presets.map(sz => {
+                const dotPx = Math.max(4, Math.min(20, Math.round(sz * 0.75 + 2)));
+                return `<button type="button" class="coretan-size-btn ${curSize === sz ? 'is-active' : ''}" onclick="setBrushSizeValue(${sz})"><span class="coretan-size-dot" style="width:${dotPx}px;height:${dotPx}px;background:${dotColor};"></span></button>`;
+            }).join('')}
+        </div>
+        <input type="range" class="form-range" min="1" max="32" value="${curSize}" oninput="setBrushSizeValue(Number(this.value))" style="accent-color:var(--excel-green);">
+    `;
+}
+
+function setBrushSizeValue(sz) {
+    coretanBrushSizes[coretanSizePopBrush] = sz;
+    updateCoretanSizeBadge();
+    const lbl = document.getElementById('coretanPopSizeVal');
+    if (lbl) lbl.textContent = `${sz}px`;
+    document.querySelectorAll('#coretanBrushSizePopover .coretan-size-btn').forEach(btn => {
+        btn.classList.remove('is-active');
+    });
+    const range = document.querySelector('#coretanBrushSizePopover input[type="range"]');
+    if (range) range.value = sz;
+}
+
+document.addEventListener('click', (e) => {
+    if (!coretanSizePopOpen) return;
+    const pop = document.getElementById('coretanBrushSizePopover');
+    if (pop && !pop.contains(e.target) && !e.target.closest('#coretanSizeBadgeBtn')) {
+        closeBrushSizePopover();
+    }
+});
 
 function setCoretanInputMode(mode) {
     coretanInputMode = mode;
@@ -4420,6 +4561,7 @@ function setCoretanBrush(brush) {
     ['Pen', 'Fountain', 'Pencil', 'Highlighter', 'Eraser'].forEach(name => {
         document.getElementById('btnBrush' + name)?.classList.toggle('is-active', name.toLowerCase() === brush);
     });
+    updateCoretanSizeBadge();
 }
 
 function setCoretanPenColor(color, el) {
