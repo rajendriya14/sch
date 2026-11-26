@@ -53,8 +53,8 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             --accent-border: var(--teams-purple-border);
 
             --summary-navy: #0f172a;
-            --shell-bg: #f7f8fa;
-            --border-subtle: #e5e7eb;
+            --shell-bg: #F3EBDD;
+            --border-subtle: #E2D6C2;
         }
         * { box-sizing: border-box; }
         body {
@@ -109,7 +109,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             gap: 9px; font-size: 0.84rem; font-weight: 500; color: #4b5563;
             cursor: pointer; margin-bottom: 2px; transition: all 0.12s ease;
         }
-        .side-nav-btn:hover { background: #eef0f4; color: #111827; }
+        .side-nav-btn:hover { background: #EAE0CE; color: #111827; }
         .side-nav-btn.active {
             background: #fff; color: var(--accent); font-weight: 600;
             box-shadow: 0 1px 2px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;
@@ -397,7 +397,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             padding: 5px 10px; border-radius: 7px; display: flex; align-items: center;
             gap: 8px; font-size: 0.8rem; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 1px;
         }
-        .sub-nav-btn:hover { background: #eef0f4; color: #111827; }
+        .sub-nav-btn:hover { background: #EAE0CE; color: #111827; }
         .sub-nav-btn.active { background: #fff; color: var(--accent); font-weight: 600; border: 1px solid #e5e7eb; }
 
         @media print {
