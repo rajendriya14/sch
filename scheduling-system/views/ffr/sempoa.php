@@ -355,7 +355,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
         }
         .rc-seg-btn.active { background: #fff; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
         .rc-month-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-        .rc-year-lbl { width: 48px; flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: #111827; line-height: 1.2; }
+        .rc-year-lbl {
+            width: 52px; flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: #111827;
+            line-height: 1.2; cursor: pointer; border-radius: 6px; padding: 3px 5px; transition: background 0.12s;
+        }
+        .rc-year-lbl:hover { background: #fee2e2; color: #9f1239; }
         .rc-year-sub { font-size: 0.68rem; font-weight: 400; color: #9ca3af; }
         .rc-months-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; user-select: none; }
         @media (min-width: 576px) { .rc-months-grid { grid-template-columns: repeat(12, 1fr); } }
@@ -1617,10 +1621,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 const mode = document.getElementById('rcTargetMode').value;
                 const field = mode === 'actual' ? 'actual' : 'forecast';
 
+                const itemName = (document.getElementById('rcName').value || '').trim().toLowerCase();
                 let existingItem = null;
                 const gridHtml = years.map(yr => {
                     const yd = state.years[yr] || {};
-                    const item = editId ? (yd[sec] || []).find(i => i.id === editId) : null;
+                    const item = (yd[sec] || []).find(i => (editId && i.id === editId) || (itemName && i.name.toLowerCase() === itemName));
                     if (item) existingItem = item;
                     const arr = item ? (item[field] || []) : [];
                     const ownCount = arr.filter(v => Number(v) > 0).length;
@@ -1632,7 +1637,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     }).join('');
                     return `
                         <div class="rc-month-row">
-                            <div class="rc-year-lbl">${yr}<div class="rc-year-sub">${ownCount} own</div></div>
+                            <div class="rc-year-lbl" data-rc-year="${yr}" title="Klik untuk pilih / batal pilih semua bulan di ${yr}">${yr}<div class="rc-year-sub">${ownCount} own</div></div>
                             <div class="rc-months-grid">${pills}</div>
                         </div>
                     `;
@@ -2073,6 +2078,18 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             ['rcAmount', 'rcQty', 'rcFreq', 'rcFeePct', 'rcSection', 'rcTargetMode'].forEach(id => {
                 document.getElementById(id)?.addEventListener('input', renderRcGridAndPreview);
                 document.getElementById(id)?.addEventListener('change', renderRcGridAndPreview);
+            });
+            document.getElementById('rcApplyGrid').addEventListener('click', function (e) {
+                const yrLbl = e.target.closest('.rc-year-lbl[data-rc-year]');
+                if (!yrLbl || rcEditMode === 'base') return;
+                const yr = yrLbl.dataset.rcYear;
+                const allSelected = MONTHS.every((_, idx) => rcSelectedMonths.has(`${yr}-${idx}`));
+                MONTHS.forEach((_, idx) => {
+                    const key = `${yr}-${idx}`;
+                    if (allSelected) rcSelectedMonths.delete(key);
+                    else rcSelectedMonths.add(key);
+                });
+                renderRcGridAndPreview();
             });
             document.getElementById('rcApplyGrid').addEventListener('mousedown', function (e) {
                 const pill = e.target.closest('.rc-m-pill');
