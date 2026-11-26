@@ -167,6 +167,36 @@ class NotebookTask
     }
 
     /**
+     * Default Indonesian public holidays & joint leave (Dec 2026 – Dec 2027).
+     */
+    public const DEFAULT_HOLIDAYS_2027 = [
+        ['date' => '2026-12-25', 'label' => 'Natal'],
+        ['date' => '2027-01-01', 'label' => 'Tahun Baru 2027 Masehi'],
+        ['date' => '2027-01-05', 'label' => "Isra Mi'raj Nabi Muhammad SAW 1448 H"],
+        ['date' => '2027-02-05', 'label' => 'Tahun Baru Imlek 2578 Kongzili'],
+        ['date' => '2027-02-06', 'label' => 'Tahun Baru Imlek 2578 Kongzili'],
+        ['date' => '2027-03-08', 'label' => 'Hari Suci Nyepi (Tahun Baru Saka 1949)'],
+        ['date' => '2027-03-09', 'label' => 'Hari Raya Idulfitri 1448 H'],
+        ['date' => '2027-03-10', 'label' => 'Hari Raya Idulfitri 1448 H'],
+        ['date' => '2027-03-11', 'label' => 'Hari Raya Idulfitri 1448 H'],
+        ['date' => '2027-03-12', 'label' => 'Hari Raya Idulfitri 1448 H'],
+        ['date' => '2027-03-15', 'label' => 'Hari Raya Idulfitri 1448 H'],
+        ['date' => '2027-03-25', 'label' => 'Wafat Yesus Kristus'],
+        ['date' => '2027-03-26', 'label' => 'Wafat Yesus Kristus'],
+        ['date' => '2027-03-28', 'label' => 'Hari Kebangkitan Yesus Kristus (Paskah)'],
+        ['date' => '2027-05-01', 'label' => 'Hari Buruh Internasional'],
+        ['date' => '2027-05-06', 'label' => 'Kenaikan Yesus Kristus'],
+        ['date' => '2027-05-17', 'label' => 'Hari Raya Iduladha 1448 H'],
+        ['date' => '2027-05-18', 'label' => 'Hari Raya Iduladha 1448 H'],
+        ['date' => '2027-05-19', 'label' => 'Hari Raya Waisak 2571 BE'],
+        ['date' => '2027-05-20', 'label' => 'Hari Raya Waisak 2571 BE'],
+        ['date' => '2027-08-15', 'label' => 'Maulid Nabi Muhammad SAW'],
+        ['date' => '2027-08-17', 'label' => 'Proklamasi Kemerdekaan RI'],
+        ['date' => '2027-12-25', 'label' => 'Natal'],
+        ['date' => '2027-12-26', 'label' => "Isra Mi'raj Nabi Muhammad SAW 1449 H"],
+    ];
+
+    /**
      * Get notebook email/digest settings for a user.
      */
     public static function getSettings(int $userId, string $fallbackEmail = ''): array
@@ -178,12 +208,14 @@ class NotebookTask
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $defaultPrefs = [
-            'default_view'     => 'month',
-            'default_duration' => 60,
-            'default_priority' => 'Medium',
-            'default_theme'    => 'theme-green',
-            'week_start'       => 'sun',
-            'show_greeting'    => true,
+            'default_view'          => 'month',
+            'default_duration'      => 60,
+            'default_priority'      => 'Medium',
+            'default_theme'         => 'theme-green',
+            'week_start'            => 'sun',
+            'show_greeting'         => true,
+            'holidays'              => self::DEFAULT_HOLIDAYS_2027,
+            'holidays_seeded_2027'  => true,
         ];
 
         if (!$row) {
@@ -211,6 +243,29 @@ class NotebookTask
             $prefs = [];
         }
 
+        if (empty($prefs['holidays_seeded_2027'])) {
+            $existingHolidays = isset($prefs['holidays']) && is_array($prefs['holidays']) ? $prefs['holidays'] : [];
+            $existingDates = [];
+            foreach ($existingHolidays as $h) {
+                if (!empty($h['date'])) {
+                    $existingDates[$h['date']] = true;
+                }
+            }
+            foreach (self::DEFAULT_HOLIDAYS_2027 as $defHol) {
+                if (empty($existingDates[$defHol['date']])) {
+                    $existingHolidays[] = $defHol;
+                    $existingDates[$defHol['date']] = true;
+                }
+            }
+            $prefs['holidays'] = $existingHolidays;
+            $prefs['holidays_seeded_2027'] = true;
+
+            $upd = Database::getInstance()->prepare(
+                'UPDATE notebook_settings SET preferences = ? WHERE user_id = ?'
+            );
+            $upd->execute([json_encode($prefs, JSON_UNESCAPED_UNICODE), $userId]);
+        }
+
         return [
             'user_id'        => $userId,
             'emails'         => $emails,
@@ -236,7 +291,9 @@ class NotebookTask
         $time3      = preg_match('/^\d{2}:\d{2}/', (string) ($data['digest_time_3'] ?? '')) ? substr((string) $data['digest_time_3'], 0, 5) . ':00' : null;
         $freq       = in_array($data['digest_freq'] ?? '', ['workdays', 'daily', 'custom'], true) ? $data['digest_freq'] : 'workdays';
         $enabled    = !empty($data['digest_enabled']) ? 1 : 0;
-        $prefsJson  = json_encode($data['preferences'] ?? [], JSON_UNESCAPED_UNICODE);
+        $prefsArr = is_array($data['preferences'] ?? null) ? $data['preferences'] : [];
+        $prefsArr['holidays_seeded_2027'] = true;
+        $prefsJson  = json_encode($prefsArr, JSON_UNESCAPED_UNICODE);
 
         $stmt = Database::getInstance()->prepare(
             'INSERT INTO notebook_settings (user_id, emails, digest_enabled, digest_freq, digest_days, digest_time, digest_time_2, digest_time_3, preferences)
