@@ -344,6 +344,47 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             .annual-tab-btn { padding: 7px 12px; font-size: 0.82rem; }
             .kpi-big-val { font-size: 1.2rem; }
         }
+        /* Rate Card UI & Slide-over Drawer */
+        .rc-seg-wrap {
+            display: grid; grid-template-columns: 1fr 1fr; background: #f3f4f6;
+            padding: 3px; border-radius: 10px; border: 1px solid #e5e7eb;
+        }
+        .rc-seg-btn {
+            border: none; background: transparent; padding: 6px 10px; font-size: 0.78rem;
+            font-weight: 600; color: #6b7280; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+        }
+        .rc-seg-btn.active { background: #fff; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+        .rc-month-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+        .rc-year-lbl { width: 48px; flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: #111827; line-height: 1.2; }
+        .rc-year-sub { font-size: 0.68rem; font-weight: 400; color: #9ca3af; }
+        .rc-months-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; flex: 1; user-select: none; }
+        @media (min-width: 576px) { .rc-months-grid { grid-template-columns: repeat(12, 1fr); } }
+        .rc-m-pill {
+            position: relative; border: 1px solid #e5e7eb; background: #fff; color: #374151;
+            border-radius: 7px; padding: 5px 2px; font-size: 0.74rem; font-weight: 600;
+            text-align: center; cursor: pointer; transition: all 0.1s;
+        }
+        .rc-m-pill:hover { border-color: #9ca3af; background: #f9fafb; }
+        .rc-m-pill.selected { background: #9f1239; color: #fff; border-color: #9f1239; }
+        .rc-m-pill.has-own::after {
+            content: ''; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px;
+            border-radius: 50%; background: #f59e0b;
+        }
+        .rc-m-pill.selected.has-own::after { background: #fde68a; }
+        .rc-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 576px) { .rc-preview-grid { grid-template-columns: 1fr; } }
+        .rc-preview-box { border-radius: 10px; padding: 10px 12px; font-size: 0.78rem; }
+        .rc-preview-changes { background: #fff1f2; border: 1px solid #fecdd3; }
+        .rc-preview-unchanged { background: #f9fafb; border: 1px solid #e5e7eb; }
+        .sub-nav-group { padding-left: 18px; margin-bottom: 4px; }
+        .sub-nav-btn {
+            width: 100%; border: none; background: transparent; text-align: left;
+            padding: 5px 10px; border-radius: 7px; display: flex; align-items: center;
+            gap: 8px; font-size: 0.8rem; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 1px;
+        }
+        .sub-nav-btn:hover { background: #eef0f4; color: #111827; }
+        .sub-nav-btn.active { background: #fff; color: var(--accent); font-weight: 600; border: 1px solid #e5e7eb; }
+
         @media print {
             .app-sidebar, .sidebar-backdrop, .canvas-topbar, .no-print { display: none !important; }
             .app-main-wrap { padding: 0 !important; }
@@ -385,6 +426,22 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     <span>Actual Calculation</span>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto" style="font-size:0.65rem;">vs Fcst</span>
                 </button>
+                <button type="button" class="side-nav-btn" data-nav="ratecard">
+                    <i class="bi bi-credit-card-2-front" style="color:#9f1239;"></i>
+                    <span>Rate Card</span>
+                    <i class="bi bi-chevron-down ms-auto small text-muted"></i>
+                </button>
+                <div class="sub-nav-group" id="rateCardSubMenu">
+                    <button type="button" class="sub-nav-btn" data-rc-sub="income">
+                        <i class="bi bi-arrow-down-circle" style="color:var(--word-blue);"></i><span>Income</span>
+                    </button>
+                    <button type="button" class="sub-nav-btn" data-rc-sub="expense">
+                        <i class="bi bi-cart-dash" style="color:var(--ppt-red);"></i><span>Expense</span>
+                    </button>
+                    <button type="button" class="sub-nav-btn" data-rc-sub="savings">
+                        <i class="bi bi-piggy-bank" style="color:var(--excel-green);"></i><span>Saving</span>
+                    </button>
+                </div>
                 <button type="button" class="side-nav-btn" data-nav="ledger">
                     <i class="bi bi-journal-text" style="color:#0f172a;"></i>
                     <span>Ledger</span>
@@ -452,6 +509,119 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
 
                 <div class="canvas-body" id="canvasBody"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Offcanvas Drawer: Tambah / Edit Rate Card -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="rateCardDrawer" style="width: 540px; max-width: 100vw;">
+        <div class="offcanvas-header border-bottom py-3">
+            <div>
+                <h6 class="offcanvas-title fw-bold mb-0" id="rcDrawerTitle">Edit rate card</h6>
+                <div class="small text-muted" id="rcDrawerSub">Sempoa · Forecast &amp; Actual</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form id="rateCardForm">
+                <input type="hidden" id="rcEditId" value="">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold small">Detail Item</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size:0.7rem;">
+                        <i class="bi bi-layers"></i> All months and years
+                    </span>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small mb-1">Kelompok</label>
+                        <select class="form-select form-select-sm" id="rcSection"></select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1">Nama Item <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="rcName" required placeholder="mis. Gaji Utama, Listrik, Dana Darurat">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-1">Target Data</label>
+                        <select class="form-select form-select-sm" id="rcTargetMode">
+                            <option value="forecast">Forecast</option>
+                            <option value="actual">Actual</option>
+                            <option value="both">Forecast &amp; Actual</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-1">Frekuensi</label>
+                        <select class="form-select form-select-sm" id="rcFreq">
+                            <option value="monthly">Monthly (×1)</option>
+                            <option value="biweekly">Biweekly (×2)</option>
+                            <option value="weekly">Weekly (×4)</option>
+                            <option value="once">Once / Tahunan</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-1">Qty</label>
+                        <input type="number" class="form-control form-control-sm" id="rcQty" min="1" step="1" value="1">
+                    </div>
+                </div>
+
+                <div class="border-top pt-3 mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="fw-bold small">Rate</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" id="rcScopeBadge" style="font-size:0.7rem;">
+                            <i class="bi bi-calendar-event"></i> Pilih bulan di bawah
+                        </span>
+                    </div>
+                    <label class="form-label small text-muted mb-1">Apa yang ingin diubah?</label>
+                    <div class="rc-seg-wrap mb-3">
+                        <button type="button" class="rc-seg-btn active" data-rc-editmode="selected">Selected months' own rate</button>
+                        <button type="button" class="rc-seg-btn" data-rc-editmode="base">Base rate (semua bulan)</button>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label small mb-1">Rate amount (Rp)</label>
+                            <input type="number" class="form-control form-control-sm text-end fw-semibold" id="rcAmount" min="0" step="1000" value="0">
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small mb-1">Mata Uang</label>
+                            <input type="text" class="form-control form-control-sm bg-light" value="IDR (Rp)" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Penyesuaian / Fee %</label>
+                            <input type="number" class="form-control form-control-sm text-end" id="rcFeePct" step="0.1" placeholder="e.g. 0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Total per Bulan</label>
+                            <div class="form-control form-control-sm bg-light text-end fw-bold" id="rcTotalPreview">Rp 0</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold mb-0">Apply to</label>
+                        <span class="small text-muted" id="rcSelectedCount">0 selected</span>
+                    </div>
+                    <div id="rcApplyGrid" class="mb-2"></div>
+                    <div class="small text-muted mb-3" style="font-size:0.72rem;">
+                        Klik bulan (atau klik &amp; geser) untuk memilih beberapa bulan. Titik kuning menandakan bulan tersebut sudah memiliki nominal.
+                    </div>
+
+                    <div class="rc-preview-grid mb-3">
+                        <div class="rc-preview-box rc-preview-changes">
+                            <div class="fw-bold text-danger mb-1" style="font-size:0.7rem;">CHANGES</div>
+                            <div class="fw-semibold text-dark" id="rcChangesLabel">Belum ada bulan dipilih</div>
+                            <div class="text-muted" id="rcChangesAmount">Rp 0</div>
+                        </div>
+                        <div class="rc-preview-box rc-preview-unchanged">
+                            <div class="fw-bold text-muted mb-1" style="font-size:0.7rem;">UNCHANGED</div>
+                            <div class="fw-semibold text-dark" id="rcUnchangedLabel">Bulan lainnya</div>
+                            <div class="text-muted">Nilai sebelumnya tetap tersimpan</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger px-3" id="rcSaveBtn">Save Rate Card</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -604,7 +774,8 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             let state = loadState();
             if (!state.settings) state.settings = structuredClone(DEFAULT_SETTINGS);
             let currentYear = '2026';
-            let currentNav = 'forecast'; // 'forecast' | 'actual' | 'ledger' | 'settings'
+            let currentNav = 'forecast'; // 'forecast' | 'actual' | 'ratecard' | 'ledger' | 'settings'
+            let currentRateCardSub = 'income'; // 'income' | 'expense' | 'savings'
             let currentSheetTab = 'expenses';
             let ledgerMonthIdx = 10;
             let searchQuery = '';
@@ -612,6 +783,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             let expandedGroups = { income: false, main: true, additional: false, savings: false };
             const manageModal = new bootstrap.Modal(document.getElementById('manageListModal'));
             const resetModal = new bootstrap.Modal(document.getElementById('resetDataModal'));
+            const rateCardDrawer = new bootstrap.Offcanvas(document.getElementById('rateCardDrawer'));
+            let rcEditMode = 'selected'; // 'selected' | 'base'
+            let rcSelectedMonths = new Set(); // e.g. '2026-0'
+            let rcIsDragging = false;
+            let rcDragAdd = true;
 
             function loadState() {
                 try {
@@ -1331,10 +1507,205 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 ySel.innerHTML = years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>Jan – Des ${y}</option>`).join('');
             }
 
+            function renderRateCardView(yearData) {
+                const subMeta = {
+                    income:  { title: 'Rate Card — Income',  sections: [{ key: 'income', label: 'Income' }], badge: 'bg-primary' },
+                    expense: { title: 'Rate Card — Expense', sections: [{ key: 'main', label: 'Main Expenses' }, { key: 'additional', label: 'Additional Expenses' }], badge: 'bg-danger' },
+                    savings: { title: 'Rate Card — Saving',  sections: [{ key: 'savings', label: 'Saving' }], badge: 'bg-success' }
+                };
+                const meta = subMeta[currentRateCardSub] || subMeta.income;
+
+                let cardsHtml = '';
+                meta.sections.forEach(sec => {
+                    const items = (yearData[sec.key] || []).filter(it => !searchQuery || it.name.toLowerCase().includes(searchQuery));
+                    const rowsHtml = items.length ? items.map((it, idx) => {
+                        const fArr = it.forecast || Array(12).fill(0);
+                        const aArr = it.actual || Array(12).fill(0);
+                        const activeMonths = fArr.filter(v => Number(v) > 0).length;
+                        const firstVal = fArr.find(v => Number(v) > 0) || 0;
+                        const totFcst = fArr.reduce((a, b) => a + Number(b || 0), 0);
+                        const totAct = aArr.reduce((a, b) => a + Number(b || 0), 0);
+                        const freqLabel = it.freq === 'weekly' ? 'Weekly ×4' : (it.freq === 'biweekly' ? 'Biweekly ×2' : (it.freq === 'once' ? 'Once' : 'Monthly'));
+                        return `
+                            <tr>
+                                <td class="text-muted" style="width:40px;">${idx + 1}</td>
+                                <td>
+                                    <div class="fw-semibold">${esc(it.name)}</div>
+                                    <div class="small text-muted">${freqLabel} · ${activeMonths}/12 bln terisi</div>
+                                </td>
+                                <td class="text-end">${rp(firstVal)}</td>
+                                <td class="text-end fw-semibold">${rp(totFcst)}</td>
+                                <td class="text-end text-muted">${rp(totAct)}</td>
+                                <td class="text-end" style="width:150px;">
+                                    <button type="button" class="btn btn-sm btn-outline-dark py-0 px-2 rc-open-edit"
+                                            data-sec="${sec.key}" data-id="${it.id}">
+                                        <i class="bi bi-sliders2"></i> Edit Rate
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1 delete-btn"
+                                            data-section="${sec.key}" data-id="${it.id}" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('') : `<tr><td colspan="6" class="text-center text-muted py-3">Belum ada item di ${sec.label}. Klik <strong>+ Tambah Rate Card</strong>.</td></tr>`;
+
+                    cardsHtml += `
+                        <div class="card mb-3">
+                            <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold small">${esc(sec.label)} <span class="badge ${meta.badge} ms-1">${items.length} item</span></span>
+                                <button type="button" class="btn btn-sm btn-light py-0 px-2 rc-open-add" data-sec="${sec.key}">
+                                    <i class="bi bi-plus-lg"></i> Tambah ${esc(sec.label)}
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>No</th><th>Item &amp; Frekuensi</th><th class="text-end">Rate / Bln</th>
+                                            <th class="text-end">Total Forecast</th><th class="text-end">Total Actual</th><th class="text-end">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rowsHtml}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('canvasBody').innerHTML = `
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <h5 class="mb-0 fw-bold">${meta.title} (${currentYear})</h5>
+                            <div class="small text-muted">Tambahkan item baru atau atur rate per bulan / multi-tahun sekaligus, otomatis masuk ke Annual Sheet &amp; Dashboard.</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-accent rc-open-add" data-sec="${meta.sections[0].key}">
+                            <i class="bi bi-plus-lg"></i> Tambah Rate Card
+                        </button>
+                    </div>
+                    <div class="annual-tabs-bar mb-3">
+                        <div class="annual-tabs-left">
+                            <button type="button" class="annual-tab-btn ${currentRateCardSub === 'income' ? 'active' : ''}" data-sheet-tab="income" data-rc-tab="income">
+                                <i class="bi bi-arrow-down-circle"></i> Income
+                            </button>
+                            <button type="button" class="annual-tab-btn ${currentRateCardSub === 'expense' ? 'active' : ''}" data-sheet-tab="expenses" data-rc-tab="expense">
+                                <i class="bi bi-cart-dash"></i> Expense
+                            </button>
+                            <button type="button" class="annual-tab-btn ${currentRateCardSub === 'savings' ? 'active' : ''}" data-sheet-tab="savings" data-rc-tab="savings">
+                                <i class="bi bi-piggy-bank"></i> Saving
+                            </button>
+                        </div>
+                    </div>
+                    ${cardsHtml}
+                `;
+            }
+
+            function calcRcEffectiveAmount() {
+                const base = Math.max(0, Number(document.getElementById('rcAmount').value || 0));
+                const qty = Math.max(1, Number(document.getElementById('rcQty').value || 1));
+                const freq = document.getElementById('rcFreq').value;
+                const mult = freq === 'weekly' ? 4 : (freq === 'biweekly' ? 2 : 1);
+                const feePct = Number(document.getElementById('rcFeePct').value || 0);
+                const raw = base * qty * mult;
+                return Math.round(raw * (1 + (feePct / 100)));
+            }
+
+            function renderRcGridAndPreview() {
+                const years = Object.keys(state.years || {}).sort();
+                const sec = document.getElementById('rcSection').value;
+                const editId = Number(document.getElementById('rcEditId').value || 0);
+                const mode = document.getElementById('rcTargetMode').value;
+                const field = mode === 'actual' ? 'actual' : 'forecast';
+
+                let existingItem = null;
+                const gridHtml = years.map(yr => {
+                    const yd = state.years[yr] || {};
+                    const item = editId ? (yd[sec] || []).find(i => i.id === editId) : null;
+                    if (item) existingItem = item;
+                    const arr = item ? (item[field] || []) : [];
+                    const ownCount = arr.filter(v => Number(v) > 0).length;
+                    const pills = MONTHS.map((m, idx) => {
+                        const key = `${yr}-${idx}`;
+                        const isSel = rcEditMode === 'base' || rcSelectedMonths.has(key);
+                        const hasOwn = Number(arr[idx] || 0) > 0;
+                        return `<div class="rc-m-pill ${isSel ? 'selected' : ''} ${hasOwn ? 'has-own' : ''}" data-rc-key="${key}">${m}</div>`;
+                    }).join('');
+                    return `
+                        <div class="rc-month-row">
+                            <div class="rc-year-lbl">${yr}<div class="rc-year-sub">${ownCount} own</div></div>
+                            <div class="rc-months-grid">${pills}</div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('rcApplyGrid').innerHTML = gridHtml;
+
+                const eff = calcRcEffectiveAmount();
+                document.getElementById('rcTotalPreview').textContent = rp(eff);
+                const count = rcEditMode === 'base' ? (years.length * 12) : rcSelectedMonths.size;
+                document.getElementById('rcSelectedCount').textContent = rcEditMode === 'base' ? 'Semua bulan & tahun' : `${count} selected`;
+
+                if (rcEditMode === 'base') {
+                    document.getElementById('rcScopeBadge').innerHTML = `<i class="bi bi-layers"></i> Base rate (semua bulan)`;
+                    document.getElementById('rcChangesLabel').textContent = `Semua bulan (${years.join(', ')})`;
+                    document.getElementById('rcUnchangedLabel').textContent = 'Tidak ada';
+                    document.getElementById('rcSaveBtn').textContent = 'Save all months';
+                } else {
+                    const keys = Array.from(rcSelectedMonths).sort();
+                    const previewTxt = keys.length === 0
+                        ? 'Belum ada bulan dipilih'
+                        : (keys.length <= 4 ? keys.map(k => { const [y, m] = k.split('-'); return `${MONTHS[m]} ${y}`; }).join(', ') : `${keys.length} bulan dipilih`);
+                    document.getElementById('rcScopeBadge').innerHTML = `<i class="bi bi-calendar-event"></i> ${previewTxt}`;
+                    document.getElementById('rcChangesLabel').textContent = previewTxt;
+                    document.getElementById('rcUnchangedLabel').textContent = 'Bulan lainnya';
+                    document.getElementById('rcSaveBtn').textContent = keys.length > 0 ? `Save ${keys.length} month(s)` : 'Save Rate Card';
+                }
+                document.getElementById('rcChangesAmount').textContent = rp(eff) + ' / bulan';
+            }
+
+            function openRateCardDrawer(secKey, itemId = null) {
+                const secOpts = [
+                    { k: 'income', l: 'Income' },
+                    { k: 'main', l: 'Main Expenses' },
+                    { k: 'additional', l: 'Additional Expenses' },
+                    { k: 'savings', l: 'Saving' }
+                ];
+                document.getElementById('rcSection').innerHTML = secOpts.map(o => `<option value="${o.k}" ${o.k === secKey ? 'selected' : ''}>${o.l}</option>`).join('');
+                document.getElementById('rcEditId').value = itemId ? String(itemId) : '';
+                rcEditMode = 'selected';
+                document.querySelectorAll('.rc-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.rcEditmode === 'selected'));
+                rcSelectedMonths = new Set([`${currentYear}-${Number(state.settings?.activeMonthIdx ?? 10)}`]);
+
+                if (itemId) {
+                    const it = (state.years[currentYear]?.[secKey] || []).find(i => i.id === itemId);
+                    document.getElementById('rcDrawerTitle').textContent = 'Edit rate card';
+                    document.getElementById('rcDrawerSub').textContent = `${it?.name || ''} · ${currentYear}`;
+                    document.getElementById('rcName').value = it?.name || '';
+                    document.getElementById('rcFreq').value = it?.freq || 'monthly';
+                    document.getElementById('rcQty').value = it?.qty || 1;
+                    document.getElementById('rcFeePct').value = '';
+                    const curM = Number(state.settings?.activeMonthIdx ?? 10);
+                    document.getElementById('rcAmount').value = Number(it?.forecast?.[curM] || it?.forecast?.find(v => v > 0) || 0);
+                } else {
+                    document.getElementById('rcDrawerTitle').textContent = 'Tambah rate card baru';
+                    document.getElementById('rcDrawerSub').textContent = `Sempoa · ${currentYear}`;
+                    document.getElementById('rcName').value = '';
+                    document.getElementById('rcFreq').value = 'monthly';
+                    document.getElementById('rcQty').value = 1;
+                    document.getElementById('rcFeePct').value = '';
+                    document.getElementById('rcAmount').value = 0;
+                }
+                renderRcGridAndPreview();
+                rateCardDrawer.show();
+            }
+
             function render() {
                 syncBrandAndYearSelect();
                 const yearData = state.years[currentYear] || { income: [], main: [], additional: [], savings: [] };
                 renderSidebarStats(yearData);
+
+                document.querySelectorAll('.sub-nav-btn[data-rc-sub]').forEach(b => {
+                    b.classList.toggle('active', currentNav === 'ratecard' && b.dataset.rcSub === currentRateCardSub);
+                });
 
                 const canvas = document.getElementById('appCanvas');
                 canvas.classList.remove('theme-teams', 'theme-word', 'theme-ppt', 'theme-excel');
@@ -1348,6 +1719,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     bread.textContent = 'Dashboard & Annual Sheet';
                     renderDashboardView(yearData, mode);
                     renderSheetView(yearData, mode);
+                } else if (currentNav === 'ratecard') {
+                    canvas.classList.add(currentRateCardSub === 'income' ? 'theme-word' : (currentRateCardSub === 'expense' ? 'theme-ppt' : 'theme-excel'));
+                    modeBadge.textContent = 'Rate Card';
+                    bread.textContent = currentRateCardSub === 'income' ? 'Income' : (currentRateCardSub === 'expense' ? 'Expense' : 'Saving');
+                    renderRateCardView(yearData);
                 } else if (currentNav === 'ledger') {
                     canvas.classList.add('theme-excel');
                     modeBadge.textContent = 'Laporan';
@@ -1534,6 +1910,16 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     const sec = setPresetDel.dataset.sec, idx = Number(setPresetDel.dataset.idx);
                     state.presets[sec].splice(idx, 1); saveState(); return render();
                 }
+                const rcTabBtn = e.target.closest('[data-rc-tab]');
+                if (rcTabBtn) {
+                    currentRateCardSub = rcTabBtn.dataset.rcTab;
+                    return render();
+                }
+                const rcOpenAdd = e.target.closest('.rc-open-add');
+                if (rcOpenAdd) return openRateCardDrawer(rcOpenAdd.dataset.sec, null);
+                const rcOpenEdit = e.target.closest('.rc-open-edit');
+                if (rcOpenEdit) return openRateCardDrawer(rcOpenEdit.dataset.sec, Number(rcOpenEdit.dataset.id));
+
                 const sheetTabBtn = e.target.closest('.annual-tab-btn[data-sheet-tab]');
                 if (sheetTabBtn) { currentSheetTab = sheetTabBtn.dataset.sheetTab; return render(); }
                 if (e.target.closest('#copyForecastBtn')) {
@@ -1663,6 +2049,97 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     closeMobileSidebar();
                     render();
                 });
+            });
+
+            document.querySelectorAll('.sub-nav-btn[data-rc-sub]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.side-nav-btn[data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === 'ratecard'));
+                    currentNav = 'ratecard';
+                    currentRateCardSub = this.dataset.rcSub;
+                    closeMobileSidebar();
+                    render();
+                });
+            });
+
+            // Rate Card Drawer interactions (segmented toggle, drag-select months, live calc, submit)
+            document.querySelectorAll('.rc-seg-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.rc-seg-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    rcEditMode = this.dataset.rcEditmode;
+                    renderRcGridAndPreview();
+                });
+            });
+            ['rcAmount', 'rcQty', 'rcFreq', 'rcFeePct', 'rcSection', 'rcTargetMode'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', renderRcGridAndPreview);
+                document.getElementById(id)?.addEventListener('change', renderRcGridAndPreview);
+            });
+            document.getElementById('rcApplyGrid').addEventListener('mousedown', function (e) {
+                const pill = e.target.closest('.rc-m-pill');
+                if (!pill || rcEditMode === 'base') return;
+                rcIsDragging = true;
+                const k = pill.dataset.rcKey;
+                rcDragAdd = !rcSelectedMonths.has(k);
+                if (rcDragAdd) rcSelectedMonths.add(k); else rcSelectedMonths.delete(k);
+                renderRcGridAndPreview();
+            });
+            document.getElementById('rcApplyGrid').addEventListener('mouseover', function (e) {
+                if (!rcIsDragging) return;
+                const pill = e.target.closest('.rc-m-pill');
+                if (!pill) return;
+                const k = pill.dataset.rcKey;
+                if (rcDragAdd) rcSelectedMonths.add(k); else rcSelectedMonths.delete(k);
+                renderRcGridAndPreview();
+            });
+            window.addEventListener('mouseup', () => { rcIsDragging = false; });
+
+            document.getElementById('rateCardForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const sec = document.getElementById('rcSection').value;
+                const name = document.getElementById('rcName').value.trim();
+                if (!name) return;
+                const editId = Number(document.getElementById('rcEditId').value || 0);
+                const mode = document.getElementById('rcTargetMode').value;
+                const freq = document.getElementById('rcFreq').value;
+                const qty = Math.max(1, Number(document.getElementById('rcQty').value || 1));
+                const eff = calcRcEffectiveAmount();
+                const years = Object.keys(state.years || {}).sort();
+
+                const targetKeys = rcEditMode === 'base'
+                    ? years.flatMap(y => MONTHS.map((_, m) => `${y}-${m}`))
+                    : Array.from(rcSelectedMonths);
+
+                if (targetKeys.length === 0) return alert('Pilih minimal 1 bulan di bagian "Apply to".');
+
+                if (!state.presets[sec].some(p => p.toLowerCase() === name.toLowerCase())) {
+                    state.presets[sec].push(name);
+                }
+
+                const newId = editId || Date.now();
+                targetKeys.forEach(k => {
+                    const [yr, mStr] = k.split('-');
+                    const mIdx = Number(mStr);
+                    if (!state.years[yr]) state.years[yr] = { income: [], main: [], additional: [], savings: [] };
+                    let item = (state.years[yr][sec] || []).find(i => i.id === newId || i.name.toLowerCase() === name.toLowerCase());
+                    if (!item) {
+                        item = { id: newId, name, freq, qty, forecast: Array(12).fill(0), actual: Array(12).fill(0) };
+                        state.years[yr][sec].push(item);
+                    } else {
+                        item.name = name; item.freq = freq; item.qty = qty;
+                    }
+                    if (mode === 'forecast' || mode === 'both') {
+                        if (!item.forecast) item.forecast = Array(12).fill(0);
+                        item.forecast[mIdx] = eff;
+                    }
+                    if (mode === 'actual' || mode === 'both') {
+                        if (!item.actual) item.actual = Array(12).fill(0);
+                        item.actual[mIdx] = eff;
+                    }
+                });
+
+                saveState();
+                rateCardDrawer.hide();
+                render();
             });
             document.getElementById('yearSelect').addEventListener('change', function () { currentYear = this.value; render(); });
             function openResetModal() {
