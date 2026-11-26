@@ -134,7 +134,9 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             gap: 5px;
         }
         .month-cell {
-            min-height: 82px;
+            height: 96px;
+            min-height: 96px;
+            max-height: 96px;
         }
         .kanban-board {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -177,9 +179,20 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
             text-align: center;
         }
         .month-cell {
-            min-height: 62px;
+            height: 74px;
+            min-height: 74px;
+            max-height: 74px;
             padding: 3px 2px 20px 2px;
             gap: 2px;
+        }
+        .month-more-btn {
+            bottom: 2px !important;
+            left: 3px !important;
+            font-size: 0.6rem !important;
+            padding: 1px 5px !important;
+        }
+        .month-hol-label {
+            display: none;
         }
         .month-day-num {
             bottom: 2px;
@@ -499,12 +512,104 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
     .month-cell {
         background: #fff;
-        min-height: 108px;
+        height: 112px;
+        min-height: 112px;
+        max-height: 112px;
         min-width: 0;
         overflow: hidden;
         padding: 6px 6px 26px 6px;
         position: relative;
         cursor: pointer;
+    }
+    .month-more-btn {
+        position: absolute;
+        bottom: 6px;
+        left: 6px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--excel-green);
+        background: var(--excel-green-soft);
+        border: 1px solid var(--excel-green-border);
+        border-radius: 5px;
+        padding: 1px 6px;
+        line-height: 1.3;
+        cursor: pointer;
+        z-index: 3;
+        max-width: calc(100% - 42px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .month-more-btn:hover {
+        background: var(--excel-green);
+        color: #ffffff;
+    }
+    .month-hol-label {
+        position: absolute;
+        bottom: 6px;
+        left: 6px;
+        right: 36px;
+        font-size: 0.66rem;
+        color: #dc2626;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+        pointer-events: none;
+    }
+    .month-hol-label.has-more {
+        bottom: 27px;
+        right: 6px;
+    }
+    .nb-day-pop {
+        position: fixed;
+        z-index: 1085;
+        width: 280px;
+        max-width: calc(100vw - 20px);
+        background: #ffffff;
+        border: 1px solid var(--nb-border);
+        border-radius: 14px;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        display: none;
+        overflow: hidden;
+    }
+    .nb-day-pop.is-open { display: block; }
+    .nb-day-pop-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 11px 14px 9px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+    .nb-day-pop-list {
+        max-height: 230px;
+        overflow-y: auto;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .nb-day-pop-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--nb-border);
+        cursor: pointer;
+        font-size: 0.78rem;
+        transition: border-color 0.12s, background 0.12s;
+    }
+    .nb-day-pop-item:hover { border-color: var(--excel-green); background: #f8fafc; }
+    .nb-day-pop-item.is-done { opacity: 0.55; text-decoration: line-through; }
+    .nb-day-pop-foot {
+        padding: 8px 10px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
     }
     .month-cell:hover { background: #fafafa; }
     .month-cell.is-today { background: #f4fbf7; border-bottom: 2px solid var(--excel-green); }
@@ -1746,6 +1851,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 
 <div class="nb-dp-popover" id="nbDatePickerPopover" onclick="event.stopPropagation()"></div>
 <div class="nb-tp-popover" id="nbTimePickerPopover" onclick="event.stopPropagation()"></div>
+<div class="nb-day-pop" id="nbDayEventsPopover" onclick="event.stopPropagation()"></div>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;" id="toastBox"></div>
 
 <script>
@@ -2077,8 +2183,9 @@ function renderMonthView() {
             const startIdx = Math.max(0, diffDays(ev.due_date, weekStart));
             const endIdx   = Math.min(6, diffDays(evEnd, weekStart));
 
+            const maxLanes = window.innerWidth <= 575 ? 1 : 2;
             let placedLane = -1;
-            for (let l = 0; l < 3; l++) {
+            for (let l = 0; l < maxLanes; l++) {
                 if (!lanes[l]) lanes[l] = Array(7).fill(false);
                 let free = true;
                 for (let c = startIdx; c <= endIdx; c++) {
@@ -2123,13 +2230,19 @@ function renderMonthView() {
             cell.onclick = () => openTaskModal(null, ds);
 
             if (overflowCount[idx] > 0) {
-                const more = document.createElement('div');
-                more.style.cssText = 'position:absolute;bottom:6px;left:6px;font-size:0.68rem;color:#6b7280;font-weight:500;';
+                const more = document.createElement('button');
+                more.type = 'button';
+                more.className = 'month-more-btn';
                 more.textContent = `+${overflowCount[idx]} lainnya`;
+                more.onclick = (e) => {
+                    e.stopPropagation();
+                    openDayEventsPopover(ds, more);
+                };
                 cell.appendChild(more);
-            } else if (holiday && holiday.label) {
+            }
+            if (holiday && holiday.label) {
                 const holBadge = document.createElement('div');
-                holBadge.style.cssText = 'position:absolute;bottom:6px;left:6px;right:56px;font-size:0.66rem;color:#dc2626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;';
+                holBadge.className = 'month-hol-label' + (overflowCount[idx] > 0 ? ' has-more' : '');
                 holBadge.textContent = holiday.label;
                 cell.appendChild(holBadge);
             }
@@ -2905,6 +3018,88 @@ document.addEventListener('click', (e) => {
     const pop = document.getElementById('nbTimePickerPopover');
     if (pop && !pop.contains(e.target) && !e.target.closest('.nb-time-trigger')) {
         closeNbTimePicker();
+    }
+});
+
+/* DAY EVENTS POPOVER (+N lainnya) */
+let dayPopOpen = false;
+
+function openDayEventsPopover(ds, triggerEl) {
+    closeNbDatePicker();
+    closeNbTimePicker();
+    const pop = document.getElementById('nbDayEventsPopover');
+    if (!pop) return;
+
+    const [y, m, d] = ds.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dayTitle = `${HERO_DAYS_ID[dt.getDay()]}, ${d} ${HERO_MONTHS_ID[m - 1]} ${y}`;
+    const holiday = cfgHolidays.find(h => h.date === ds);
+
+    const dayEvents = getFilteredEvents()
+        .filter(ev => {
+            const evEnd = ev.end_date || ev.due_date;
+            return ds >= ev.due_date && ds <= evEnd;
+        })
+        .sort((a, b) => (a.due_time || '99:99').localeCompare(b.due_time || '99:99'));
+
+    const listHtml = dayEvents.length
+        ? dayEvents.map(ev => {
+            const timeStr = ev.due_time ? formatShortTime(ev.due_time) : 'All day';
+            const doneCls = ev.status === 'Done' ? 'is-done' : '';
+            return `
+                <div class="nb-day-pop-item ${ev.theme || 'theme-green'} ${doneCls}" onclick="closeDayEventsPopover(); openTaskModal(${ev.id});">
+                    <span class="d-flex align-items-center gap-2 min-width-0">
+                        <span class="m-pill-dot"></span>
+                        <span class="text-truncate fw-medium" style="color:#111827;">${esc(ev.title)}</span>
+                    </span>
+                    <span class="text-muted flex-shrink-0" style="font-size:0.7rem;">${esc(timeStr)}</span>
+                </div>
+            `;
+        }).join('')
+        : '<div class="text-muted small text-center py-2">Tidak ada agenda.</div>';
+
+    pop.innerHTML = `
+        <div class="nb-day-pop-head">
+            <div>
+                <div class="fw-bold" style="font-size:0.84rem; color:var(--nb-text);">${esc(dayTitle)}</div>
+                ${holiday && holiday.label ? `<div class="text-danger" style="font-size:0.72rem; font-weight:500;">${esc(holiday.label)}</div>` : ''}
+            </div>
+            <button type="button" class="btn-close" style="font-size:0.65rem;" onclick="closeDayEventsPopover()" aria-label="Close"></button>
+        </div>
+        <div class="nb-day-pop-list">${listHtml}</div>
+        <div class="nb-day-pop-foot">
+            <button type="button" class="btn-excel py-1 px-2" style="font-size:0.75rem;" onclick="closeDayEventsPopover(); openTaskModal(null, '${ds}');">
+                <i class="bi bi-plus-lg"></i> New event
+            </button>
+        </div>
+    `;
+
+    pop.classList.add('is-open');
+    const rect = triggerEl.getBoundingClientRect();
+    const popW = pop.offsetWidth || 280;
+    const popH = pop.offsetHeight || 260;
+    let left = Math.min(rect.left, window.innerWidth - popW - 10);
+    if (left < 10) left = 10;
+    let top = rect.bottom + 6;
+    if (top + popH > window.innerHeight - 10) {
+        top = Math.max(10, rect.top - popH - 6);
+    }
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+    dayPopOpen = true;
+}
+
+function closeDayEventsPopover() {
+    const pop = document.getElementById('nbDayEventsPopover');
+    if (pop) pop.classList.remove('is-open');
+    dayPopOpen = false;
+}
+
+document.addEventListener('click', (e) => {
+    if (!dayPopOpen) return;
+    const pop = document.getElementById('nbDayEventsPopover');
+    if (pop && !pop.contains(e.target) && !e.target.closest('.month-more-btn')) {
+        closeDayEventsPopover();
     }
 });
 
