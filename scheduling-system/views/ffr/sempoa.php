@@ -8,6 +8,13 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sempoa — Forecast &amp; Actual Calculation</title>
     <link rel="icon" type="image/svg+xml" href="scheduling-system/public/assets/img/sempoa-logo.svg">
+    <link rel="icon" type="image/png" sizes="180x180" href="scheduling-system/public/assets/img/sempoa-apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="scheduling-system/public/assets/img/sempoa-apple-touch-icon.png">
+    <link rel="manifest" href="scheduling-system/public/assets/manifest-sempoa.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sempoa">
+    <meta name="theme-color" content="#F3EBDD">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@700;800&display=swap" rel="stylesheet">

@@ -1,0 +1,20 @@
+{
+  "name": "Sempoa — Forecast & Actual Calculation",
+  "short_name": "Sempoa",
+  "start_url": "/index.php?page=ffr",
+  "display": "standalone",
+  "background_color": "#F3EBDD",
+  "theme_color": "#F3EBDD",
+  "icons": [
+    {
+      "src": "/scheduling-system/public/assets/img/sempoa-apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/scheduling-system/public/assets/img/sempoa-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
