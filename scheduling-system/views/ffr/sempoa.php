@@ -371,6 +371,9 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                                 <option value="2027">Jan – Des 2027</option>
                             </select>
                         </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="topResetBtn">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
                         <button type="button" class="btn btn-sm btn-dark" id="topExportBtn">
                             <i class="bi bi-download"></i> Export Excel
                         </button>
@@ -378,6 +381,72 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 </div>
 
                 <div class="canvas-body" id="canvasBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reset Bulanan & Tahunan -->
+    <div class="modal fade" id="resetDataModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white py-2">
+                    <h6 class="modal-title"><i class="bi bi-arrow-counterclockwise"></i> Reset Data Bulanan / Tahunan</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Reset Bulanan -->
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <div class="fw-bold small mb-2 text-dark"><i class="bi bi-calendar-month me-1"></i> Reset Bulanan (Nolkan Bulan Tertentu)</div>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <label class="form-label small mb-1">Tahun</label>
+                                <select class="form-select form-select-sm" id="modalResetMonthYear"></select>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small mb-1">Bulan</label>
+                                <select class="form-select form-select-sm" id="modalResetMonthIdx"></select>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small mb-1">Target</label>
+                                <select class="form-select form-select-sm" id="modalResetMonthTarget">
+                                    <option value="both">Forecast &amp; Actual</option>
+                                    <option value="forecast">Forecast saja</option>
+                                    <option value="actual">Actual saja</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <button type="button" class="btn btn-sm btn-danger w-100" id="btnExecResetMonth">
+                                    <i class="bi bi-eraser"></i> Reset Bulan Terpilih
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Tahunan -->
+                    <div class="border rounded p-3 bg-light">
+                        <div class="fw-bold small mb-2 text-dark"><i class="bi bi-calendar-range me-1"></i> Reset Tahunan (1 Tahun Penuh)</div>
+                        <div class="row g-2">
+                            <div class="col-5">
+                                <label class="form-label small mb-1">Tahun</label>
+                                <select class="form-select form-select-sm" id="modalResetYearSelect"></select>
+                            </div>
+                            <div class="col-7">
+                                <label class="form-label small mb-1">Mode Reset</label>
+                                <select class="form-select form-select-sm" id="modalResetYearMode">
+                                    <option value="both">Nolkan Forecast &amp; Actual (Jan–Des)</option>
+                                    <option value="forecast">Nolkan Forecast saja (Jan–Des)</option>
+                                    <option value="actual">Nolkan Actual saja (Jan–Des)</option>
+                                    <option value="clear_items">Hapus semua baris item tahun ini</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100" id="btnExecResetYear">
+                                    <i class="bi bi-trash"></i> Reset Tahun Terpilih
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -472,6 +541,7 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             let managingSection = 'main';
             let expandedGroups = { income: false, main: true, additional: false, savings: false };
             const manageModal = new bootstrap.Modal(document.getElementById('manageListModal'));
+            const resetModal = new bootstrap.Modal(document.getElementById('resetDataModal'));
 
             function loadState() {
                 try {
@@ -1127,7 +1197,11 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                                         </div>
                                     </div>
                                     <div class="border-top pt-2">
-                                        <div class="small fw-semibold mb-2">Backup &amp; Restore Data (JSON)</div>
+                                        <div class="small fw-semibold mb-2">Reset Bulanan &amp; Tahunan</div>
+                                        <button type="button" class="btn btn-sm btn-danger mb-2" id="settingsOpenResetBtn">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Buka Menu Reset Bulan / Tahun
+                                        </button>
+                                        <div class="small fw-semibold mb-2 mt-2">Backup &amp; Restore Data (JSON)</div>
                                         <div class="d-flex flex-wrap gap-2">
                                             <button type="button" class="btn btn-sm btn-outline-success" id="exportJsonBtn"><i class="bi bi-download"></i> Export Backup JSON</button>
                                             <label class="btn btn-sm btn-outline-primary mb-0">
@@ -1366,6 +1440,9 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     a.download = `Sempoa_Backup_${new Date().toISOString().slice(0,10)}.json`;
                     return a.click();
                 }
+                if (e.target.closest('#settingsOpenResetBtn')) {
+                    return openResetModal();
+                }
                 if (e.target.closest('#settingsResetBtn')) {
                     state = { years: structuredClone(DEFAULT_YEARS), presets: structuredClone(DEFAULT_PRESETS), settings: structuredClone(DEFAULT_SETTINGS) };
                     saveState();
@@ -1507,6 +1584,70 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 });
             });
             document.getElementById('yearSelect').addEventListener('change', function () { currentYear = this.value; render(); });
+            function openResetModal() {
+                const years = Object.keys(state.years || {}).sort();
+                const yOpts = years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+                document.getElementById('modalResetMonthYear').innerHTML = yOpts;
+                document.getElementById('modalResetYearSelect').innerHTML = yOpts;
+                document.getElementById('modalResetMonthIdx').innerHTML = MONTH_NAMES.map((m, i) => `<option value="${i}" ${i === Number(state.settings?.activeMonthIdx ?? 10) ? 'selected' : ''}>${m}</option>`).join('');
+                resetModal.show();
+            }
+
+            document.getElementById('topResetBtn').addEventListener('click', openResetModal);
+
+            document.getElementById('btnExecResetMonth').addEventListener('click', function () {
+                const yr = document.getElementById('modalResetMonthYear').value;
+                const mIdx = Number(document.getElementById('modalResetMonthIdx').value);
+                const target = document.getElementById('modalResetMonthTarget').value;
+                const label = `${MONTH_NAMES[mIdx]} ${yr}`;
+                if (!confirm(`Yakin ingin mereset data ${target === 'both' ? 'Forecast & Actual' : target} untuk bulan ${label}?`)) return;
+
+                const yd = state.years[yr];
+                if (yd) {
+                    ['income', 'main', 'additional', 'savings'].forEach(sec => {
+                        (yd[sec] || []).forEach(it => {
+                            if (target === 'forecast' || target === 'both') {
+                                if (!it.forecast) it.forecast = Array(12).fill(0);
+                                it.forecast[mIdx] = 0;
+                            }
+                            if (target === 'actual' || target === 'both') {
+                                if (!it.actual) it.actual = Array(12).fill(0);
+                                it.actual[mIdx] = 0;
+                            }
+                        });
+                    });
+                    saveState();
+                }
+                resetModal.hide();
+                render();
+            });
+
+            document.getElementById('btnExecResetYear').addEventListener('click', function () {
+                const yr = document.getElementById('modalResetYearSelect').value;
+                const mode = document.getElementById('modalResetYearMode').value;
+                const msg = mode === 'clear_items'
+                    ? `Yakin ingin MENGHAPUS SEMUA ITEM di tahun ${yr}?`
+                    : `Yakin ingin menolkan semua data ${mode === 'both' ? 'Forecast & Actual' : mode} sepanjang tahun ${yr}?`;
+                if (!confirm(msg)) return;
+
+                if (mode === 'clear_items') {
+                    state.years[yr] = { income: [], main: [], additional: [], savings: [] };
+                } else {
+                    const yd = state.years[yr];
+                    if (yd) {
+                        ['income', 'main', 'additional', 'savings'].forEach(sec => {
+                            (yd[sec] || []).forEach(it => {
+                                if (mode === 'forecast' || mode === 'both') it.forecast = Array(12).fill(0);
+                                if (mode === 'actual' || mode === 'both') it.actual = Array(12).fill(0);
+                            });
+                        });
+                    }
+                }
+                saveState();
+                resetModal.hide();
+                render();
+            });
+
             document.getElementById('topExportBtn').addEventListener('click', () => currentNav === 'ledger' ? exportLedgerMonthExcel() : exportSummaryExcel());
             document.getElementById('globalSearchInput').addEventListener('input', function () { searchQuery = this.value.trim().toLowerCase(); if (currentNav !== 'ledger') render(); });
             document.getElementById('resetDemoBtn').addEventListener('click', () => { state = { years: structuredClone(DEFAULT_YEARS), presets: structuredClone(DEFAULT_PRESETS) }; saveState(); render(); });
