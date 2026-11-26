@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Models\NotebookCoretan;
 use Models\NotebookStickyNote;
 use Models\NotebookTask;
 use Services\AuthService;
@@ -59,6 +60,7 @@ class NotebookController
 
         $tasks     = NotebookTask::allByUser($userId);
         $stickies  = NotebookStickyNote::allByUser($userId);
+        $coretans  = NotebookCoretan::allByUser($userId);
         $settings  = NotebookTask::getSettings($userId, (string) ($user['email'] ?? ''));
         $smtpReady = MailService::isConfigured();
 
@@ -464,6 +466,69 @@ class NotebookController
 
         $note = NotebookStickyNote::findByUser($savedId, $userId);
         $this->jsonResponse(['success' => true, 'message' => $msg, 'sticky' => $note]);
+    }
+
+    /**
+     * API: Save Coretan (Create or Update)
+     */
+    public function saveCoretan(): void
+    {
+        $userId     = $this->getCurrentUserId();
+        $id         = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
+        $title      = trim((string) ($_POST['title'] ?? ''));
+        $content    = (string) ($_POST['content'] ?? '');
+        $paperStyle = trim((string) ($_POST['paper_style'] ?? 'plain'));
+        $fontFamily = trim((string) ($_POST['font_family'] ?? 'sans'));
+        $isPinned   = !empty($_POST['is_pinned']) ? 1 : 0;
+
+        if ($title === '') {
+            $title = 'Untitled';
+        }
+        if (!in_array($paperStyle, ['plain', 'lined', 'grid'], true)) {
+            $paperStyle = 'plain';
+        }
+        if (!in_array($fontFamily, ['sans', 'serif', 'mono', 'hand'], true)) {
+            $fontFamily = 'sans';
+        }
+
+        $data = [
+            'user_id'     => $userId,
+            'title'       => $title,
+            'content'     => $content,
+            'paper_style' => $paperStyle,
+            'font_family' => $fontFamily,
+            'is_pinned'   => $isPinned,
+        ];
+
+        if ($id > 0) {
+            $existing = NotebookCoretan::findByUser($id, $userId);
+            if (!$existing) {
+                $this->jsonResponse(['success' => false, 'message' => 'Coretan tidak ditemukan.'], 404);
+            }
+            NotebookCoretan::update($id, $userId, $data);
+            $savedId = $id;
+            $msg = 'Coretan disimpan.';
+        } else {
+            $savedId = NotebookCoretan::create($data);
+            $msg = 'Coretan baru dibuat.';
+        }
+
+        $coretan = NotebookCoretan::findByUser($savedId, $userId);
+        $this->jsonResponse(['success' => true, 'message' => $msg, 'coretan' => $coretan]);
+    }
+
+    /**
+     * API: Delete Coretan
+     */
+    public function deleteCoretan(): void
+    {
+        $userId = $this->getCurrentUserId();
+        $id     = (int) ($_POST['id'] ?? 0);
+        if (!$id || !NotebookCoretan::findByUser($id, $userId)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Coretan tidak ditemukan.'], 404);
+        }
+        NotebookCoretan::delete($id, $userId);
+        $this->jsonResponse(['success' => true, 'message' => 'Coretan dihapus.']);
     }
 
     /**

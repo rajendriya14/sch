@@ -5,6 +5,7 @@
 $userDisplayName = (string) ($user['name'] ?? $user['full_name'] ?? $user['username'] ?? 'User');
 $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 ?>
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
     :root {
         --excel-green: #217346;
@@ -1005,6 +1006,183 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
         flex-shrink: 0;
         border-radius: 4px;
     }
+
+    /* CORETAN. (GoodNotes-style Paper Notes) */
+    .coretan-shell {
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        min-height: 600px;
+        background: #f8fafc;
+    }
+    .coretan-list-pane {
+        background: #ffffff;
+        border-right: 1px solid var(--nb-border);
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 10px;
+    }
+    .coretan-list-items {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+        max-height: 520px;
+    }
+    .coretan-list-card {
+        border: 1px solid var(--nb-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+        background: #ffffff;
+        transition: border-color 0.14s, background 0.14s;
+    }
+    .coretan-list-card:hover { border-color: var(--excel-green-border); background: #f8fafc; }
+    .coretan-list-card.is-active { border-color: var(--excel-green); background: var(--excel-green-soft); }
+    .coretan-editor-pane {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        gap: 12px;
+        background: #f1f5f9;
+        position: relative;
+        min-width: 0;
+    }
+    .coretan-pill-bar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        padding: 5px 10px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .coretan-pill-bar::-webkit-scrollbar { display: none; }
+    .coretan-tool-btn {
+        border: none;
+        background: transparent;
+        color: #374151;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.12s, color 0.12s;
+    }
+    .coretan-tool-btn:hover { background: #f3f4f6; color: #111827; }
+    .coretan-tool-btn.is-active { background: var(--excel-green); color: #ffffff; }
+    .coretan-tool-sep {
+        width: 1px;
+        height: 18px;
+        background: #e5e7eb;
+        margin: 0 3px;
+        flex-shrink: 0;
+    }
+    .coretan-paper {
+        width: 100%;
+        max-width: 780px;
+        flex: 1;
+        min-height: 430px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+        padding: 22px 26px;
+        display: flex;
+        flex-direction: column;
+    }
+    .coretan-paper[data-paper="lined"] {
+        background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 27px,
+            #e5e7eb 27px,
+            #e5e7eb 28px
+        );
+        background-position: 0 16px;
+    }
+    .coretan-paper[data-paper="grid"] {
+        background-image:
+            linear-gradient(to right, #edf2f7 1px, transparent 1px),
+            linear-gradient(to bottom, #edf2f7 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+    .coretan-title-input {
+        border: none;
+        background: transparent;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #111827;
+        outline: none;
+        width: 100%;
+        padding: 0 0 10px;
+        margin-bottom: 8px;
+        border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
+    }
+    .coretan-paper[data-font="sans"] .coretan-title-input,
+    .coretan-paper[data-font="sans"] .ql-editor {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .coretan-paper[data-font="serif"] .coretan-title-input,
+    .coretan-paper[data-font="serif"] .ql-editor {
+        font-family: Georgia, 'Times New Roman', serif;
+    }
+    .coretan-paper[data-font="mono"] .coretan-title-input,
+    .coretan-paper[data-font="mono"] .ql-editor {
+        font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    }
+    .coretan-paper[data-font="hand"] .coretan-title-input,
+    .coretan-paper[data-font="hand"] .ql-editor {
+        font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+    }
+    .coretan-paper .ql-toolbar.ql-snow { display: none; }
+    .coretan-paper .ql-container.ql-snow {
+        border: none;
+        flex: 1;
+        font-size: 0.96rem;
+        line-height: 28px;
+        background: transparent;
+    }
+    .coretan-paper .ql-editor {
+        padding: 4px 0;
+        min-height: 340px;
+        line-height: 28px;
+        color: #111827;
+    }
+    .coretan-paper .ql-editor ul[data-checked=true] > li::before,
+    .coretan-paper .ql-editor ul[data-checked=false] > li::before {
+        color: var(--excel-green);
+        font-size: 1.05rem;
+    }
+    .coretan-paper .ql-editor ul[data-checked=true] > li {
+        text-decoration: line-through;
+        color: #6b7280;
+    }
+    .coretan-hl-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    @media (max-width: 767px) {
+        .coretan-shell { grid-template-columns: 1fr; }
+        .coretan-shell.is-editing .coretan-list-pane { display: none; }
+        .coretan-shell:not(.is-editing) .coretan-editor-pane { display: none; }
+        .coretan-editor-pane { padding: 10px 8px; }
+        .coretan-paper { padding: 16px 14px; min-height: 62vh; }
+    }
 </style>
 
 <div class="nb-sidebar-backdrop" id="nbSidebarBackdrop" onclick="toggleSidebar(false)"></div>
@@ -1076,6 +1254,14 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                     <span>Sticky Notes</span>
                 </span>
                 <span class="sidebar-count" id="cnt-Sticky">0</span>
+            </button>
+
+            <button type="button" class="sidebar-nav-item" id="nav-Coretan" onclick="switchView('coretan')">
+                <span class="sidebar-nav-left">
+                    <i class="bi bi-journal-richtext"></i>
+                    <span style="font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive; font-weight:700;">coretan.</span>
+                </span>
+                <span class="sidebar-count" id="cnt-Coretan">0</span>
             </button>
 
             <button type="button" class="sidebar-nav-item" id="nav-Settings"
@@ -1203,6 +1389,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('kanban')"><i class="bi bi-kanban me-2"></i>Kanban Notes (Board)</a></li>
                                         <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('sticky')"><i class="bi bi-sticky me-2"></i>Sticky Notes</a></li>
+                                        <li><a class="dropdown-item small" href="javascript:void(0)" onclick="switchView('coretan')"><i class="bi bi-journal-richtext me-2"></i>coretan.</a></li>
                                     </ul>
                                 </div>
                                 <div class="d-flex align-items-center">
@@ -1304,6 +1491,110 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
                                 </button>
                             </div>
                             <div class="row g-3" id="stickyNotesGrid"></div>
+                        </div>
+
+                        <!-- VIEW 6: CORETAN. (PAPER NOTEPAD) -->
+                        <div id="view-coretan" class="d-none">
+                            <div class="coretan-shell" id="coretanShell">
+                                <!-- Left Notes List -->
+                                <div class="coretan-list-pane" id="coretanListPane">
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="fw-bold" style="font-family:'Segoe Print','Bradley Hand','Comic Sans MS',cursive; font-size:1.1rem; color:var(--excel-green);">coretan.</span>
+                                        <button type="button" class="btn-excel py-1 px-2" style="font-size:0.78rem;" onclick="createNewCoretan()">
+                                            <i class="bi bi-plus-lg"></i> Baru
+                                        </button>
+                                    </div>
+                                    <input type="text" id="coretanSearchInput" class="form-control form-control-sm" placeholder="Cari coretan..." oninput="renderCoretanList()">
+                                    <div class="coretan-list-items" id="coretanListItems"></div>
+                                </div>
+
+                                <!-- Right Paper Canvas + Floating Toolbars -->
+                                <div class="coretan-editor-pane" id="coretanEditorPane">
+                                    <!-- Top Floating Pill Toolbar -->
+                                    <div class="coretan-pill-bar">
+                                        <button type="button" class="coretan-tool-btn d-md-none" onclick="coretanBackToList()" title="Kembali ke Daftar">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn d-none d-md-inline-flex" onclick="toggleCoretanSidebar()" title="Daftar Coretan">
+                                            <i class="bi bi-grid"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" onclick="coretanUndo()" title="Undo">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" onclick="coretanRedo()" title="Redo">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" onclick="createNewCoretan()" title="Catatan Baru">
+                                            <i class="bi bi-file-earmark-plus"></i>
+                                        </button>
+                                        <span class="coretan-tool-sep"></span>
+                                        <button type="button" class="coretan-tool-btn" id="btnPaperPlain" onclick="setCoretanPaper('plain')" title="Kertas Polos">
+                                            <i class="bi bi-file-earmark"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnPaperLined" onclick="setCoretanPaper('lined')" title="Kertas Bergaris">
+                                            <i class="bi bi-justify"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnPaperGrid" onclick="setCoretanPaper('grid')" title="Kertas Grid">
+                                            <i class="bi bi-grid-3x3"></i>
+                                        </button>
+                                        <span class="coretan-tool-sep"></span>
+                                        <button type="button" class="coretan-tool-btn" id="btnCoretanPin" onclick="toggleCoretanPin()" title="Pin Coretan">
+                                            <i class="bi bi-pin-angle"></i>
+                                        </button>
+                                        <button type="button" class="btn-excel py-1 px-2 ms-1" style="font-size:0.74rem; border-radius:999px;" onclick="saveCoretanNow(true)" title="Simpan Manual">
+                                            <i class="bi bi-check2"></i> Save
+                                        </button>
+                                        <span class="small text-muted px-1 text-nowrap" id="coretanSaveStatus" style="font-size:0.7rem;">Saved</span>
+                                        <button type="button" class="coretan-tool-btn text-danger" onclick="deleteCurrentCoretan()" title="Hapus Coretan">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Paper Canvas -->
+                                    <div class="coretan-paper" id="coretanPaper" data-paper="plain" data-font="sans">
+                                        <input type="text" id="coretanTitle" class="coretan-title-input" placeholder="Judul coretan..." oninput="scheduleCoretanAutoSave()">
+                                        <div id="coretanQuillEditor"></div>
+                                    </div>
+
+                                    <!-- Bottom Floating Formatting Pill Toolbar -->
+                                    <div class="coretan-pill-bar">
+                                        <select id="coretanFontSelect" class="form-select form-select-sm border-0 bg-transparent fw-semibold" style="width:auto; font-size:0.78rem; cursor:pointer;" onchange="setCoretanFont(this.value)" title="Pilih Font">
+                                            <option value="sans">Sans</option>
+                                            <option value="serif">Serif</option>
+                                            <option value="mono">Mono</option>
+                                            <option value="hand">Handwriting</option>
+                                        </select>
+                                        <span class="coretan-tool-sep"></span>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtBold" onclick="toggleCoretanFormat('bold')" title="Bold">
+                                            <i class="bi bi-type-bold"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtItalic" onclick="toggleCoretanFormat('italic')" title="Italic">
+                                            <i class="bi bi-type-italic"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtUnderline" onclick="toggleCoretanFormat('underline')" title="Underline">
+                                            <i class="bi bi-type-underline"></i>
+                                        </button>
+                                        <span class="coretan-tool-sep"></span>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtCheck" onclick="toggleCoretanList('check')" title="Checkbox / Checklist">
+                                            <i class="bi bi-check2-square"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtBullet" onclick="toggleCoretanList('bullet')" title="Bullet List">
+                                            <i class="bi bi-list-ul"></i>
+                                        </button>
+                                        <button type="button" class="coretan-tool-btn" id="btnFmtOrdered" onclick="toggleCoretanList('ordered')" title="Numbering">
+                                            <i class="bi bi-list-ol"></i>
+                                        </button>
+                                        <span class="coretan-tool-sep"></span>
+                                        <span class="coretan-hl-dot" style="background:#fef08a;" onclick="setCoretanHighlight('#fef08a')" title="Highlight Kuning"></span>
+                                        <span class="coretan-hl-dot" style="background:#bbf7d0;" onclick="setCoretanHighlight('#bbf7d0')" title="Highlight Hijau"></span>
+                                        <span class="coretan-hl-dot" style="background:#bfdbfe;" onclick="setCoretanHighlight('#bfdbfe')" title="Highlight Biru"></span>
+                                        <span class="coretan-hl-dot" style="background:#fbcfe8;" onclick="setCoretanHighlight('#fbcfe8')" title="Highlight Pink"></span>
+                                        <button type="button" class="coretan-tool-btn" onclick="setCoretanHighlight(false)" title="Hapus Highlight">
+                                            <i class="bi bi-eraser"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1857,6 +2148,7 @@ $userName = htmlspecialchars($userDisplayName, ENT_QUOTES, 'UTF-8');
 <script>
 window.NOTEBOOK_DATA     = <?= json_encode($tasks, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_STICKIES = <?= json_encode($stickies, JSON_UNESCAPED_UNICODE) ?>;
+window.NOTEBOOK_CORETAN  = <?= json_encode($coretans, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_SETTINGS = <?= json_encode($settings, JSON_UNESCAPED_UNICODE) ?>;
 window.NOTEBOOK_USER     = <?= json_encode($userDisplayName, JSON_UNESCAPED_UNICODE) ?>;
 </script>
@@ -1875,6 +2167,7 @@ function relDate(offset) {
 
 let events = Array.isArray(window.NOTEBOOK_DATA) ? window.NOTEBOOK_DATA : [];
 let stickies = Array.isArray(window.NOTEBOOK_STICKIES) ? window.NOTEBOOK_STICKIES : [];
+let coretans = Array.isArray(window.NOTEBOOK_CORETAN) ? window.NOTEBOOK_CORETAN : [];
 let cfgSettings = window.NOTEBOOK_SETTINGS || { emails: [], digest_enabled: true, digest_freq: 'workdays', digest_time: '07:30', preferences: {} };
 let cfgPrefs = Object.assign({
     default_view: 'month',
@@ -1949,6 +2242,7 @@ function renderBreadcrumb(navId) {
         'nav-Personal': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'All Notes', onclick: "selectFilter('ALL', 'All Notes')" }, { label: 'Personal Notes' }],
         'nav-Kanban':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Kanban Board' }],
         'nav-Sticky':   [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Sticky Notes' }],
+    'nav-Coretan':  [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'coretan.' }],
         'nav-Prefs':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Preferensi Notes' }],
         'nav-Email':    [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Email Reminder' }],
         'nav-Holidays': [{ label: 'Home', href: 'index.php?page=portal' }, { label: 'Settings', onclick: "openSettingsModal(this, 'prefs')" }, { label: 'Tanggal Merah' }],
@@ -2002,6 +2296,7 @@ function renderAll() {
     if (currentView === 'day') renderDayView();
     if (currentView === 'kanban') renderKanbanView();
     if (currentView === 'sticky') renderStickyView();
+    if (currentView === 'coretan') renderCoretanView();
     if (agendaOpen) renderAgendaDrawer();
 }
 
@@ -2013,6 +2308,8 @@ function updateSidebarCounts() {
     document.getElementById('cnt-Email').textContent = emailCnt;
     document.getElementById('cnt-Kanban').textContent = events.length;
     document.getElementById('cnt-Sticky').textContent = stickies.length;
+    const cntCoretan = document.getElementById('cnt-Coretan');
+    if (cntCoretan) cntCoretan.textContent = coretans.length;
     document.getElementById('sidebarStatusText').textContent = `Email reminder aktif · ${cfgEmails.length} akun`;
 }
 
@@ -2067,9 +2364,9 @@ setInterval(updateHeroClock, 1000);
 
 function switchView(view) {
     currentView = view;
-    const labels = { month: 'Month', day: 'Day', category: 'Category', kanban: 'Kanban', sticky: 'Sticky Notes' };
+    const labels = { month: 'Month', day: 'Day', category: 'Category', kanban: 'Kanban', sticky: 'Sticky Notes', coretan: 'coretan.' };
     document.getElementById('currentViewLabel').textContent = labels[view] || 'Month';
-    ['month', 'day', 'category', 'kanban', 'sticky'].forEach(v => {
+    ['month', 'day', 'category', 'kanban', 'sticky', 'coretan'].forEach(v => {
         document.getElementById('view-' + v).classList.toggle('d-none', v !== view);
     });
 
@@ -2077,6 +2374,8 @@ function switchView(view) {
         setActiveSidebarNav('nav-Kanban', 'Kanban Board');
     } else if (view === 'sticky') {
         setActiveSidebarNav('nav-Sticky', 'Sticky Notes');
+    } else if (view === 'coretan') {
+        setActiveSidebarNav('nav-Coretan', 'coretan.');
     } else {
         const navMap = { 'ALL': ['nav-ALL', 'All Notes'], '#Meeting': ['nav-Meeting', 'Meeting & Sync'], '#Personal': ['nav-Personal', 'Personal Notes'] };
         const [navId, title] = navMap[activeTagFilter] || ['nav-ALL', 'All Notes'];
@@ -2090,6 +2389,7 @@ function updateToolbarTitle() {
     if (currentView === 'month') el.textContent = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
     else if (currentView === 'kanban') el.textContent = 'Notes & Task Board';
     else if (currentView === 'sticky') el.textContent = 'Sticky Notes';
+    else if (currentView === 'coretan') el.textContent = 'coretan.';
     else el.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
@@ -3595,4 +3895,287 @@ document.addEventListener('DOMContentLoaded', () => {
     runDueRemindersSilent();
     scheduleMinuteAlignedHeartbeat();
 });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script>
+/* CORETAN. — PAPER NOTEPAD WITH QUILL */
+let coretanQuill = null;
+let activeCoretanId = 0;
+let coretanAutoSaveTimer = null;
+let coretanSuppressChange = false;
+let activeCoretanPaper = 'plain';
+let activeCoretanFont = 'sans';
+let activeCoretanPinned = false;
+
+function ensureCoretanQuill() {
+    if (coretanQuill || typeof Quill === 'undefined') return;
+    coretanQuill = new Quill('#coretanQuillEditor', {
+        theme: 'snow',
+        placeholder: 'Mulai mencoret catatan Anda di sini...',
+        modules: {
+            toolbar: false,
+            history: { delay: 600, maxStack: 100, userOnly: true }
+        }
+    });
+    coretanQuill.on('text-change', () => {
+        if (coretanSuppressChange) return;
+        scheduleCoretanAutoSave();
+        syncCoretanToolbarState();
+    });
+    coretanQuill.on('selection-change', () => syncCoretanToolbarState());
+}
+
+function renderCoretanView() {
+    ensureCoretanQuill();
+    renderCoretanList();
+    if (!activeCoretanId && coretans.length > 0) {
+        loadCoretanIntoEditor(coretans[0], false);
+    } else if (coretans.length === 0) {
+        resetCoretanEditor(false);
+    }
+}
+
+function renderCoretanList() {
+    const box = document.getElementById('coretanListItems');
+    if (!box) return;
+    const q = (document.getElementById('coretanSearchInput')?.value || '').trim().toLowerCase();
+    const list = coretans.filter(c => {
+        if (!q) return true;
+        const plain = (c.content || '').replace(/<[^>]+>/g, ' ').toLowerCase();
+        return (c.title || '').toLowerCase().includes(q) || plain.includes(q);
+    });
+
+    if (!list.length) {
+        box.innerHTML = '<div class="text-muted small text-center py-4">Belum ada coretan. Klik <strong>+ Baru</strong> untuk mulai menulis.</div>';
+        return;
+    }
+
+    const paperLabel = { plain: 'Polos', lined: 'Bergaris', grid: 'Grid' };
+    box.innerHTML = list.map(c => {
+        const plain = (c.content || '').replace(/<[^>]+>/g, ' ').trim();
+        const snippet = plain.slice(0, 65) || 'Kosong...';
+        const isActive = Number(c.id) === Number(activeCoretanId) ? 'is-active' : '';
+        return `
+            <div class="coretan-list-card ${isActive}" onclick="openCoretanItem(${c.id})">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                    <span class="fw-semibold text-truncate" style="font-size:0.86rem;">
+                        ${c.is_pinned ? '<i class="bi bi-pin-fill me-1" style="color:var(--excel-green);"></i>' : ''}${esc(c.title || 'Untitled')}
+                    </span>
+                    <span class="badge bg-light text-muted border" style="font-size:0.65rem;">${paperLabel[c.paper_style] || 'Polos'}</span>
+                </div>
+                <div class="text-muted text-truncate" style="font-size:0.74rem;">${esc(snippet)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openCoretanItem(id) {
+    const item = coretans.find(c => Number(c.id) === Number(id));
+    if (!item) return;
+    loadCoretanIntoEditor(item, true);
+}
+
+function loadCoretanIntoEditor(item, enterMobileEdit = true) {
+    ensureCoretanQuill();
+    activeCoretanId = Number(item.id);
+    activeCoretanPaper = item.paper_style || 'plain';
+    activeCoretanFont = item.font_family || 'sans';
+    activeCoretanPinned = !!item.is_pinned;
+
+    document.getElementById('coretanTitle').value = item.title || '';
+    coretanSuppressChange = true;
+    if (coretanQuill) coretanQuill.root.innerHTML = item.content || '';
+    coretanSuppressChange = false;
+
+    applyCoretanPaperAndFontUI();
+    document.getElementById('coretanSaveStatus').textContent = 'Saved';
+    if (enterMobileEdit) document.getElementById('coretanShell')?.classList.add('is-editing');
+    renderCoretanList();
+}
+
+function resetCoretanEditor(enterMobileEdit = true) {
+    ensureCoretanQuill();
+    activeCoretanId = 0;
+    activeCoretanPaper = 'plain';
+    activeCoretanFont = 'sans';
+    activeCoretanPinned = false;
+    document.getElementById('coretanTitle').value = '';
+    coretanSuppressChange = true;
+    if (coretanQuill) coretanQuill.setContents([]);
+    coretanSuppressChange = false;
+    applyCoretanPaperAndFontUI();
+    document.getElementById('coretanSaveStatus').textContent = 'Draft';
+    if (enterMobileEdit) document.getElementById('coretanShell')?.classList.add('is-editing');
+}
+
+function createNewCoretan() {
+    resetCoretanEditor(true);
+    renderCoretanList();
+    document.getElementById('coretanTitle')?.focus();
+}
+
+function coretanBackToList() {
+    document.getElementById('coretanShell')?.classList.remove('is-editing');
+}
+
+function toggleCoretanSidebar() {
+    const pane = document.getElementById('coretanListPane');
+    const shell = document.getElementById('coretanShell');
+    if (!pane || !shell) return;
+    const hidden = pane.classList.toggle('d-none');
+    shell.style.gridTemplateColumns = hidden ? '1fr' : '';
+}
+
+function applyCoretanPaperAndFontUI() {
+    const paper = document.getElementById('coretanPaper');
+    if (paper) {
+        paper.dataset.paper = activeCoretanPaper;
+        paper.dataset.font = activeCoretanFont;
+    }
+    const fontSel = document.getElementById('coretanFontSelect');
+    if (fontSel) fontSel.value = activeCoretanFont;
+
+    document.getElementById('btnPaperPlain')?.classList.toggle('is-active', activeCoretanPaper === 'plain');
+    document.getElementById('btnPaperLined')?.classList.toggle('is-active', activeCoretanPaper === 'lined');
+    document.getElementById('btnPaperGrid')?.classList.toggle('is-active', activeCoretanPaper === 'grid');
+    document.getElementById('btnCoretanPin')?.classList.toggle('is-active', activeCoretanPinned);
+}
+
+function setCoretanPaper(style) {
+    activeCoretanPaper = style;
+    applyCoretanPaperAndFontUI();
+    scheduleCoretanAutoSave();
+}
+
+function setCoretanFont(font) {
+    activeCoretanFont = font;
+    applyCoretanPaperAndFontUI();
+    scheduleCoretanAutoSave();
+}
+
+function toggleCoretanPin() {
+    activeCoretanPinned = !activeCoretanPinned;
+    applyCoretanPaperAndFontUI();
+    scheduleCoretanAutoSave();
+}
+
+function toggleCoretanFormat(fmt) {
+    if (!coretanQuill) return;
+    const cur = coretanQuill.getFormat();
+    coretanQuill.format(fmt, !cur[fmt]);
+    syncCoretanToolbarState();
+}
+
+function toggleCoretanList(type) {
+    if (!coretanQuill) return;
+    const cur = coretanQuill.getFormat();
+    coretanQuill.format('list', cur.list === type ? false : type);
+    syncCoretanToolbarState();
+}
+
+function setCoretanHighlight(color) {
+    if (!coretanQuill) return;
+    coretanQuill.format('background', color);
+    syncCoretanToolbarState();
+}
+
+function coretanUndo() {
+    if (coretanQuill) coretanQuill.history.undo();
+}
+
+function coretanRedo() {
+    if (coretanQuill) coretanQuill.history.redo();
+}
+
+function syncCoretanToolbarState() {
+    if (!coretanQuill) return;
+    const fmt = coretanQuill.getFormat();
+    document.getElementById('btnFmtBold')?.classList.toggle('is-active', !!fmt.bold);
+    document.getElementById('btnFmtItalic')?.classList.toggle('is-active', !!fmt.italic);
+    document.getElementById('btnFmtUnderline')?.classList.toggle('is-active', !!fmt.underline);
+    document.getElementById('btnFmtCheck')?.classList.toggle('is-active', fmt.list === 'check');
+    document.getElementById('btnFmtBullet')?.classList.toggle('is-active', fmt.list === 'bullet');
+    document.getElementById('btnFmtOrdered')?.classList.toggle('is-active', fmt.list === 'ordered');
+}
+
+function scheduleCoretanAutoSave() {
+    const st = document.getElementById('coretanSaveStatus');
+    if (st) st.textContent = 'Unsaved';
+    clearTimeout(coretanAutoSaveTimer);
+    coretanAutoSaveTimer = setTimeout(() => saveCoretanNow(false), 1200);
+}
+
+async function saveCoretanNow(manual = false) {
+    clearTimeout(coretanAutoSaveTimer);
+    const title = (document.getElementById('coretanTitle')?.value || '').trim();
+    const html = coretanQuill ? coretanQuill.root.innerHTML : '';
+    const plain = (coretanQuill ? coretanQuill.getText() : '').trim();
+    if (!manual && !activeCoretanId && !title && !plain) return;
+
+    const st = document.getElementById('coretanSaveStatus');
+    if (st) st.textContent = 'Saving...';
+
+    const fd = new FormData();
+    fd.append('id', activeCoretanId);
+    fd.append('title', title || 'Untitled');
+    fd.append('content', html);
+    fd.append('paper_style', activeCoretanPaper);
+    fd.append('font_family', activeCoretanFont);
+    if (activeCoretanPinned) fd.append('is_pinned', '1');
+
+    try {
+        const res = await fetch('index.php?page=notebook&action=saveCoretan', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: fd
+        });
+        const json = await res.json();
+        if (json.success && json.coretan) {
+            activeCoretanId = Number(json.coretan.id);
+            const idx = coretans.findIndex(x => Number(x.id) === activeCoretanId);
+            if (idx >= 0) coretans[idx] = json.coretan;
+            else coretans.unshift(json.coretan);
+            updateSidebarCounts();
+            renderCoretanList();
+            if (st) st.textContent = 'Saved';
+            if (manual) showToast(json.message || 'Coretan disimpan.');
+        } else if (manual) {
+            await AppDialog.alert({ tone: 'danger', title: 'Gagal Menyimpan', message: json.message || 'Gagal menyimpan coretan.' });
+        }
+    } catch (e) {
+        if (st) st.textContent = 'Offline';
+    }
+}
+
+async function deleteCurrentCoretan() {
+    if (!activeCoretanId) {
+        resetCoretanEditor(false);
+        return;
+    }
+    const ok = await AppDialog.confirm({
+        tone: 'danger',
+        title: 'Are you sure?',
+        message: 'Hapus coretan ini secara permanen?',
+        cancelText: 'No',
+        confirmText: 'Yes, Delete'
+    });
+    if (!ok) return;
+
+    const fd = new FormData();
+    fd.append('id', activeCoretanId);
+    const res = await fetch('index.php?page=notebook&action=deleteCoretan', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: fd
+    });
+    const json = await res.json();
+    if (json.success) {
+        coretans = coretans.filter(c => Number(c.id) !== Number(activeCoretanId));
+        activeCoretanId = 0;
+        updateSidebarCounts();
+        renderCoretanView();
+        coretanBackToList();
+        showToast('Coretan dihapus.');
+    }
+}
 </script>

@@ -459,6 +459,21 @@ class Database
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ');
+
+            self::$instance->exec('
+                CREATE TABLE IF NOT EXISTS notebook_coretan (
+                    id          INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id     INT NOT NULL,
+                    title       VARCHAR(255) NOT NULL DEFAULT "Untitled",
+                    content     MEDIUMTEXT NULL,
+                    paper_style ENUM("plain","lined","grid") NOT NULL DEFAULT "plain",
+                    font_family VARCHAR(60) NOT NULL DEFAULT "sans",
+                    is_pinned   TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_coretan_user (user_id, updated_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ');
         } catch (\PDOException $e) {
             error_log('ensureNotebookTables: ' . $e->getMessage());
         }
