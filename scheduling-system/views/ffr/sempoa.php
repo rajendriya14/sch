@@ -273,13 +273,72 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
         .summary-pct-row td, .summary-pct-row td.col-det { background: #bbf7d0; color: #14532d; font-weight: 700; }
         .count-pill { font-size: 0.68rem; background: #e2e8f0; color: #475569; padding: 1px 6px; border-radius: 999px; margin-left: 6px; }
 
-        @media (max-width: 900px) {
-            .app-shell { flex-direction: column; }
-            .app-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border-subtle); }
-            .app-main-wrap { padding: 10px; }
+        /* Mobile & Tablet Responsive Drawer + Table Tuning */
+        .mobile-menu-btn {
+            display: none;
+            border: 1px solid var(--border-subtle);
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px 9px;
+            font-size: 1.05rem;
+            color: #111827;
+            cursor: pointer;
+        }
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 1040;
+        }
+        .sidebar-backdrop.show { display: block; }
+
+        @media (max-width: 991px) {
+            .mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+            .app-sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 268px;
+                height: 100vh;
+                z-index: 1050;
+                transition: left 0.22s ease;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.12);
+            }
+            .app-sidebar.open { left: 0; }
+            .app-main-wrap { padding: 8px; }
+            .app-canvas { min-height: calc(100vh - 16px); border-radius: 12px; }
+            .canvas-topbar { padding: 10px 14px; }
+            .canvas-body { padding: 14px; }
+            .stacked-chart-area { overflow-x: auto; gap: 6px; padding: 18px 8px 0; }
+            .stacked-col { min-width: 32px; }
+        }
+
+        @media (max-width: 576px) {
+            .canvas-topbar { padding: 10px 12px; gap: 8px; }
+            .canvas-body { padding: 12px; }
+            .breadcrumb-title { font-size: 0.8rem; gap: 5px; }
+            .sheet-table thead th.col-item, .sheet-table tbody td.col-item,
+            .summary-table thead th.col-det, .summary-table tbody td.col-det {
+                min-width: 132px;
+                max-width: 150px;
+                padding-left: 10px;
+                font-size: 0.76rem;
+                white-space: normal;
+            }
+            .sheet-table tbody td, .summary-table tbody td {
+                padding: 6px 8px;
+                font-size: 0.76rem;
+            }
+            .editable-cell { min-width: 82px; }
+            .section-add-controls { flex-wrap: wrap; }
+            .section-add-select { min-width: 150px; flex: 1 1 150px; }
+            .annual-tab-btn { padding: 7px 12px; font-size: 0.82rem; }
+            .kpi-big-val { font-size: 1.2rem; }
         }
         @media print {
-            .app-sidebar, .canvas-topbar, .no-print { display: none !important; }
+            .app-sidebar, .sidebar-backdrop, .canvas-topbar, .no-print { display: none !important; }
             .app-main-wrap { padding: 0 !important; }
             .app-canvas { border: none !important; box-shadow: none !important; }
             .canvas-body { padding: 0 !important; }
@@ -288,9 +347,10 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
     </style>
 </head>
 <body>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="app-shell">
         <!-- Left Sidebar -->
-        <aside class="app-sidebar">
+        <aside class="app-sidebar" id="appSidebar">
             <div>
                 <div class="brand-row">
                     <a href="#" class="brand-left">
@@ -357,9 +417,12 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             <div class="app-canvas theme-teams" id="appCanvas">
                 <div class="canvas-topbar">
                     <div class="breadcrumb-title">
-                        <i class="bi bi-house"></i>
-                        <span>Sempoa</span>
-                        <span>—</span>
+                        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Buka menu">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <i class="bi bi-house d-none d-sm-inline"></i>
+                        <span class="d-none d-sm-inline">Sempoa</span>
+                        <span class="d-none d-sm-inline">—</span>
                         <span id="topModeBadge" class="badge bg-secondary-subtle text-dark border">Forecast</span>
                         <strong id="topBreadcrumbCurrent">Dashboard</strong>
                     </div>
@@ -1575,11 +1638,22 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 saveState(); renderManageList(); render();
             });
 
+            function closeMobileSidebar() {
+                document.getElementById('appSidebar')?.classList.remove('open');
+                document.getElementById('sidebarBackdrop')?.classList.remove('show');
+            }
+            document.getElementById('mobileMenuBtn')?.addEventListener('click', function () {
+                document.getElementById('appSidebar')?.classList.toggle('open');
+                document.getElementById('sidebarBackdrop')?.classList.toggle('show');
+            });
+            document.getElementById('sidebarBackdrop')?.addEventListener('click', closeMobileSidebar);
+
             document.querySelectorAll('.side-nav-btn[data-nav]').forEach(btn => {
                 btn.addEventListener('click', function () {
                     document.querySelectorAll('.side-nav-btn[data-nav]').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     currentNav = this.dataset.nav;
+                    closeMobileSidebar();
                     render();
                 });
             });
