@@ -421,6 +421,32 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
         .sub-nav-btn:hover { background: #EAE0CE; color: #111827; }
         .sub-nav-btn.active { background: #fff; color: var(--accent); font-weight: 600; border: 1px solid #e5e7eb; }
 
+        /* iOS-style Grouped Toggle List for Kelola Dropdown */
+        .ios-toggle-group {
+            border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fff;
+            max-height: 280px; overflow-y: auto;
+        }
+        .ios-toggle-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; border-bottom: 1px solid #f1f5f9; transition: background 0.12s;
+        }
+        .ios-toggle-row:last-child { border-bottom: none; }
+        .ios-toggle-row.is-on { background: #f8fafc; }
+        .ios-toggle-label { font-size: 0.88rem; font-weight: 500; color: #111827; }
+        .ios-toggle-row:not(.is-on) .ios-toggle-label { color: #9ca3af; }
+        .ios-switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+        .ios-switch input { opacity: 0; width: 0; height: 0; }
+        .ios-slider {
+            position: absolute; cursor: pointer; inset: 0; background: #e5e7eb;
+            border-radius: 999px; transition: 0.2s;
+        }
+        .ios-slider::before {
+            content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background: #fff; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .ios-switch input:checked + .ios-slider { background: var(--modal-accent, #111827); }
+        .ios-switch input:checked + .ios-slider::before { transform: translateX(18px); }
+
         @media print {
             .app-sidebar, .sidebar-backdrop, .canvas-topbar, .no-print { display: none !important; }
             .app-main-wrap { padding: 0 !important; }
@@ -746,18 +772,18 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
     <!-- Modal Kelola List Dropdown -->
     <div class="modal fade" id="manageListModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white py-2">
+            <div class="modal-content" id="manageListContent">
+                <div class="modal-header text-white py-2" id="manageListHeader" style="background: var(--modal-accent, #212529);">
                     <h6 class="modal-title" id="manageListTitle"><i class="bi bi-sliders"></i> Kelola Pilihan Dropdown</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addPresetForm" class="input-group input-group-sm mb-3">
                         <input type="text" class="form-control" id="newPresetInput" placeholder="Tambah pilihan baru ke dropdown..." required>
-                        <button type="submit" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Tambah ke List</button>
+                        <button type="submit" class="btn text-white" id="addPresetSubmitBtn" style="background: var(--modal-accent, #212529);"><i class="bi bi-plus-lg"></i> Tambah ke List</button>
                     </form>
-                    <div class="small text-muted mb-2">Daftar pilihan di dropdown saat ini:</div>
-                    <ul class="list-group list-group-flush border rounded" id="managePresetList" style="max-height: 260px; overflow-y: auto;"></ul>
+                    <div class="small text-muted mb-2">Aktifkan pilihan yang ingin tampil di dropdown:</div>
+                    <div class="ios-toggle-group" id="managePresetList"></div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Selesai</button>
@@ -1222,7 +1248,8 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
 
             function buildDropdownOptions(sectionKey, existingItems) {
                 const existingNames = new Set((existingItems || []).map(i => i.name.toLowerCase()));
-                const list = (state.presets[sectionKey] || []).filter(p => !existingNames.has(p.toLowerCase()));
+                const disabled = new Set(((state.disabledPresets || {})[sectionKey] || []).map(p => p.toLowerCase()));
+                const list = (state.presets[sectionKey] || []).filter(p => !existingNames.has(p.toLowerCase()) && !disabled.has(p.toLowerCase()));
                 const labelMap = { income: 'Income', main: 'Main', additional: 'Additional', savings: 'Saving' };
                 let opts = `<option value="">-- Pilih item ${labelMap[sectionKey] || ''} --</option>`;
                 list.forEach(p => { opts += `<option value="${esc(p)}">${esc(p)}</option>`; });
@@ -2080,11 +2107,32 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
             });
 
             function renderManageList() {
+                const accentMap = { income: '#185ABD', main: '#D24726', additional: '#D24726', savings: '#217346' };
+                const modalEl = document.getElementById('manageListContent');
+                if (modalEl) modalEl.style.setProperty('--modal-accent', accentMap[managingSection] || '#212529');
+
                 const listEl = document.getElementById('managePresetList');
                 const items = state.presets[managingSection] || [];
+                const disabled = new Set(((state.disabledPresets || {})[managingSection] || []).map(p => p.toLowerCase()));
                 listEl.innerHTML = items.length
-                    ? items.map((n, i) => `<li class="list-group-item d-flex justify-content-between align-items-center py-1 px-2 small"><span>${esc(n)}</span><button type="button" class="btn btn-sm btn-link text-danger p-0 remove-preset-btn" data-idx="${i}"><i class="bi bi-trash"></i></button></li>`).join('')
-                    : '<li class="list-group-item text-muted small text-center py-3">Kosong</li>';
+                    ? items.map((n, i) => {
+                        const isOn = !disabled.has(n.toLowerCase());
+                        return `
+                            <div class="ios-toggle-row ${isOn ? 'is-on' : ''}">
+                                <span class="ios-toggle-label">${esc(n)}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="ios-switch" title="${isOn ? 'Aktif di dropdown' : 'Disembunyikan dari dropdown'}">
+                                        <input type="checkbox" class="toggle-preset-cb" data-name="${esc(n)}" ${isOn ? 'checked' : ''}>
+                                        <span class="ios-slider"></span>
+                                    </label>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 remove-preset-btn" data-idx="${i}" title="Hapus permanen">
+                                        <i class="bi bi-x-lg" style="font-size:0.75rem;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')
+                    : '<div class="text-muted small text-center py-3">Kosong</div>';
             }
 
             document.getElementById('addPresetForm').addEventListener('submit', function (e) {
@@ -2096,6 +2144,19 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 }
                 document.getElementById('newPresetInput').value = '';
                 renderManageList(); render();
+            });
+            document.getElementById('managePresetList').addEventListener('change', function (e) {
+                const cb = e.target.closest('.toggle-preset-cb');
+                if (!cb) return;
+                if (!state.disabledPresets) state.disabledPresets = {};
+                if (!state.disabledPresets[managingSection]) state.disabledPresets[managingSection] = [];
+                const name = cb.dataset.name;
+                if (cb.checked) {
+                    state.disabledPresets[managingSection] = state.disabledPresets[managingSection].filter(p => p.toLowerCase() !== name.toLowerCase());
+                } else if (!state.disabledPresets[managingSection].some(p => p.toLowerCase() === name.toLowerCase())) {
+                    state.disabledPresets[managingSection].push(name);
+                }
+                saveState(); renderManageList(); render();
             });
             document.getElementById('managePresetList').addEventListener('click', function (e) {
                 const btn = e.target.closest('.remove-preset-btn');
