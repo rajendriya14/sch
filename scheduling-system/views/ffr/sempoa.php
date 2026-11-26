@@ -540,6 +540,22 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                         <button type="button" class="btn btn-sm btn-dark" id="topExportBtn">
                             <i class="bi bi-download"></i> Export Excel
                         </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm dropdown-toggle d-inline-flex align-items-center gap-2" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:4px 12px 4px 8px;color:#111827;font-weight:500;">
+                                <i class="bi bi-person-circle" style="color:#217346;font-size:1.05rem;"></i>
+                                <span id="topUserName"><?= htmlspecialchars($loggedName) ?></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:0.84rem;">
+                                <li><span class="dropdown-item-text small text-muted" id="topUserHandle">@<?= htmlspecialchars($loggedUser) ?></span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="index.php?page=portal"><i class="bi bi-grid-1x2 me-2"></i>Portal</a></li>
+                                <li><a class="dropdown-item" href="index.php?page=auth&action=changePassword"><i class="bi bi-key me-2"></i>Ganti Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="index.php?page=auth&action=logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -1536,6 +1552,8 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 document.querySelector('.brand-name-cute').textContent = s.appName || 'Sempoa';
                 document.getElementById('sidebarUserName').textContent = s.userName || 'Ivan Rajendriya';
                 document.getElementById('sidebarUserHandle').textContent = s.userHandle || '@ivanrajendriya';
+                if (document.getElementById('topUserName')) document.getElementById('topUserName').textContent = s.userName || 'Ivan Rajendriya';
+                if (document.getElementById('topUserHandle')) document.getElementById('topUserHandle').textContent = s.userHandle || '@ivanrajendriya';
                 const parts = (s.userName || 'IR').trim().split(/\s+/);
                 document.getElementById('sidebarAvatar').textContent = parts.map(p => p[0]).join('').slice(0, 2).toUpperCase();
 
