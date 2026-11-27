@@ -1557,35 +1557,315 @@ body.ledger-exporting .ledger-table tr:hover > * {
 
 /* ---------- 6. LOGIN — halaman berdiri sendiri ---------- */
 .login-page {
-    background-color: #212529;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-color: #ffffff;
+    color: #09090b;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     min-height: 100vh;
-    padding: 24px 12px;
+    margin: 0;
 }
 
-.login-wrapper {
+.login-split {
+    display: flex;
+    min-height: 100vh;
     width: 100%;
-    max-width: 420px;
 }
 
-.login-card {
-    border: 0;
-    border-radius: 14px;
-}
-
-.login-logo {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto;
-    border-radius: 16px;
-    background-color: #212529;
-    color: #fff;
+.login-left {
+    flex: 1 1 56%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
+    padding: 40px 24px;
+    background-color: #ffffff;
+}
+
+.login-form-box {
+    width: 100%;
+    max-width: 360px;
+}
+
+.login-brand-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    color: #18181b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    margin-bottom: 24px;
+}
+
+.login-heading {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #09090b;
+    margin: 0 0 6px;
+}
+
+.login-subheading {
+    font-size: 0.925rem;
+    color: #71717a;
+    margin: 0 0 28px;
+}
+
+.login-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #18181b;
+    margin-bottom: 6px;
+}
+
+.login-input {
+    height: 42px;
+    border-radius: 8px;
+    border: 1px solid #e4e4e7;
+    font-size: 0.9rem;
+    color: #09090b;
+    padding: 8px 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.login-input::placeholder {
+    color: #a1a1aa;
+}
+
+.login-input:focus {
+    border-color: #18181b;
+    box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+}
+
+.login-password-wrap {
+    position: relative;
+}
+
+.login-input-password {
+    padding-right: 42px;
+}
+
+.login-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #71717a;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.login-password-toggle:hover {
+    color: #18181b;
+    background-color: #f4f4f5;
+}
+
+.login-submit-btn {
+    height: 42px;
+    border-radius: 8px;
+    background-color: #18181b;
+    border: 1px solid #18181b;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.login-submit-btn:hover,
+.login-submit-btn:focus {
+    background-color: #27272a;
+    border-color: #27272a;
+    color: #ffffff;
+}
+
+.login-submit-btn:active {
+    transform: translateY(1px);
+}
+
+.login-footer-note {
+    margin: 28px 0 0;
+    font-size: 0.78rem;
+    color: #a1a1aa;
+}
+
+/* Panel Kanan: Grid Kotak + Logo Bergantian + Quote */
+.login-right {
+    flex: 0 0 44%;
+    position: relative;
+    overflow: hidden;
+    background-color: #ffffff;
+    border-left: 1px solid #f4f4f5;
+}
+
+.login-logo-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+}
+
+.login-grid-cell {
+    border-right: 1px solid #f4f4f5;
+    border-bottom: 1px solid #f4f4f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: transparent;
+    transition: background-color 0.45s ease;
+}
+
+.login-grid-cell.is-active {
+    background-color: #f4f4f5;
+}
+
+.login-grid-slot {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.84);
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.login-grid-cell.is-active .login-grid-slot {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.login-grid-logo-img {
+    width: 44px;
+    height: 44px;
+    max-width: 78%;
+    max-height: 78%;
+    object-fit: contain;
+    display: block;
+}
+
+.login-grid-logo-rekha {
+    width: 34px;
+    height: 34px;
+}
+
+.login-grid-logo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.login-grid-logo-wfm {
+    background-color: #18181b;
+    color: #ffffff;
+}
+
+.login-grid-logo-portal {
+    background-color: #e4e4e7;
+    color: #18181b;
+}
+
+.login-quote-overlay {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    pointer-events: none;
+}
+
+.login-quote-card {
+    max-width: 400px;
+    text-align: center;
+    padding: 28px 24px;
+    border-radius: 20px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.96) 55%, rgba(255, 255, 255, 0.72) 100%);
+}
+
+.login-stars {
+    display: inline-flex;
+    gap: 5px;
+    color: #18181b;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.login-quote-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+    color: #09090b;
+    margin: 0 0 22px;
+}
+
+.login-quote-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+
+.login-author-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #18181b;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.login-author-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #09090b;
+    line-height: 1.2;
+}
+
+.login-author-role {
+    font-size: 0.78rem;
+    color: #71717a;
+    line-height: 1.3;
+}
+
+@media (max-width: 991.98px) {
+    .login-split {
+        flex-direction: column;
+    }
+
+    .login-left {
+        flex: 1 1 auto;
+        min-height: 100vh;
+    }
+
+    .login-right {
+        display: none;
+    }
 }
 
 /* ============================================================
