@@ -778,12 +778,17 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addPresetForm" class="input-group input-group-sm mb-3">
-                        <input type="text" class="form-control" id="newPresetInput" placeholder="Tambah pilihan baru ke dropdown..." required>
-                        <button type="submit" class="btn text-white" id="addPresetSubmitBtn" style="background: var(--modal-accent, #212529);"><i class="bi bi-plus-lg"></i> Tambah ke List</button>
+                    <form id="addPresetForm" class="mb-3">
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="text" class="form-control" id="newPresetInput" placeholder="Tambah item baru..." required>
+                            <button type="submit" class="btn text-white" id="addPresetSubmitBtn" style="background: var(--modal-accent, #212529);"><i class="bi bi-plus-lg"></i> Tambah</button>
+                        </div>
+                        <div class="form-check form-check-inline small m-0">
+                            <input class="form-check-input" type="checkbox" id="addAlsoToSheet" checked>
+                            <label class="form-check-label text-muted" for="addAlsoToSheet">Langsung tampilkan di tabel sheet (${currentYear})</label>
+                        </div>
                     </form>
-                    <div class="small text-muted mb-2">Aktifkan pilihan yang ingin tampil di dropdown:</div>
-                    <div class="ios-toggle-group" id="managePresetList"></div>
+                    <div id="managePresetList"></div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Selesai</button>
@@ -2112,36 +2117,74 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 if (modalEl) modalEl.style.setProperty('--modal-accent', accentMap[managingSection] || '#212529');
 
                 const listEl = document.getElementById('managePresetList');
-                const items = state.presets[managingSection] || [];
+                const sheetItems = (state.years[currentYear]?.[managingSection] || []);
+                const presets = state.presets[managingSection] || [];
                 const disabled = new Set(((state.disabledPresets || {})[managingSection] || []).map(p => p.toLowerCase()));
-                listEl.innerHTML = items.length
-                    ? items.map((n, i) => {
-                        const isOn = !disabled.has(n.toLowerCase());
-                        return `
-                            <div class="ios-toggle-row ${isOn ? 'is-on' : ''}">
-                                <span class="ios-toggle-label">${esc(n)}</span>
+
+                const sheetHtml = `
+                    <div class="small fw-semibold text-muted mb-1">Item aktif di Sheet (${currentYear})</div>
+                    <div class="ios-toggle-group mb-3">
+                        ${sheetItems.length ? sheetItems.map(it => `
+                            <div class="ios-toggle-row is-on">
+                                <span class="ios-toggle-label">${esc(it.name)}</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <label class="ios-switch" title="${isOn ? 'Aktif di dropdown' : 'Disembunyikan dari dropdown'}">
-                                        <input type="checkbox" class="toggle-preset-cb" data-name="${esc(n)}" ${isOn ? 'checked' : ''}>
-                                        <span class="ios-slider"></span>
-                                    </label>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 remove-preset-btn" data-idx="${i}" title="Hapus permanen">
-                                        <i class="bi bi-x-lg" style="font-size:0.75rem;"></i>
+                                    <button type="button" class="btn btn-sm btn-link text-primary p-0 edit-sheet-item-btn" data-id="${it.id}" title="Edit nama item">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 remove-sheet-item-btn" data-id="${it.id}" title="Hapus dari sheet">
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                             </div>
-                        `;
-                    }).join('')
-                    : '<div class="text-muted small text-center py-3">Kosong</div>';
+                        `).join('') : '<div class="text-muted small text-center py-2">Belum ada item di sheet</div>'}
+                    </div>
+                `;
+
+                const presetHtml = `
+                    <div class="small fw-semibold text-muted mb-1">Pilihan di Dropdown (Toggle ON/OFF)</div>
+                    <div class="ios-toggle-group">
+                        ${presets.length ? presets.map((n, i) => {
+                            const isOn = !disabled.has(n.toLowerCase());
+                            return `
+                                <div class="ios-toggle-row ${isOn ? 'is-on' : ''}">
+                                    <span class="ios-toggle-label">${esc(n)}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label class="ios-switch" title="${isOn ? 'Aktif di dropdown' : 'Disembunyikan dari dropdown'}">
+                                            <input type="checkbox" class="toggle-preset-cb" data-name="${esc(n)}" ${isOn ? 'checked' : ''}>
+                                            <span class="ios-slider"></span>
+                                        </label>
+                                        <button type="button" class="btn btn-sm btn-link text-primary p-0 edit-preset-btn" data-idx="${i}" title="Edit nama">
+                                            <i class="bi bi-pencil" style="font-size:0.8rem;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-link text-danger p-0 remove-preset-btn" data-idx="${i}" title="Hapus">
+                                            <i class="bi bi-trash" style="font-size:0.8rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : '<div class="text-muted small text-center py-2">Kosong</div>'}
+                    </div>
+                `;
+
+                listEl.innerHTML = sheetHtml + presetHtml;
             }
 
             document.getElementById('addPresetForm').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const val = document.getElementById('newPresetInput').value.trim();
                 if (!val) return;
+                const toSheet = document.getElementById('addAlsoToSheet')?.checked;
                 if (!state.presets[managingSection].some(p => p.toLowerCase() === val.toLowerCase())) {
-                    state.presets[managingSection].push(val); saveState();
+                    state.presets[managingSection].push(val);
                 }
+                if (toSheet) {
+                    if (!state.years[currentYear]) state.years[currentYear] = { income: [], main: [], additional: [], savings: [] };
+                    const exists = (state.years[currentYear][managingSection] || []).some(i => i.name.toLowerCase() === val.toLowerCase());
+                    if (!exists) {
+                        state.years[currentYear][managingSection].push({ id: Date.now(), name: val, forecast: Array(12).fill(0), actual: Array(12).fill(0) });
+                    }
+                }
+                saveState();
                 document.getElementById('newPresetInput').value = '';
                 renderManageList(); render();
             });
@@ -2159,6 +2202,38 @@ $loggedUser = $_SESSION['username'] ?? 'ivanrajendriya';
                 saveState(); renderManageList(); render();
             });
             document.getElementById('managePresetList').addEventListener('click', function (e) {
+                const editSheetBtn = e.target.closest('.edit-sheet-item-btn');
+                if (editSheetBtn) {
+                    const id = Number(editSheetBtn.dataset.id);
+                    const it = (state.years[currentYear]?.[managingSection] || []).find(i => i.id === id);
+                    if (!it) return;
+                    const newName = prompt('Ubah nama item:', it.name);
+                    if (newName && newName.trim()) {
+                        it.name = newName.trim();
+                        saveState(); renderManageList(); render();
+                    }
+                    return;
+                }
+                const delSheetBtn = e.target.closest('.remove-sheet-item-btn');
+                if (delSheetBtn) {
+                    const id = Number(delSheetBtn.dataset.id);
+                    const it = (state.years[currentYear]?.[managingSection] || []).find(i => i.id === id);
+                    if (!it || !confirm(`Hapus item "${it.name}" dari sheet ${currentYear}?`)) return;
+                    state.years[currentYear][managingSection] = state.years[currentYear][managingSection].filter(i => i.id !== id);
+                    saveState(); renderManageList(); render();
+                    return;
+                }
+                const editPresetBtn = e.target.closest('.edit-preset-btn');
+                if (editPresetBtn) {
+                    const idx = Number(editPresetBtn.dataset.idx);
+                    const oldName = state.presets[managingSection][idx];
+                    const newName = prompt('Ubah nama pilihan dropdown:', oldName);
+                    if (newName && newName.trim()) {
+                        state.presets[managingSection][idx] = newName.trim();
+                        saveState(); renderManageList(); render();
+                    }
+                    return;
+                }
                 const btn = e.target.closest('.remove-preset-btn');
                 if (!btn) return;
                 state.presets[managingSection].splice(Number(btn.dataset.idx), 1);
